@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MinigameConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/minigame_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "defense_g1"
+display_name = "格挡·时机条（第1组占位）"
+kind = "defense"
+group = 1
+scene_path = "res://minigames/timing_bar.tscn"
+telegraph_text = "敌人连击来袭！"
+telegraph_color = Color(1, 0.4, 0.2, 1)
+difficulty_offset = 0.0

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MinigameConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/minigame_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "attack_slash"
+display_name = "斩击·时机条"
+kind = "attack"
+group = 0
+scene_path = "res://minigames/timing_bar.tscn"
+telegraph_text = "看准时机出手！"
+telegraph_color = Color(0.3, 0.8, 1, 1)
+difficulty_offset = 0.0

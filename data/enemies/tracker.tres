@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "追踪术士（追踪弹）"
+max_hp = 22
+attack = 11
+speed = 7
+pattern = 1
+color = Color(0.6, 0.3, 0.85, 1)

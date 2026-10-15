@@ -90,6 +90,8 @@ func _run() -> void:
 	await get_tree().process_frame
 	var t := GameState.tunables
 	t.map_seed = 12345
+	GameState.log_path = "user://test_playtest_log.csv"
+	GameState.clear_log()
 	GameState.auto_minigame = R.PERFECT
 	GameState.auto_skill = 0
 
@@ -266,6 +268,10 @@ func _run() -> void:
 	check(GameState.last_result.extracted == false, "结算记录为倒下")
 	scene().back_to_camp()
 	check(await wait_scene(GameState.SCN_CAMP), "倒下结算 → 营地")
+	t.slash_power = 10
+	t.heavy_power = 16
+
+	await test_milestone3()
 
 	print("\n结果：%d 通过，%d 失败" % [passes, fails])
 	get_tree().quit(0 if fails == 0 else 1)
@@ -610,3 +616,279 @@ func dodge_bot(b) -> Vector2:
 	var a: float = b.cfg.arena_size
 	v += (Vector2(a / 2, a / 2) - b.player_pos) / a * 1.2
 	return v.normalized()
+
+# ======================= T8~T10 + 整体验收 =======================
+func focus_ok() -> bool:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var f := get_viewport().gui_get_focus_owner()
+	return f != null and f.is_visible_in_tree() and not (f is Button and f.disabled)
+
+func pad(btn := JOY_BUTTON_A) -> void:
+	await tap(joy_ev(btn))
+
+func test_milestone3() -> void:
+	var t := GameState.tunables
+	GameState.auto_minigame = R.PERFECT
+	GameState.auto_skill = 0
+	print("== T8 搜刮与背包 ==")
+	GameState.new_run()
+	GameState.put_item("material", 3)
+	check(GameState.inventory.size() == 1, "放入材料 3 → 占 1 格")
+	GameState.put_item("material", 34)
+	check(GameState.inventory.size() == 12 and GameState.pending_loot.size() == 1, "背包上限 12 格，多出的进入待取舍（%d 格，待取舍 %d）" % [GameState.inventory.size(), GameState.pending_loot.size()])
+	GameState.pending_loot.clear()
+	GameState.put_item("shard", 1)
+	GameState.goto(GameState.SCN_DUNGEON)
+	await wait_scene(GameState.SCN_DUNGEON)
+	check(scene().popup_kind == "discard", "背包满时进入迷宫/拾取 → 弹出取舍界面")
+	check(await focus_ok(), "取舍界面有默认焦点（手柄可操作）")
+	var all_disabled := true
+	for id in scene().buttons:
+		all_disabled = all_disabled and scene().buttons[id].disabled
+	check(all_disabled, "取舍未完成前不能继续走迷宫")
+	scene().choose_discard_slot(0)
+	await get_tree().process_frame
+	check(GameState.pending_loot.is_empty() and GameState.inventory.size() == 12 and GameState.run_loot.shard == 1 and GameState.run_loot.material == 33, "丢弃第 1 格材料 → 碎片入包（材料 %d 碎片 %d）" % [GameState.run_loot.material, GameState.run_loot.shard])
+	GameState.put_item("shard", 2)
+	GameState.put_item("material", 3) # 堆满后溢出
+	await get_tree().process_frame
+	scene()._refresh()
+	check(scene().popup_kind == "discard", "再次溢出 → 再次弹出取舍")
+	while not GameState.pending_loot.is_empty():
+		scene().choose_discard_new()
+		await get_tree().process_frame
+	check(GameState.run_loot.material <= 36 and scene().popup_kind == "", "放弃新物品 → 背包不变，取舍结束")
+	# 倒下 / 撤离结算
+	GameState.new_run()
+	GameState.put_item("material", 7)
+	GameState.put_item("shard", 3)
+	var meta_m := GameState.meta_materials
+	var meta_s := GameState.meta_shards
+	GameState.end_run(false)
+	await wait_scene(GameState.SCN_RESULT)
+	var lr := GameState.last_result
+	check(lr.material == 3 and lr.material_lost == 4 and lr.shard == 3, "倒下：材料 7 → 带出 3（丢 4），碎片 3 全保留")
+	scene().back_to_camp()
+	await wait_scene(GameState.SCN_CAMP)
+	check(GameState.meta_materials == meta_m + 3 and GameState.meta_shards == meta_s + 3, "倒下结算正确计入局外")
+	GameState.new_run()
+	GameState.put_item("material", 7)
+	GameState.put_item("shard", 3)
+	GameState.end_run(true)
+	await wait_scene(GameState.SCN_RESULT)
+	check(GameState.last_result.material == 7 and GameState.last_result.shard == 3, "撤离：材料 7、碎片 3 全部带出")
+	scene().back_to_camp()
+	await wait_scene(GameState.SCN_CAMP)
+	# 掉落率
+	GameState.new_run()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1
+	var hits := 0
+	for i in 2000:
+		hits += 1 if GameState.roll_drop(0.25, 1, rng) > 0 else 0
+	check(absf(hits / 2000.0 - 0.25) < 0.03, "掉落率 25%% → 模拟 %.1f%%" % (hits / 20.0))
+	t.battle_drop_rate = 1.0
+	t.battle_shard_rate = 1.0
+	GameState.start_battle()
+	await wait_scene(GameState.SCN_BATTLE)
+	var bt = scene()
+	await battle_outcome(bt)
+	var ne: int = bt.enemies.size()
+	check(bt.drops.material == ne * t.battle_material_drop and bt.drops.shard == ne, "战斗掉落：%d 个敌人 → 材料 %d、碎片 %d（掉落率 100%%）" % [ne, bt.drops.material, bt.drops.shard])
+	t.battle_drop_rate = 0.8
+	t.battle_shard_rate = 0.25
+	await wait_scene(GameState.SCN_DUNGEON)
+
+	print("== T9 极简营地 ==")
+	GameState.goto(GameState.SCN_CAMP)
+	await wait_scene(GameState.SCN_CAMP)
+	GameState.meta_materials = 0
+	scene()._refresh()
+	check(scene().upgrade_buttons[1].disabled, "材料不足时升级按钮不可用")
+	GameState.meta_materials = 40
+	scene()._refresh()
+	var cost1 := GameState.upgrade_cost(1)
+	scene().upgrade_buttons[1].pressed.emit()
+	check(GameState.skill_levels[1] == 1 and GameState.meta_materials == 40 - cost1, "第1组升到 Lv1，花费 %d 材料" % cost1)
+	check(GameState.upgrade_cost(1) > cost1, "再升级花费递增（%d）" % GameState.upgrade_cost(1))
+	scene().upgrade_buttons[5].pressed.emit()
+	scene().upgrade_buttons[6].pressed.emit()
+	scene().upgrade_buttons[2].pressed.emit()
+	check(GameState.skill_levels[5] == 1 and GameState.skill_levels[6] == 1 and GameState.skill_levels[2] == 1, "第2/5/6组也可升级")
+	GameState.depth = 3
+	scene().enter_dungeon()
+	await wait_scene(GameState.SCN_DUNGEON)
+	check(GameState.depth == 1, "“再次下潜”从第 1 层开始")
+	var cm: MinigameBase = await spawn(GameState.mg_defense[1], GameState.minigame_context(GameState.mg_defense[1]))
+	check(is_equal_approx(cm.window, 0.66), "下一局：连击窗口 600 → %d ms（+10%%）" % roundi(cm.window * 1000))
+	cm.queue_free()
+	var rmg: MinigameBase = await spawn(GameState.mg_rhythm, GameState.minigame_context(GameState.mg_rhythm))
+	check(is_equal_approx(rmg.good_w, 0.132) and is_equal_approx(rmg.perfect_w, 0.055), "下一局：节奏判定 ±50/±120 → ±%d/±%d ms" % [roundi(rmg.perfect_w * 1000), roundi(rmg.good_w * 1000)])
+	rmg.queue_free()
+	var chm: MinigameBase = await spawn(GameState.mg_defense[2], GameState.minigame_context(GameState.mg_defense[2]))
+	var sp: float = chm.balls[0].vel.length()
+	check(absf(sp - 260.0 / 1.1) < 0.5, "下一局：追踪球速 260 → %.0f（等效窗口 +10%%）" % sp)
+	chm.queue_free()
+	check(GameState.luck() == 1 and GameState.mg_rps.rps_win_rate(GameState.luck()) > GameState.mg_rps.rps_win_rate(0), "下一局：幸运 +1，猜拳胜率 33%% → %d%%" % roundi(GameState.mg_rps.rps_win_rate(GameState.luck()) * 100))
+	# 还原
+	for g in GameState.skill_levels:
+		GameState.skill_levels[g] = 0
+
+	print("== T10 调试面板与数据记录 ==")
+	var dp = GameState.debug_panel
+	var need := [[t, "battle_drop_rate"], [t, "battle_shard_rate"], [t, "chest_shard_rate"], [t, "base_difficulty"], [GameState.enemy_types[0], "attack"], [GameState.enemy_types[1], "attack"], [GameState.enemy_types[2], "attack"], [GameState.mg_defense[2], "ball_speed"], [GameState.mg_rhythm, "bpm"], [GameState.mg_rps, "rps_base_win"]]
+	var miss := []
+	for pr in need:
+		if dp.find_editor(pr[0], pr[1]) == null:
+			miss.append(pr[1])
+	check(miss.is_empty(), "面板包含：掉落率、敌人伤害、各小游戏参数（缺失：%s）" % str(miss))
+	var gm := false
+	for c in dp.root.find_children("*", "CheckBox", true, false):
+		gm = gm or true
+	check(gm and dp.depth_spin != null, "面板包含上帝模式开关与当前层")
+	dp.toggle()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(int(dp.depth_spin.value) == GameState.depth and dp.info.text.contains("当前层"), "面板显示当前层 %d" % GameState.depth)
+	dp.toggle()
+	t.god_mode = true
+	GameState.auto_minigame = R.FAIL
+	GameState.player_hp = 100
+	GameState.start_battle()
+	await wait_scene(GameState.SCN_BATTLE)
+	var gb = scene()
+	await battle_outcome(gb)
+	var dmg_taken := 0
+	for ev in gb.damage_events:
+		if ev.kind == "defense":
+			dmg_taken += ev.amount
+	check(gb.outcome == "win" and dmg_taken == 0 and GameState.player_hp == 100, "上帝模式：防御全 FAIL 也不掉血")
+	t.god_mode = false
+	await wait_scene(GameState.SCN_DUNGEON)
+	GameState.auto_minigame = R.PERFECT
+	GameState.clear_log()
+	GameState.start_battle()
+	await wait_scene(GameState.SCN_BATTLE)
+	var lb = scene()
+	await battle_outcome(lb)
+	var n_events: int = lb.damage_events.size()
+	await wait_scene(GameState.SCN_DUNGEON)
+	var f := FileAccess.open(GameState.log_path, FileAccess.READ)
+	var lines := f.get_as_text().strip_edges().split("\n")
+	f.close()
+	check(lines[0] == GameState.LOG_HEADER, "CSV 表头：" + lines[0])
+	check(lines.size() - 1 == n_events, "每次小游戏写一行（%d 行 = %d 次判定）" % [lines.size() - 1, n_events])
+	var cols_ok := true
+	for i in range(1, lines.size()):
+		var c := lines[i].split(",")
+		cols_ok = cols_ok and c.size() == 11 and c[6] in ["PERFECT", "GOOD", "FAIL"] and float(c[9]) > 0.4
+	check(cols_ok, "每行含判定结果与耗时（例：%s）" % lines[1])
+	# 真实操作的日志（非 auto）
+	GameState.clear_log()
+	var lm: MinigameBase = await spawn(GameState.mg_rps, GameState.minigame_context(GameState.mg_rps))
+	await tap(key_ev(KEY_LEFT))
+	await wait_done(lm)
+	lm.queue_free()
+	f = FileAccess.open(GameState.log_path, FileAccess.READ)
+	var l2 := f.get_as_text().strip_edges().split("\n")
+	f.close()
+	var c2 := l2[1].split(",")
+	check(c2[3] == "luck_rps" and c2[10] == "0" and float(c2[8]) > 0.5, "真实操作的小游戏也记录（%s）" % l2[1])
+	print("  CSV 路径：", ProjectSettings.globalize_path(GameState.log_path))
+
+	print("== 整体验收（headless 可测部分）==")
+	# 全手柄 / 全键盘走一局：营地 → 迷宫 → 战斗（菜单选技能）→ 出口撤离 → 结算 → 营地
+	for dev in ["joy", "kb"]:
+		GameState.auto_skill = -1
+		GameState.auto_minigame = R.PERFECT
+		GameState.goto(GameState.SCN_CAMP)
+		await wait_scene(GameState.SCN_CAMP)
+		var screens := {}
+		var ok := true
+		var steps := 0
+		var left_camp := false
+		while steps < 400:
+			steps += 1
+			var sc := scene()
+			var path: String = sc.scene_file_path if sc else ""
+			if path == GameState.SCN_CAMP and left_camp:
+				break
+			if path == GameState.SCN_BATTLE and not sc.choosing:
+				await get_tree().process_frame
+				continue
+			if not await focus_ok():
+				await get_tree().process_frame
+				if not await focus_ok():
+					continue
+			screens[path.get_file().get_basename() + ("/" + sc.popup_kind if path == GameState.SCN_DUNGEON and sc.popup_kind != "" else "")] = true
+			if path != GameState.SCN_CAMP:
+				left_camp = true
+			if dev == "joy":
+				await pad()
+			else:
+				await tap(key_ev(KEY_ENTER))
+			for i in 3:
+				await get_tree().process_frame
+		var got_all: bool = screens.has("camp") and screens.has("dungeon") and screens.has("battle") and screens.has("dungeon/exit") and screens.has("result")
+		check(got_all and scene().scene_file_path == GameState.SCN_CAMP, "仅用%s走完一局：%s" % ["手柄 A 键" if dev == "joy" else "键盘回车", str(screens.keys())])
+	GameState.auto_skill = 0
+	# 校准界面焦点
+	GameState.goto(GameState.SCN_CALIBRATION)
+	await wait_scene(GameState.SCN_CALIBRATION)
+	check(await focus_ok(), "校准界面可用手柄/键盘返回")
+	# 一局时长估算：用 auto GOOD 打一局到第 3 层再撤离，数判定次数
+	GameState.auto_minigame = R.GOOD
+	GameState.goto(GameState.SCN_CAMP)
+	await wait_scene(GameState.SCN_CAMP)
+	scene().enter_dungeon()
+	await wait_scene(GameState.SCN_DUNGEON)
+	var judges := 0
+	var nodes_visited := 0
+	var battles := 0
+	var player_turns := 0
+	var dead := false
+	for fl in 3:
+		while true:
+			var d = scene()
+			if d.scene_file_path != GameState.SCN_DUNGEON:
+				break
+			if d.popup_kind == "discard":
+				d.choose_discard_new()
+				await get_tree().process_frame
+				continue
+			var path := _bfs(GameState.floor_data, GameState.current_node, "exit")
+			var nid: int = path[0]
+			nodes_visited += 1
+			d.visit(nid)
+			var nd: Dictionary = GameState.floor_data.nodes[nid]
+			if nd.type == "combat":
+				await wait_scene(GameState.SCN_BATTLE)
+				var b = scene()
+				var o = await battle_outcome(b)
+				battles += 1
+				judges += b.damage_events.size()
+				for ev in b.damage_events:
+					if ev.kind == "attack":
+						player_turns += 1
+				if o != "win":
+					dead = true
+					break
+				await wait_scene(GameState.SCN_DUNGEON)
+			elif nd.type == "exit":
+				if fl < 2:
+					scene().choose_descend()
+					await get_tree().process_frame
+					await wait_scene(GameState.SCN_DUNGEON)
+				else:
+					scene().choose_withdraw()
+				break
+			elif d.popup_kind == "message":
+				d.dismiss_message()
+		if dead:
+			break
+	# 估算：每次判定 预兆0.7 + 判定≈3.8 + 结算演出1.2 秒；玩家每回合选技能≈3 秒；每个节点走动/阅读≈8 秒；每场战斗进出≈5 秒
+	var est := judges * (0.7 + 3.8 + 1.2) + player_turns * 3.0 + nodes_visited * 8.0 + battles * 5.0
+	print("  估算一局：%d 个节点、%d 场战斗、%d 次判定（全 GOOD，%s）→ 约 %.1f 分钟" % [nodes_visited, battles, judges, "中途倒下" if dead else "打到第 3 层撤离", est / 60.0])
+	check(est / 60.0 >= 5.0 and est / 60.0 <= 20.0, "一局时长估算 %.1f 分钟（目标 10~15，需真人计时确认）" % (est / 60.0))
+	GameState.auto_minigame = R.PERFECT

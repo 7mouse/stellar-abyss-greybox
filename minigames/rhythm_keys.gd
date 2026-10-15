@@ -25,8 +25,9 @@ func _begin() -> void:
 	var d := eff_depth()
 	bpm = cfg.bpm_at(d)
 	beat = 60.0 / bpm
-	perfect_w = cfg.perfect_ms / 1000.0
-	good_w = cfg.good_ms / 1000.0
+	var wm := float(context.get("window_mult", 1.0))
+	perfect_w = cfg.perfect_ms / 1000.0 * wm
+	good_w = cfg.good_ms / 1000.0 * wm
 	var vs := get_viewport_rect().size
 	lane_x = vs.x / 2 - 60
 	line_y = vs.y / 2 + 300

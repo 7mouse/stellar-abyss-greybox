@@ -19,6 +19,7 @@ func _ready() -> void:
 	info = UI.label(self, "当前校准值：%+d ms" % roundi(GameState.tunables.rhythm_offset_ms), Vector2(120, 700), 32)
 	var b := UI.button(self, "返回营地", func(): GameState.goto(GameState.SCN_CAMP), Vector2(360, 80))
 	b.position = Vector2(120, 860)
+	b.grab_focus.call_deferred()
 	start_us = Time.get_ticks_usec()
 
 func now() -> float:

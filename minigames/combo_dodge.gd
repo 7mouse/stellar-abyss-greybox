@@ -26,7 +26,7 @@ func _begin() -> void:
 	cfg = config as ComboConfig
 	var d := eff_depth()
 	hits = cfg.hits_at(d)
-	window = cfg.window_at(d) / 1000.0
+	window = cfg.window_at(d) / 1000.0 * float(context.get("window_mult", 1.0))
 	interval = cfg.interval_ms / 1000.0
 	if context.has("seed"):
 		rng.seed = int(context.seed)

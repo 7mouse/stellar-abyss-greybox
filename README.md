@@ -23,10 +23,13 @@
 
 ## 自动测试
 ```
-godot --headless --import --quit          # 首次：生成类缓存
-godot --headless res://tests/test_main.tscn
+tests/run_tests.sh      # 无头跑全部验收，引擎报错也算失败
 ```
-退出码 0 表示 T1~T7 验收用例全部通过（含 T6 的 1000 次概率模拟）。
+退出码 0 表示 T1~T10 验收用例全部通过（含 T6 的 1000 次概率模拟、纯手柄/纯键盘走完一局）。
+
+## 试玩数据
+每次小游戏判定都会追加一行到 `user://playtest_log.csv`（Windows：`%APPDATA%\Godot\app_userdata\Stellar Abyss 灰盒原型\`，Linux：`~/.local/share/godot/app_userdata/Stellar Abyss 灰盒原型/`）。
+列：`time,run_id,depth,minigame,group,kind,result,score,judge_sec（操作耗时）,total_sec（含预兆）,auto`。F1 面板可清空日志。
 
 ## 目录
 - `scripts/game_state.gd`：全局状态（autoload），场景流转、局内背包、局外材料、技能等级、层数、输入映射
@@ -45,4 +48,4 @@ godot --headless res://tests/test_main.tscn
 ## 进度
 - [x] T1 项目骨架  - [x] T2 迷宫层  - [x] T3 回合制战斗框架
 - [x] T4 连击闪避/格挡  - [x] T5 追逐躲球  - [x] T6 猜拳/骰子  - [x] T7 节奏按键
-- [ ] T8~T10
+- [x] T8 搜刮与 12 格背包  - [x] T9 极简营地  - [x] T10 调试面板与 CSV 记录

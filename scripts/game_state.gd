@@ -31,7 +31,17 @@ var base_luck: int = 0
 var in_run := false
 var depth: int = 1
 var loot_mult: float = 1.0
-var run_loot := {"material": 0, "shard": 0} ## 局内背包（T8 再改为 12 格）
+## 局内背包：最多 backpack_slots 格，每格 {kind, count}；材料/碎片各自按堆叠上限叠放
+var inventory: Array = []
+var pending_loot: Array = [] ## 背包满时待取舍的新物品 [{kind, count}]
+var run_loot: Dictionary:
+	get:
+		var d := {"material": 0, "shard": 0}
+		for it in inventory:
+			d[it.kind] += it.count
+		return d
+var run_id := ""
+var log_path := "user://playtest_log.csv"
 var player_hp: int = 100
 var run_seed: int = 0
 var floor_data: Dictionary = {}
@@ -62,8 +72,29 @@ func all_minigames() -> Array:
 func luck() -> int:
 	return base_luck + int(skill_levels.get(5, 0))
 
-func trait_bonus(group: int) -> float:
-	return float(skill_levels.get(group, 0)) * tunables.trait_bonus_per_level
+## 角色特长加成（灰盒没有角色，固定 0；接口保留给难度公式）
+func trait_bonus(_group: int) -> float:
+	return 0.0
+
+## 营地升级：判定窗口倍率（每级 +10%）。第 5 组升级改为幸运 +1，见 luck()
+func window_mult(group: int) -> float:
+	return 1.0 + float(skill_levels.get(group, 0)) * tunables.upgrade_window_bonus
+
+func upgrade_cost(group: int) -> int:
+	return tunables.upgrade_cost_base + int(skill_levels.get(group, 0)) * tunables.upgrade_cost_step
+
+func can_upgrade(group: int) -> bool:
+	return meta_materials >= upgrade_cost(group)
+
+func upgrade(group: int) -> bool:
+	if not can_upgrade(group):
+		return false
+	meta_materials -= upgrade_cost(group)
+	skill_levels[group] = int(skill_levels.get(group, 0)) + 1
+	return true
+
+func minigame_context(cfg: MinigameConfig) -> Dictionary:
+	return {"depth": depth, "luck": luck(), "trait_bonus": trait_bonus(cfg.group), "window_mult": window_mult(cfg.group)}
 
 func goto(path: String) -> void:
 	get_tree().change_scene_to_file.call_deferred(path)
@@ -73,7 +104,9 @@ func new_run() -> void:
 	in_run = true
 	depth = 1
 	loot_mult = 1.0
-	run_loot = {"material": 0, "shard": 0}
+	inventory = []
+	pending_loot = []
+	run_id = "%d_%d" % [Time.get_unix_time_from_system(), randi() % 10000]
 	player_hp = tunables.player_max_hp
 	run_seed = tunables.map_seed if tunables.map_seed >= 0 else randi()
 	_gen_floor()
@@ -87,10 +120,51 @@ func _gen_floor() -> void:
 	floor_data = DungeonGen.generate(run_seed, depth, tunables)
 	current_node = -1
 
+## 按掉落倍率放入背包，返回实际数量。放不下的部分进入 pending_loot 等待取舍。
 func add_loot(kind: String, base_amount: int) -> int:
 	var n := int(round(base_amount * loot_mult))
-	run_loot[kind] = int(run_loot.get(kind, 0)) + n
+	put_item(kind, n)
 	return n
+
+func stack_max(kind: String) -> int:
+	return tunables.material_stack if kind == "material" else tunables.shard_stack
+
+func put_item(kind: String, n: int) -> void:
+	var left := n
+	for it in inventory:
+		if left <= 0:
+			break
+		if it.kind == kind and it.count < stack_max(kind):
+			var add := mini(left, stack_max(kind) - it.count)
+			it.count += add
+			left -= add
+	while left > 0:
+		var c := mini(left, stack_max(kind))
+		if inventory.size() < tunables.backpack_slots:
+			inventory.append({"kind": kind, "count": c})
+		else:
+			pending_loot.append({"kind": kind, "count": c})
+		left -= c
+
+## 取舍：丢掉背包第 i 格，把第一个待取舍物品放进去
+func discard_slot(i: int) -> void:
+	if pending_loot.is_empty() or i < 0 or i >= inventory.size():
+		return
+	inventory.remove_at(i)
+	var it: Dictionary = pending_loot.pop_front()
+	put_item(it.kind, it.count)
+
+## 取舍：放弃第一个待取舍物品
+func discard_pending() -> void:
+	if not pending_loot.is_empty():
+		pending_loot.pop_front()
+
+static func item_name(it: Dictionary) -> String:
+	return ("材料" if it.kind == "material" else "记忆碎片") + " ×%d" % it.count
+
+## 掉落：按概率决定是否掉、掉多少
+func roll_drop(rate: float, amount: int, rng: RandomNumberGenerator) -> int:
+	return amount if rng.randf() < rate else 0
 
 func heal_rest() -> int:
 	var before := player_hp
@@ -100,13 +174,17 @@ func heal_rest() -> int:
 func start_battle() -> void:
 	goto(SCN_BATTLE)
 
-## extracted=true 撤离；false 倒下。倒下惩罚在 T8 实装，目前战利品原样带出。
+## extracted=true 撤离：全部带出；false 倒下：碎片全保留，材料丢一半（向下取整保留）
 func end_run(extracted: bool) -> void:
+	var loot := run_loot
+	var mats: int = loot.material if extracted else int(floor(loot.material * (1.0 - tunables.knockdown_material_loss)))
+	pending_loot = []
 	last_result = {
 		"extracted": extracted,
 		"depth": depth,
-		"material": run_loot.material,
-		"shard": run_loot.shard,
+		"material": mats,
+		"material_lost": loot.material - mats,
+		"shard": loot.shard,
 	}
 	in_run = false
 	goto(SCN_RESULT)
@@ -119,6 +197,9 @@ func finish_result() -> void:
 
 # ---- 输入映射（键盘 + 手柄）----
 func _setup_input() -> void:
+	# 菜单确认/返回也绑定手柄（引擎默认 ui_accept 不含手柄 A）
+	_action("ui_accept", [], [JOY_BUTTON_A])
+	_action("ui_cancel", [], [JOY_BUTTON_B])
 	_action("mg_action", [KEY_SPACE, KEY_J, KEY_Z], [JOY_BUTTON_A])
 	_action("mg_cancel", [KEY_K, KEY_X], [JOY_BUTTON_B])
 	_action("debug_toggle", [KEY_F1], [JOY_BUTTON_BACK])
@@ -145,3 +226,25 @@ func _action(name: String, keys: Array, buttons: Array, axis: int = -1, axis_val
 		m.axis = axis
 		m.axis_value = axis_val
 		InputMap.action_add_event(name, m)
+
+# ---- 试玩数据记录（T10）----
+const LOG_HEADER := "time,run_id,depth,minigame,group,kind,result,score,judge_sec,total_sec,auto"
+
+func log_minigame(cfg: MinigameConfig, ctx: Dictionary, result: int, score: float, judge_sec: float, total_sec: float) -> void:
+	if not tunables.log_enabled:
+		return
+	var exists := FileAccess.file_exists(log_path)
+	var f := FileAccess.open(log_path, FileAccess.READ_WRITE if exists else FileAccess.WRITE)
+	if f == null:
+		push_warning("无法写入 %s" % log_path)
+		return
+	if exists:
+		f.seek_end()
+	else:
+		f.store_line(LOG_HEADER)
+	f.store_line("%s,%s,%d,%s,%d,%s,%s,%.3f,%.3f,%.3f,%d" % [Time.get_datetime_string_from_system(), run_id, int(ctx.get("depth", depth)), cfg.id, cfg.group, cfg.kind, MinigameBase.RESULT_NAMES[result], score, judge_sec, total_sec, 1 if int(ctx.get("auto", -1)) >= 0 else 0])
+	f.close()
+
+func clear_log() -> void:
+	if FileAccess.file_exists(log_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(log_path))

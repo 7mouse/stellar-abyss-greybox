@@ -15,6 +15,7 @@ var ended := false
 var outcome := ""
 var damage_events: Array = [] ## {src, dst, result, base, amount, kind, group}
 var float_count := 0
+var drops := {"material": 0, "shard": 0}
 var menu: VBoxContainer
 var log_label: Label
 var marker: ColorRect
@@ -130,7 +131,7 @@ func _enemy_turn(e: Dictionary) -> void:
 func _play_minigame(cfg: MinigameConfig) -> Array:
 	var mg: MinigameBase = load(cfg.scene_path).instantiate()
 	add_child(mg)
-	var ctx := {"depth": GameState.depth, "luck": GameState.luck(), "trait_bonus": GameState.trait_bonus(cfg.group)}
+	var ctx := GameState.minigame_context(cfg)
 	if GameState.auto_minigame >= 0:
 		ctx["auto"] = GameState.auto_minigame
 	mg.start(cfg, ctx)
@@ -155,8 +156,16 @@ func _end(o: String) -> void:
 	outcome = o
 	GameState.player_hp = player.hp
 	if o == "win":
-		var m := GameState.add_loot("material", GameState.tunables.battle_material_drop * enemies.size())
-		_log("战斗胜利！获得材料 %d" % m)
+		var t := GameState.tunables
+		var mats := 0
+		var shards := 0
+		for e in enemies:
+			mats += GameState.roll_drop(t.battle_drop_rate, t.battle_material_drop, rng)
+			shards += GameState.roll_drop(t.battle_shard_rate, 1, rng)
+		var m := GameState.add_loot("material", mats) if mats > 0 else 0
+		var s := GameState.add_loot("shard", shards) if shards > 0 else 0
+		drops = {"material": m, "shard": s}
+		_log("战斗胜利！获得材料 %d，记忆碎片 %d" % [m, s])
 	else:
 		_log("主角倒下了……")
 	battle_ended.emit(o)

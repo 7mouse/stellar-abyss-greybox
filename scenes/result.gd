@@ -9,7 +9,7 @@ func _ready() -> void:
 	UI.label(self, "到达层数：第 %d 层" % r.get("depth", 1), Vector2(120, 240), 36)
 	UI.label(self, "带出材料：%d    记忆碎片：%d" % [r.get("material", 0), r.get("shard", 0)], Vector2(120, 300), 36)
 	if not ok:
-		UI.label(self, "（倒下惩罚“碎片保留、材料减半”将在 T8 实装，目前战利品全部带出）", Vector2(120, 370), 26, Color(0.85, 0.75, 0.6))
+		UI.label(self, "倒下惩罚：记忆碎片全部保留，材料丢失 %d" % r.get("material_lost", 0), Vector2(120, 370), 30, Color(1, 0.6, 0.5))
 	var b := UI.button(self, "返回营地", back_to_camp, Vector2(400, 90))
 	b.position = Vector2(120, 500)
 	b.grab_focus.call_deferred()

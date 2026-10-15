@@ -45,7 +45,10 @@ func reachable() -> Array:
 	return DungeonGen.reachable_from(fd, GameState.current_node)
 
 func _refresh() -> void:
-	header.text = "第 %d 层    HP %d/%d    掉落倍率 %d%%    材料 %d  碎片 %d" % [GameState.depth, GameState.player_hp, GameState.tunables.player_max_hp, roundi(GameState.loot_mult * 100), GameState.run_loot.material, GameState.run_loot.shard]
+	header.text = "第 %d 层    HP %d/%d    掉落倍率 %d%%    背包 %d/%d 格（材料 %d  碎片 %d）" % [GameState.depth, GameState.player_hp, GameState.tunables.player_max_hp, roundi(GameState.loot_mult * 100), GameState.inventory.size(), GameState.tunables.backpack_slots, GameState.run_loot.material, GameState.run_loot.shard]
+	if popup_node == null and not GameState.pending_loot.is_empty():
+		_discard_choice()
+		return
 	var r := reachable()
 	var first: Button = null
 	for id in buttons:
@@ -71,8 +74,12 @@ func visit(id: int) -> void:
 			return
 		"chest":
 			if first_time:
-				var m := GameState.add_loot("material", GameState.tunables.chest_material)
-				var s := GameState.add_loot("shard", GameState.tunables.chest_shard)
+				var t := GameState.tunables
+				var rng := RandomNumberGenerator.new()
+				rng.seed = hash([GameState.run_seed, GameState.depth, id, "chest"])
+				var m := GameState.add_loot("material", t.chest_material)
+				var sh := GameState.roll_drop(t.chest_shard_rate, t.chest_shard, rng)
+				var s := GameState.add_loot("shard", sh) if sh > 0 else 0
 				_message("打开宝箱：材料 +%d，记忆碎片 +%d" % [m, s])
 			else:
 				_message("宝箱已经空了。")
@@ -102,6 +109,37 @@ func _exit_choice() -> void:
 	var b1 := UI.button(p.box, "撤离（带出全部战利品，下局从第 1 层开始）", choose_withdraw, Vector2(760, 80), Color(0.2, 0.45, 0.3))
 	UI.button(p.box, "继续深入（第 %d 层，掉落倍率 +%d%%）" % [GameState.depth + 1, roundi(GameState.tunables.loot_bonus_per_depth * 100)], choose_descend, Vector2(760, 80), Color(0.5, 0.25, 0.25))
 	b1.grab_focus.call_deferred()
+
+## 背包已满：选择丢弃背包里的一格，或放弃新物品
+func _discard_choice() -> void:
+	var it: Dictionary = GameState.pending_loot[0]
+	var p := UI.popup(self, "背包已满（%d/%d 格）。新物品：%s\n选择要丢弃的一格，或放弃新物品" % [GameState.inventory.size(), GameState.tunables.backpack_slots, GameState.item_name(it)])
+	popup_node = p.panel
+	popup_kind = "discard"
+	var grid := GridContainer.new()
+	grid.columns = 4
+	p.box.add_child(grid)
+	var first: Button = null
+	for i in GameState.inventory.size():
+		var col := Color(0.45, 0.4, 0.2) if GameState.inventory[i].kind == "material" else Color(0.35, 0.3, 0.6)
+		var b := UI.button(grid, "丢弃 " + GameState.item_name(GameState.inventory[i]), choose_discard_slot.bind(i), Vector2(280, 64), col)
+		if first == null:
+			first = b
+	UI.button(p.box, "放弃新物品（%s）" % GameState.item_name(it), choose_discard_new, Vector2(600, 72), Color(0.5, 0.25, 0.25))
+	first.grab_focus.call_deferred()
+	_refresh_buttons_only()
+
+func choose_discard_slot(i: int) -> void:
+	GameState.discard_slot(i)
+	_close_popup()
+
+func choose_discard_new() -> void:
+	GameState.discard_pending()
+	_close_popup()
+
+func _refresh_buttons_only() -> void:
+	for id in buttons:
+		buttons[id].disabled = true
 
 func _close_popup() -> void:
 	if popup_node:

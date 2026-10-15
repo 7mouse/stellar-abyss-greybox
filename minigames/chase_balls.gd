@@ -29,7 +29,7 @@ func _begin() -> void:
 	UI.label(self, "%s —— 方向键/摇杆移动，躲开追踪球！" % config.display_name, Vector2(arena_origin.x - 60, arena_origin.y - 80), 32)
 	UI.rect(self, arena_origin, Vector2(a, a), Color(0.18, 0.2, 0.24))
 	player_pos = Vector2(a / 2, a / 2)
-	var speed := cfg.speed_at(d)
+	var speed := cfg.speed_at(d) / float(context.get("window_mult", 1.0)) ## 升级：球速降低，等效判定窗口 +10%/级
 	for i in cfg.balls_at(d):
 		var corner := Vector2(rng.randf_range(0.0, 1.0) * a, 0.0 if i % 2 == 0 else a)
 		var dir := (player_pos - corner).normalized().rotated(rng.randf_range(-0.6, 0.6))

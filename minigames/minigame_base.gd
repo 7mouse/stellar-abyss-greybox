@@ -16,11 +16,14 @@ var difficulty: float = 0.0
 var elapsed: float = 0.0
 var active := false
 var done := false
+var _t_start_us := 0
+var _t_begin_us := 0
 
 func start(p_config: MinigameConfig, p_context: Dictionary) -> void:
 	config = p_config
 	context = p_context
 	difficulty = compute_difficulty(config, context)
+	_t_start_us = Time.get_ticks_usec()
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	await _play_telegraph()
 	if done or not is_inside_tree():
@@ -30,6 +33,7 @@ func start(p_config: MinigameConfig, p_context: Dictionary) -> void:
 		_finish(auto, [1.0, 0.6, 0.0][auto])
 		return
 	elapsed = 0.0
+	_t_begin_us = Time.get_ticks_usec()
 	active = true
 	_begin()
 
@@ -73,6 +77,10 @@ func _finish(result: int, score: float) -> void:
 		return
 	done = true
 	active = false
+	var now := Time.get_ticks_usec()
+	var begin := _t_begin_us if _t_begin_us > 0 else now
+	# 记录的是游戏内时间（真实时间 × time_scale），正常游玩时二者相等
+	GameState.log_minigame(config, context, result, score, (now - begin) / 1e6 * Engine.time_scale, (now - _t_start_us) / 1e6 * Engine.time_scale)
 	finished.emit(result, score)
 
 # ---- 子类覆写 ----

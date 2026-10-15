@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BoonData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boon_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "finisher"
+display_name = "终结"
+desc = "第三段伤害 +50%"
+stat_mods = {"finisher_pct": 0.5}
+tags = PackedStringArray()

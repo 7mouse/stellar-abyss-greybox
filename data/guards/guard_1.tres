@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="GuardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/guard_data.gd" id="s"]
+[ext_resource type="Script" path="res://scripts/resources/affix_data.gd" id="sa"]
+[ext_resource type="Resource" path="res://data/enemies/shellbug.tres" id="r0"]
+[ext_resource type="Resource" path="res://data/loot_tables/guard_1.tres" id="r1"]
+[ext_resource type="Resource" path="res://data/guards/affix_hardshell.tres" id="r2"]
+
+[resource]
+script = ExtResource("s")
+id = "guard_1"
+display_name = "层守·硬壳甲虫"
+base_enemy = ExtResource("r0")
+hp_mult = 3.7143
+dmg_mult = 0.8333
+attack_interval = 1.8
+scale = 1.8
+color = Color(0.75, 0.3, 0.3, 1)
+affixes = Array[ExtResource("sa")]([ExtResource("r2")])
+phase2_hp_ratio = 0.0
+xp = 30
+loot_table = ExtResource("r1")

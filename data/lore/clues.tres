@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="LoreClues" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/lore_clues.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+log_flash_sec = 0.35
+log_repeat_chance = 0.3

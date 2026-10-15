@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BoonData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boon_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "blade"
+display_name = "利刃"
+desc = "普攻伤害 +20%"
+stat_mods = {"light_pct": 0.2}
+tags = PackedStringArray()

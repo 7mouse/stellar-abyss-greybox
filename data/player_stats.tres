@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="PlayerStats" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/player_stats.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+max_hp = 100

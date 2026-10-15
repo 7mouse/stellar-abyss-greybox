@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/item_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "trinket_atk"
+display_name = "根刺指环（攻击 +10%）"
+category = "equipment"
+color = Color(1, 0.7, 0.3, 1)
+stat_mods = {"atk_pct": 0.1}

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="AffixData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/affix_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "hardshell"
+display_name = "硬壳"
+poise_pct = 1.0
+back_damage_mult = 1.5

@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/sys_log_flash.gd" id="1"]
+
+[node name="SysLogFlash" type="CanvasLayer"]
+script = ExtResource("1")

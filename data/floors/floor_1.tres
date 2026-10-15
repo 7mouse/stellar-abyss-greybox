@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="FloorData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_data.gd" id="s"]
+[ext_resource type="Resource" path="res://data/guards/guard_1.tres" id="r0"]
+[ext_resource type="Resource" path="res://data/loot_tables/chest.tres" id="r1"]
+
+[resource]
+script = ExtResource("s")
+depth = 1
+wave_size_min = 3
+guard = ExtResource("r0")
+chest_loot = ExtResource("r1")

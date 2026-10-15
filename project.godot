@@ -3,14 +3,17 @@ config_version=5
 
 [application]
 
-config/name="Stellar Abyss 灰盒原型"
-run/main_scene="res://scenes/camp.tscn"
+config/name="Stellar Abyss 灰盒 2"
+run/main_scene="res://scenes/village/village.tscn"
 config/features=PackedStringArray("4.7")
 
 [autoload]
 
-Settings="*res://scripts/settings.gd"
-GameState="*res://scripts/game_state.gd"
+Settings="*res://autoload/settings.gd"
+Log="*res://autoload/log.gd"
+Lineage="*res://autoload/lineage.gd"
+Game="*res://autoload/game.gd"
+SysLog="*res://scenes/ui/sys_log_flash.tscn"
 
 [display]
 

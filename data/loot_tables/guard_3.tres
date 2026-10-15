@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="LootTable" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/loot_table.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "guard_3"
+entries = Array[Dictionary]([{"item": "moss", "chance": 1.0, "min": 12, "max": 12}, {"item": "shard", "chance": 1.0, "min": 2, "max": 2}, {"item": "moss_essence", "chance": 1.0, "min": 1, "max": 1}, {"item": "trinket_any", "chance": 0.5, "min": 1, "max": 1}])

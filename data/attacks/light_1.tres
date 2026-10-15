@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "light_1"
+display_name = "普攻 1"
+damage = 10
+windup = 0.08
+active = 0.06
+recovery = 0.16
+attack_range = 90.0
+arc_deg = 120.0
+knockback = 0.0
+cooldown = 0.0
+stagger_sec = 0.0
+hitstop_sec = 0.05
+combo_reset = 0.6

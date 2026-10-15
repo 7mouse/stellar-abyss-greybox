@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BoonData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boon_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "afterimage"
+display_name = "残影"
+desc = "冲刺终点留下 0.5 秒的伤害圈（8 伤害）"
+stat_mods = {"afterimage_dmg": 8}
+tags = PackedStringArray("on_dash")

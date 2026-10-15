@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BoonData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boon_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "bloodthirst"
+display_name = "嗜血"
+desc = "击杀回 2 HP"
+stat_mods = {"kill_heal": 2}
+tags = PackedStringArray("on_kill")

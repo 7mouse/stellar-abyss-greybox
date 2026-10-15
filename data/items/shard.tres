@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/item_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "shard"
+display_name = "记忆碎片"
+category = "shard"
+color = Color(0.8, 0.6, 1, 1)
+stat_mods = {}

@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 python3 tools/font/font_tool.py check || exit 1
 godot --headless --import --quit >/dev/null 2>&1
 out=$(mktemp)
-godot --headless res://tests/test_main.tscn 2>&1 | tee "$out" | grep -av '^\[战斗\]'
+timeout 900 godot --headless res://tests/test_main.tscn 2>&1 | tee "$out"
 code=${PIPESTATUS[0]}
 if grep -aqE "SCRIPT ERROR|^ERROR:" "$out"; then echo "检测到引擎报错 → 失败"; exit 1; fi
 exit $code

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="s"]
+[ext_resource type="Resource" path="res://data/loot_tables/enemy_common.tres" id="r0"]
+
+[resource]
+script = ExtResource("s")
+id = "rootshot"
+display_name = "根须射手"
+max_hp = 22
+damage = 5
+move_speed = 120.0
+attack_range = 460.0
+windup = 0.6
+attack_interval = 2.0
+poise = 0.0
+xp = 4
+loot_table = ExtResource("r0")
+color = Color(0.45, 0.75, 0.3, 1)
+size = Vector2(36, 56)

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "skill_sweep"
+display_name = "根须横扫"
+damage = 40
+windup = 0.2
+active = 0.1
+recovery = 0.25
+attack_range = 150.0
+arc_deg = 360.0
+knockback = 60.0
+cooldown = 6.0
+stagger_sec = 0.5
+hitstop_sec = 0.05
+combo_reset = 0.6

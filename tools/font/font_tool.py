@@ -10,7 +10,7 @@ def used_chars():
     chars = set(chr(c) for c in range(0x20, 0x7f)) | set(EXTRA)
     files = glob.glob("**/*.gd", recursive=True) + glob.glob("**/*.tres", recursive=True) + glob.glob("**/*.tscn", recursive=True)
     for f in files:
-        if f.startswith(("tests/", ".godot/")):
+        if f.startswith(("tests/", ".godot/", "legacy_greybox1/")):
             continue
         for ch in open(f, encoding="utf-8").read():
             if ord(ch) > 0x7f and ch not in "\ufeff":

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="AffixData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/affix_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "frenzy"
+display_name = "狂暴"
+attack_speed_pct = 0.3

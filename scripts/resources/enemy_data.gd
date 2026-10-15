@@ -1,14 +1,26 @@
 class_name EnemyData
 extends Resource
+## 普通敌人参数（data/enemies/*.tres），第 1 层基准
 
-enum Pattern { MELEE_COMBO, TRACKER, BALANCED }
-
-@export var display_name: String = ""
-@export var max_hp: int = 30
-@export var attack: int = 8
-@export var speed: int = 8
-@export var pattern: Pattern = Pattern.BALANCED
-@export var color: Color = Color.RED
-@export var defense_groups: Array[int] = [] ## 非空时按顺序轮流使用这些防御组；空 = 按 pattern 映射
-@export var actions_per_round: int = 1 ## 每回合行动次数（每次行动 = 1 个独立敌人回合 = 1 次防御小游戏）
-@export_enum("normal", "elite", "boss") var rank: String = "normal" ## 精英/首领不吃 enemy_*_per_depth 成长
+@export var id := ""
+@export var display_name := ""
+@export var max_hp := 30
+@export var damage := 6
+@export var move_speed := 170.0
+@export var attack_range := 60.0
+@export var windup := 0.45
+@export var attack_interval := 1.6
+@export var poise := 0.0
+@export var xp := 4
+@export var loot_table: LootTable
+@export var color := Color(0.8, 0.5, 0.3)
+@export var size := Vector2(40, 48)
+@export_group("行为")
+@export var lunge_distance := 110.0 ## 菌菇小鬼冲撞
+@export var lunge_time := 0.15
+@export var keep_distance := 320.0 ## 射手保持距离
+@export var projectile_speed := 320.0
+@export var slam_arc_deg := 100.0 ## 甲虫重砸扇形
+@export var attack_active := 0.12
+@export var recover_sec := 0.35
+@export var hurt_sec := 0.3

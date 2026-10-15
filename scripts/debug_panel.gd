@@ -1,81 +1,236 @@
 extends CanvasLayer
-## F1 调试面板（骨架）：运行时编辑 Tunables 与各小游戏配置。T10 再补全掉落率、CSV 等。
+## F1 / ` / 手柄 Back 调试面板：按分组折叠；反射 Resource 的 int/float/bool/String 字段生成编辑器，改动立即生效；可导出为 .tres
 
 var root: PanelContainer
+var box: VBoxContainer
 var info: Label
-var prob: Label
-var depth_spin: SpinBox
-var log_label: Label
+var drop_label: Label
+var spawn_kind: OptionButton
+var spawn_count: SpinBox
+var floor_spin: SpinBox
+var boon_pick: OptionButton
+var seed_spin: SpinBox
+var groups := {} ## 名称 -> VBoxContainer
 
 func _ready() -> void:
 	layer = 100
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	root = PanelContainer.new()
 	root.position = Vector2(20, 20)
-	root.size = Vector2(640, 1040)
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.05, 0.05, 0.08, 0.92)
-	sb.set_content_margin_all(16)
+	sb.bg_color = Color(0.05, 0.05, 0.08, 0.93)
+	sb.set_content_margin_all(14)
 	root.add_theme_stylebox_override("panel", sb)
 	add_child(root)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(600, 1000)
+	scroll.custom_minimum_size = Vector2(760, 1020)
 	root.add_child(scroll)
-	var box := VBoxContainer.new()
+	box = VBoxContainer.new()
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(box)
-	var title := Label.new()
-	title.text = "调试面板（F1 或 ` 键 / 手柄 Back 开关）"
-	title.add_theme_font_size_override("font_size", 26)
-	box.add_child(title)
-	info = Label.new()
-	box.add_child(info)
-	prob = Label.new()
-	prob.add_theme_color_override("font_color", Color(0.6, 1, 0.7))
-	box.add_child(prob)
-	var row := HBoxContainer.new()
-	box.add_child(row)
-	var dl := Label.new()
-	dl.text = "当前层（下次生成生效）"
-	row.add_child(dl)
-	depth_spin = SpinBox.new()
-	depth_spin.min_value = 1
-	depth_spin.max_value = 99
-	depth_spin.value_changed.connect(func(v): GameState.depth = int(v))
-	row.add_child(depth_spin)
-	var row2 := HBoxContainer.new()
-	box.add_child(row2)
-	for pair in [["回满血", func(): GameState.player_hp = GameState.tunables.player_max_hp], ["跳到下一层", _skip_floor], ["下载 CSV", func(): GameState.download_log()], ["清空 CSV 日志", func(): GameState.clear_log()], ["局外材料 +20", func(): GameState.meta_materials += 20]]:
-		var b := Button.new()
-		b.text = pair[0]
-		b.pressed.connect(pair[1])
-		row2.add_child(b)
-	log_label = Label.new()
-	box.add_child(log_label)
-	_section(box, "全局参数（含掉落率、背包、营地、上帝模式 god_mode）", GameState.tunables)
-	for cfg in GameState.all_minigames():
-		_section(box, "小游戏：" + cfg.display_name, cfg)
-	for e in GameState.enemy_types:
-		_section(box, "敌人：" + e.display_name + "（attack = 伤害）", e)
+	_lbl(box, "调试面板（F1 / ` / 手柄 Back 开关）", 26)
+	info = _lbl(box, "", 20)
+	_build_tools()
+	var g := Game
+	_section("玩家", "主角参数", g.player_stats)
+	for a in g.attacks:
+		_section("攻击", a.display_name, a)
+	_section("攻击", g.skill.display_name, g.skill)
+	for id in g.enemies:
+		_section("敌人：" + g.enemies[id].display_name, g.enemies[id].display_name, g.enemies[id])
+	for fd in g.floors:
+		_section("层守", fd.guard.display_name, fd.guard)
+		_affix_toggles("层守", fd.guard)
+	for id in g.affixes:
+		_section("层守", "词缀：" + g.affixes[id].display_name, g.affixes[id])
+	for fd in g.floors:
+		_section("楼层", "第 %d 层" % fd.depth, fd)
+	for id in ["enemy_common", "guard_1", "guard_2", "guard_3", "chest"]:
+		_loot_section(load("res://data/loot_tables/%s.tres" % id))
+	_section("遗志", "继承规则（legacy_power = 遗志生效比例）", Lineage.legacy_rules)
+	_section("保险箱", "保险箱规则", Lineage.vault_rules)
+	_section("保险箱", "强化台（局外）", Lineage.meta_rules)
+	_section("线索", "虚拟世界线索 clues.tres", g.clues)
 	root.visible = false
+
+func _lbl(parent: Node, t: String, size := 20) -> Label:
+	var l := Label.new()
+	l.text = t
+	l.add_theme_font_size_override("font_size", size)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size.x = 720
+	parent.add_child(l)
+	return l
+
+func _btn(parent: Node, t: String, cb: Callable) -> Button:
+	var b := Button.new()
+	b.text = t
+	b.pressed.connect(cb)
+	parent.add_child(b)
+	return b
+
+func _row(parent: Node) -> HBoxContainer:
+	var r := HBoxContainer.new()
+	parent.add_child(r)
+	return r
+
+func _check(parent: Node, t: String, val: bool, cb: Callable) -> CheckBox:
+	var c := CheckBox.new()
+	c.text = t
+	c.button_pressed = val
+	c.toggled.connect(cb)
+	parent.add_child(c)
+	return c
+
+func _build_tools() -> void:
+	var tools := _group("调试按钮", true)
+	var r1 := _row(tools)
+	_check(r1, "上帝模式", Game.god_mode, func(v): Game.god_mode = v)
+	_check(r1, "无限冲刺", Game.inf_dash, func(v): Game.inf_dash = v)
+	_check(r1, "显示受击框/攻击框", Game.show_boxes, func(v): Game.show_boxes = v)
+	_check(r1, "记录 hits.csv", Log.hits_enabled, func(v): Log.hits_enabled = v)
+	var r2 := _row(tools)
+	_lbl(r2, "刷怪").custom_minimum_size.x = 60
+	spawn_kind = OptionButton.new()
+	for id in Game.enemies:
+		spawn_kind.add_item(Game.enemies[id].display_name)
+	r2.add_child(spawn_kind)
+	spawn_count = SpinBox.new()
+	spawn_count.min_value = 1
+	spawn_count.max_value = 20
+	spawn_count.value = 1
+	r2.add_child(spawn_count)
+	_btn(r2, "刷出", func(): spawn_enemies(Game.enemies.keys()[spawn_kind.selected], int(spawn_count.value)))
+	_btn(r2, "直接打出层守", debug_guard)
+	var r3 := _row(tools)
+	floor_spin = SpinBox.new()
+	floor_spin.min_value = 1
+	floor_spin.max_value = 3
+	r3.add_child(floor_spin)
+	_btn(r3, "跳到第 n 层", func(): jump_floor(int(floor_spin.value)))
+	_lbl(r3, "种子（-1 随机，下一局生效）").custom_minimum_size.x = 240
+	seed_spin = SpinBox.new()
+	seed_spin.min_value = -1
+	seed_spin.max_value = 999999
+	seed_spin.value = Game.run_seed_override
+	seed_spin.value_changed.connect(func(v): Game.run_seed_override = int(v))
+	r3.add_child(seed_spin)
+	var r4 := _row(tools)
+	boon_pick = OptionButton.new()
+	for b in Boons.all():
+		boon_pick.add_item(b.display_name)
+	r4.add_child(boon_pick)
+	_btn(r4, "给予强化", func(): give_boon(Boons.all()[boon_pick.selected].id))
+	_btn(r4, "移除强化", func(): remove_boon(Boons.all()[boon_pick.selected].id))
+	var r5 := _row(tools)
+	_btn(r5, "杀死自己", kill_self)
+	_btn(r5, "材料 +50", func(): add_mats(50))
+	_btn(r5, "清空存档", func(): Lineage.wipe())
+	_btn(r5, "下载 CSV", func(): Log.download_all())
+	_btn(r5, "刷 1000 只怪（掉落统计）", func(): drop_label.text = drop_stats_text(1000))
+	drop_label = _lbl(tools, "")
+	_btn(tools, "导出全部参数为 .tres（user://export/）", export_all)
+
+func _group(name: String, open := false) -> VBoxContainer:
+	if groups.has(name):
+		return groups[name]
+	var head := Button.new()
+	head.text = ("▼ " if open else "▶ ") + name
+	head.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	head.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
+	box.add_child(head)
+	var g := VBoxContainer.new()
+	g.visible = open
+	box.add_child(g)
+	head.pressed.connect(func(): g.visible = not g.visible; head.text = ("▼ " if g.visible else "▶ ") + name)
+	groups[name] = g
+	return g
+
+## 列出 Resource 的 int/float/bool/String 导出变量，生成可编辑控件（改动即时写回 Resource）
+func _section(group: String, title: String, res: Resource) -> void:
+	var g := _group(group)
+	var h := _row(g)
+	_lbl(h, "— " + title + " —").custom_minimum_size.x = 520
+	_btn(h, "导出 .tres", func(): export_res(res))
+	for p in res.get_property_list():
+		if not (p.usage & PROPERTY_USAGE_SCRIPT_VARIABLE):
+			continue
+		var t: int = p.type
+		if not t in [TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_STRING]:
+			continue
+		var row := _row(g)
+		var l := _lbl(row, p.name, 18)
+		l.custom_minimum_size.x = 300
+		var pname: String = p.name
+		var c: Control
+		if t == TYPE_STRING:
+			var le := LineEdit.new()
+			le.text = res.get(pname)
+			le.custom_minimum_size = Vector2(420, 0)
+			le.text_changed.connect(func(v): res.set(pname, v))
+			c = le
+		elif t == TYPE_BOOL:
+			var cb := CheckBox.new()
+			cb.button_pressed = res.get(pname)
+			cb.toggled.connect(func(v): res.set(pname, v))
+			c = cb
+		else:
+			var s := SpinBox.new()
+			s.min_value = -100000
+			s.max_value = 100000
+			s.step = 1.0 if t == TYPE_INT else 0.01
+			s.value = res.get(pname)
+			s.custom_minimum_size = Vector2(200, 0)
+			s.value_changed.connect(func(v): res.set(pname, int(v) if t == TYPE_INT else v))
+			c = s
+		c.set_meta("res", res)
+		c.set_meta("prop", pname)
+		row.add_child(c)
+
+func _affix_toggles(group: String, gd: GuardData) -> void:
+	var r := _row(_group(group))
+	_lbl(r, "  词缀组合：", 18).custom_minimum_size.x = 140
+	for id in Game.affixes:
+		var a: AffixData = Game.affixes[id]
+		var c := _check(r, a.display_name, gd.affixes.has(a), func(v): set_guard_affix(gd, a, v))
+		c.set_meta("res", gd)
+		c.set_meta("prop", "affix_" + id)
+
+func set_guard_affix(gd: GuardData, a: AffixData, on: bool) -> void:
+	if on and not gd.affixes.has(a):
+		gd.affixes.append(a)
+	elif not on:
+		gd.affixes.erase(a)
+	for g in get_tree().get_nodes_in_group("guards"):
+		if g.gdata == gd:
+			g.set_affixes(gd.affixes.duplicate())
+
+func _loot_section(lt: LootTable) -> void:
+	var g := _group("掉落")
+	var h := _row(g)
+	_lbl(h, "— 掉落表 " + lt.id + " —").custom_minimum_size.x = 520
+	_btn(h, "导出 .tres", func(): export_res(lt))
+	for e in lt.entries:
+		var row := _row(g)
+		_lbl(row, "%s（%d~%d）概率" % [e.item, e.min, e.max], 18).custom_minimum_size.x = 300
+		var s := SpinBox.new()
+		s.min_value = 0
+		s.max_value = 1
+		s.step = 0.01
+		s.value = e.chance
+		s.value_changed.connect(func(v): e.chance = v)
+		row.add_child(s)
 
 func _process(_d: float) -> void:
 	if root.visible:
-		info.text = "通关次数：%d  当前层：%d  掉落倍率：%d%%  HP：%d  材料：%d  碎片：%d" % [GameState.clear_count, GameState.depth, roundi(GameState.loot_mult * 100), GameState.player_hp, GameState.run_loot.material, GameState.run_loot.shard]
-		prob.text = probability_text()
-		if not depth_spin.get_line_edit().has_focus():
-			depth_spin.set_value_no_signal(GameState.depth)
-		log_label.text = "试玩日志：%s" % ProjectSettings.globalize_path(GameState.log_path)
+		var r := Game.run
+		info.text = "个体 %s　局：%s　层 %d　种子 %s\n存档：%s　CSV：%s" % [Lineage.current().name, r.id if r else "—", r.depth if r else 0, str(r.seed) if r else "—",
+			ProjectSettings.globalize_path(Lineage.save_path), ProjectSettings.globalize_path(Log.dir)]
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("debug_toggle"):
 		toggle()
 		get_viewport().set_input_as_handled()
-
-func _skip_floor() -> void:
-	if GameState.in_run:
-		GameState.descend()
-		GameState.goto(GameState.SCN_DUNGEON)
 
 func toggle() -> void:
 	root.visible = not root.visible
@@ -83,67 +238,116 @@ func toggle() -> void:
 func is_open() -> bool:
 	return root.visible
 
-## 列出 Resource 的所有 int/float/bool 导出变量，生成可编辑控件（改动即时写回 Resource）
-func _section(box: VBoxContainer, title: String, res: Resource) -> void:
-	var h := Label.new()
-	h.text = "— " + title + " —"
-	h.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
-	box.add_child(h)
-	for p in res.get_property_list():
-		if not (p.usage & PROPERTY_USAGE_SCRIPT_VARIABLE):
-			continue
-		var t: int = p.type
-		if t != TYPE_INT and t != TYPE_FLOAT and t != TYPE_BOOL and t != TYPE_STRING:
-			continue
-		if t == TYPE_STRING and not p.name in ["entrance_rest_floors", "elite_floors"]:
-			continue
-		var row := HBoxContainer.new()
-		var l := Label.new()
-		l.text = p.name
-		l.custom_minimum_size = Vector2(330, 0)
-		row.add_child(l)
-		var pname: String = p.name
-		if t == TYPE_STRING:
-			var le := LineEdit.new()
-			le.text = res.get(pname)
-			le.custom_minimum_size = Vector2(200, 0)
-			le.set_meta("res", res)
-			le.set_meta("prop", pname)
-			le.text_changed.connect(func(v): res.set(pname, v))
-			row.add_child(le)
-		elif t == TYPE_BOOL:
-			var c := CheckBox.new()
-			c.button_pressed = res.get(pname)
-			c.toggled.connect(func(v): res.set(pname, v))
-			row.add_child(c)
-		else:
-			var s := SpinBox.new()
-			s.set_meta("res", res)
-			s.set_meta("prop", pname)
-			s.min_value = -100000
-			s.max_value = 100000
-			s.step = 1.0 if t == TYPE_INT else 0.01
-			s.value = res.get(pname)
-			s.custom_minimum_size = Vector2(200, 0)
-			s.value_changed.connect(func(v): res.set(pname, int(v) if t == TYPE_INT else v))
-			row.add_child(s)
-		box.add_child(row)
-
-## 运气小游戏的实际概率（随幸运与参数实时变化）
-func probability_text() -> String:
-	var lk := GameState.luck()
-	var lines := ["运气实际概率（幸运 %d）：" % lk]
-	var r: LuckConfig = GameState.mg_rps
-	var pr: Array = r.outcome_probs(lk)
-	lines.append("猜拳 单局胜率 %.1f%%｜PERFECT %.1f%% GOOD %.1f%% FAIL %.1f%%" % [r.rps_win_rate(lk) * 100, pr[0] * 100, pr[1] * 100, pr[2] * 100])
-	var d: LuckConfig = GameState.mg_dice
-	var pd: Array = d.outcome_probs(lk)
-	lines.append("骰子 首掷成功 %.1f%% 重掷 %.1f%%｜PERFECT %.1f%% GOOD %.1f%% FAIL %.1f%%" % [d.dice_base_rate() * 100, d.dice_reroll_rate(lk) * 100, pd[0] * 100, pd[1] * 100, pd[2] * 100])
-	return "\n".join(lines)
-
-## 找到某个资源某个参数对应的输入框（测试用）
 func find_editor(res: Resource, prop: String) -> Control:
 	for n in root.find_children("*", "Control", true, false):
 		if n.has_meta("res") and n.get_meta("res") == res and n.get_meta("prop", "") == prop:
 			return n
 	return null
+
+# ---------- 调试操作 ----------
+func _floor() -> Node:
+	var s := get_tree().current_scene
+	return s if s and s.scene_file_path == Game.SCN_FLOOR else null
+
+func spawn_enemies(id: String, n: int) -> Array:
+	var f := _floor()
+	if f == null:
+		return []
+	var out := []
+	for i in n:
+		out.append(f.spawn_enemy(id, f.player.global_position + Vector2(260, 0).rotated(TAU * i / maxf(1, n)), f.current_room))
+	return out
+
+func debug_guard() -> void:
+	var f := _floor()
+	if f:
+		f.debug_guard()
+
+func jump_floor(n: int) -> void:
+	if Game.run == null:
+		Game.start_run()
+	Game.enter_floor(clampi(n, 1, Game.FINAL_FLOOR))
+
+func give_boon(id: String) -> void:
+	if Game.run:
+		Game.run.add_boon(Boons.get_boon(id))
+		_refresh_player()
+
+func remove_boon(id: String) -> void:
+	if Game.run:
+		Game.run.remove_boon(Boons.get_boon(id))
+		_refresh_player()
+
+func _refresh_player() -> void:
+	for p in get_tree().get_nodes_in_group("player"):
+		p.refresh_stats()
+
+func kill_self() -> void:
+	var f := _floor()
+	if f:
+		f.player.kill_self()
+	else:
+		## 不在迷宫里：直接走一次死亡记录（测试死亡流程）
+		if Game.run == null:
+			Game.run = Run.new()
+			Game.run.id = "debug_%d" % Time.get_ticks_msec()
+			Game.run.xp = int(Lineage.current().xp)
+		Game.on_player_died("调试：杀死自己")
+
+func add_mats(n: int) -> void:
+	Lineage.mats.moss += n
+	Lineage.mats.moss_essence += n
+	Lineage.save()
+
+## 用真实掉落表刷 n 只普通怪 + n 只各层守 + n 个宝箱，统计每项出现率
+func drop_stats(n: int) -> Dictionary:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 12345
+	var out := {}
+	for id in ["enemy_common", "guard_1", "guard_2", "guard_3", "chest"]:
+		var lt: LootTable = load("res://data/loot_tables/%s.tres" % id)
+		var hits := {}
+		for i in n:
+			var seen := {}
+			for st in lt.roll(rng):
+				var k: String = "trinket_any" if st.item.category == "equipment" else st.item.id
+				seen[k] = true
+			for k in seen:
+				hits[k] = int(hits.get(k, 0)) + 1
+		var rates := {}
+		for e in lt.entries:
+			rates[e.item] = {"want": float(e.chance), "got": float(hits.get(e.item, 0)) / n}
+		out[id] = rates
+	return out
+
+func drop_stats_text(n: int) -> String:
+	var lines := []
+	var d := drop_stats(n)
+	for id in d:
+		var parts := []
+		for k in d[id]:
+			parts.append("%s %.1f%%（设定 %.0f%%）" % [k, d[id][k].got * 100, d[id][k].want * 100])
+		lines.append("%s：%s" % [id, "，".join(parts)])
+	return "\n".join(lines)
+
+func export_res(res: Resource) -> String:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://export"))
+	var name := res.resource_path.get_file() if res.resource_path != "" else "resource.tres"
+	var p := "user://export/" + name
+	var copy := res.duplicate(true)
+	ResourceSaver.save(copy, p)
+	if OS.has_feature("web"):
+		JavaScriptBridge.download_buffer(FileAccess.get_file_as_bytes(p), name, "text/plain")
+	return p
+
+func export_all() -> Array:
+	var out := []
+	var list: Array = [Game.player_stats, Game.skill, Game.clues, Lineage.legacy_rules, Lineage.vault_rules, Lineage.meta_rules]
+	list += Game.attacks
+	list += Game.enemies.values()
+	list += Game.floors
+	for f in Game.floors:
+		list.append(f.guard)
+	for r in list:
+		out.append(export_res(r))
+	return out

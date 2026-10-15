@@ -488,7 +488,7 @@ func test_guards_and_exit() -> void:
 	f.debug_guard()
 	await secs(0.5)
 	var g: Guard = f.guard
-	check(g.max_hp == 1200 and g.damage == 11 and g.has_affix("hardshell") and g.has_affix("frenzy") and absf(g.effective_interval() - 1.5) < 0.01, "第 3 层层守：HP 1200、伤害 11、硬壳 + 狂暴、出手间隔 %.2f 秒" % g.effective_interval())
+	check(g.max_hp == 1200 and g.damage == 9 and absf(g.windup - 1.35) < 0.001 and is_equal_approx(g.gdata.summon_every_mult, 1.5) and g.has_affix("hardshell") and g.has_affix("frenzy") and absf(g.effective_interval() - 1.5) < 0.01, "第 3 层层守：HP 1200、伤害 9、前摇 1.35 秒、召唤间隔 ×1.5、硬壳 + 狂暴、出手间隔 %.2f 秒" % g.effective_interval())
 	var src := Src.new()
 	f.add_child(src)
 	g.take_hit(g.hp - 300, src, Vector2.ZERO)

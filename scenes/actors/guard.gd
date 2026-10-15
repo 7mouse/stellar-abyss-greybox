@@ -18,6 +18,7 @@ func setup_guard(gd: GuardData, p_depth: int) -> void:
 	max_hp = roundi(gd.base_enemy.max_hp * gd.hp_mult)
 	hp = max_hp
 	damage = roundi(gd.base_enemy.damage * gd.dmg_mult)
+	windup = gd.base_enemy.windup * gd.windup_mult
 	size = gd.base_enemy.size * gd.scale
 	tint = gd.color
 	set_affixes(gd.affixes.duplicate())
@@ -43,6 +44,7 @@ func effective_interval() -> float:
 func _ready() -> void:
 	super._ready()
 	hitbox.source_name = gdata.display_name
+	warn.add_theme_font_size_override("font_size", 72)  # 层守预兆“!”加大
 	add_to_group("guards")
 
 func _tick_extra(delta: float) -> void:
@@ -60,9 +62,9 @@ func _tick_extra(delta: float) -> void:
 	for a in active_affixes:
 		if a.summon_every > 0.0 and phase2_t < 0.0:
 			summon_t += delta
-			if summon_t >= a.summon_every:
+			if summon_t >= a.summon_every * gdata.summon_every_mult:
 				summon_t = 0.0
-				summon_requested.emit(a.summon_enemy, a.summon_count)
+				summon_requested.emit(a.summon_enemy, gdata.summon_count_override if gdata.summon_count_override > 0 else a.summon_count)
 
 func _physics_process(delta: float) -> void:
 	if phase2_t >= 0.0:

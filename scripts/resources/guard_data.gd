@@ -14,5 +14,8 @@ extends Resource
 @export var phase2_hp_ratio := 0.0 ## 0 = 无二阶段
 @export var phase2_affix: AffixData
 @export var phase2_sec := 1.0
+@export var windup_mult := 1.0 ## 攻击前摇倍率（×模板 windup）
+@export var summon_every_mult := 1.0 ## 召唤间隔倍率（×词缀 summon_every）
+@export var summon_count_override := 0 ## 每次召唤数量；0 = 用词缀的 summon_count
 @export var xp := 30
 @export var loot_table: LootTable

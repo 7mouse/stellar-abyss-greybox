@@ -1,5 +1,6 @@
 """灰盒 2 模拟（设计师 docs/sim2/sim_g2.py 的副本，参数按游戏 79dce9c 对齐，并补充统计）。
 不改设计文档；与原脚本的差异见 MISMATCH 注释。用法: python3 tools/sim/sim_g2_game.py [runs] [--doc]
+覆盖键：guardN_hp/dmg/iv/xp、wavesN（第 N 层每房波数）、heal_between、legacy_power、summon_every、guard_hit_mult
 --doc：原脚本参数（对照）；默认：游戏参数。可用 --set KEY=VAL 覆盖（例：--set guard3_hp=520）。"""
 import random, sys, statistics as st, math, json
 
@@ -21,19 +22,25 @@ FLOOR = dict(combat_rooms=(3,4), waves=(2,2), mix=[0.45,0.35,0.20], explore_s_pe
              boon_pick_s=6.0)
 WAVE_SIZE = {1:(3,5), 2:(3,5), 3:(3,5) if DOC else (4,5)}   # MISMATCH：游戏第 3 层 4~5
 GUARD = {1:[260,10,1.8,30], 2:[380,12,1.7,40], 3:[620,14,1.5,60]}
+WAVES = {1:2, 2:2, 3:2}                                   # 每个战斗房波数（游戏 FloorData.waves）
+if not DOC:   # 主策决定（灰盒 2 调参）：层守 1/2 HP、层守 3 1200/11、第 3 层 3 波、层间回血 40%
+    GUARD[1][0] = 400; GUARD[2][0] = 400; GUARD[3][0] = 1200; GUARD[3][1] = 11
+    WAVES[3] = 3; PLAYER["heal_between_floors"] = 0.40
 GUARD_MATS = {1:8, 2:8, 3:8 if DOC else 12}               # MISMATCH：游戏第 3 层层守掉材料 12
 TRINKET_CH = {1:0.25, 2:0.30, 3:0.50}
 GUARD_HEAL_ROOM = 0.30
 BOON_ATK = 0.10
-LEGACY_POWER = 0.5
+LEGACY_POWER = OVR.get("legacy_power", 0.5)
 PHASE2_SEC = 1.0          # 二阶段演出（无敌）
 GUARD_SKILL_TARGETS = 2.5 if DOC else 1.0   # MISMATCH：层守战只有 1 个目标（召唤物另算），原脚本按 2.5 个
 PROFILE = {"novice": dict(hit=0.38, uptime=0.45, guard_hit=0.45), "average": dict(hit=0.24, uptime=0.55, guard_hit=0.30),
            "skilled": dict(hit=0.12, uptime=0.65, guard_hit=0.16)}
 for k, v in OVR.items():
-    if k.startswith("guard") and "_" in k:
+    if k.startswith("guard") and k[5:6].isdigit():
         n, f = k[5], k.split("_")[1]; GUARD[int(n)][["hp","dmg","iv","xp"].index(f)] = v
     elif k == "summon_every": pass
+    elif k.startswith("waves"): WAVES[int(k[5])] = int(v)
+    elif k == "heal_between": PLAYER["heal_between_floors"] = v
     elif k == "guard_hit_mult":
         for p in PROFILE.values(): p["guard_hit"] *= v
 SUMMON_EVERY = OVR.get("summon_every", 10.0)
@@ -82,7 +89,7 @@ def floor_run(n, s, prof, rng, stats):
     else: boons_here = 2 + sum(1 for _ in range(extra) if rng.random() < 0.5)   # MISMATCH：游戏 2 个奖励房 + 强化支路（50%）= 2~4
     t += boons_here*FLOOR["boon_pick_s"] + (rooms+extra+1)*FLOOR["explore_s_per_room"]
     for r in range(rooms):
-        for w in range(rng.randint(*FLOOR["waves"])):
+        for w in range(WAVES[n]):
             es = []
             for _ in range(rng.randint(*WAVE_SIZE[n])):
                 k = rng.choices(list(ENEMIES), FLOOR["mix"])[0]; h, dm, iv, xp = ENEMIES[k]
@@ -118,7 +125,7 @@ def pct(xs, p):
     xs = sorted(xs); return xs[min(len(xs)-1, int(p*len(xs)))] if xs else 0
 
 if __name__ == "__main__":
-    print("参数：", "设计师原脚本" if DOC else "游戏 79dce9c", OVR or "")
+    print("参数：", "设计师原脚本" if DOC else "游戏（灰盒 2 调参后）", OVR or "")
     for prof in PROFILE:
         rng = random.Random(11); stats = {}; rs = [run(prof, rng, 1, 0, stats) for _ in range(N)]
         print(f"== {prof} ==")

@@ -434,7 +434,7 @@ func test_guards_and_exit() -> void:
 	f.debug_guard()
 	await secs(0.5)
 	check(f.guard != null and f.doors_locked(f.layout.guard), "进层守房：门锁上，层守出现")
-	check(f.guard.max_hp == 260 and f.guard.damage == 10 and f.guard.poise == 60.0 and is_equal_approx(f.guard.back_mult, 1.5), "第 1 层层守：HP 260、伤害 10、poise 60（硬壳 +100%）、背后 ×1.5")
+	check(f.guard.max_hp == 400 and f.guard.damage == 10 and f.guard.poise == 60.0 and is_equal_approx(f.guard.back_mult, 1.5), "第 1 层层守：HP 400、伤害 10、poise 60（硬壳 +100%）、背后 ×1.5")
 	check(not f.exit_active and f.nearest_interactable().get("id", "") != "exit", "层守没死时撤离点不能互动")
 	f.player.global_position = f.exit_pos
 	await frames(2)
@@ -471,7 +471,7 @@ func test_guards_and_exit() -> void:
 	f.debug_guard()
 	await secs(0.5)
 	var g: Guard = f.guard
-	check(g.max_hp == 620 and g.has_affix("hardshell") and g.has_affix("frenzy") and absf(g.effective_interval() - 1.5) < 0.01, "第 3 层层守：HP 620、硬壳 + 狂暴、出手间隔 %.2f 秒" % g.effective_interval())
+	check(g.max_hp == 1200 and g.damage == 11 and g.has_affix("hardshell") and g.has_affix("frenzy") and absf(g.effective_interval() - 1.5) < 0.01, "第 3 层层守：HP 1200、伤害 11、硬壳 + 狂暴、出手间隔 %.2f 秒" % g.effective_interval())
 	var src := Src.new()
 	f.add_child(src)
 	g.take_hit(g.hp - 300, src, Vector2.ZERO)

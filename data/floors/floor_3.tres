@@ -8,5 +8,6 @@
 script = ExtResource("s")
 depth = 3
 wave_size_min = 4
+waves = 3
 guard = ExtResource("r0")
 chest_loot = ExtResource("r1")

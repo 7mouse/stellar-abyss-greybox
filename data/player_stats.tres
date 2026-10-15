@@ -5,3 +5,4 @@
 [resource]
 script = ExtResource("s")
 max_hp = 100
+heal_between_floors = 0.4

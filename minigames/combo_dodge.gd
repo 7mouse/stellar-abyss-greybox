@@ -73,7 +73,7 @@ func _resolve(ok: bool, reaction_ms: float) -> void:
 	if not ok:
 		misses += 1
 	prompt_box.color = Color(0.3, 0.8, 0.4) if ok else Color(0.5, 0.1, 0.1)
-	prompt_label.text = "✓" if ok else "✗"
+	prompt_label.text = "✓" if ok else "×"
 	idx += 1
 	phase = "gap"
 	phase_t = 0.0

@@ -11,6 +11,16 @@
 
 命令行运行：`godot --path .`
 
+## 网页版（HTML5）
+- 线上地址（启用 GitHub Pages 后）：https://7mouse.github.io/stellar-abyss-greybox/
+- 单线程版（不需要 COOP/COEP 头，GitHub Pages 可直接托管），内置中文字体 `assets/fonts/NotoSansSC-Greybox.ttf`（Noto Sans SC 子集，OFL 许可见同目录）。
+- 本地导出：`godot --headless --export-release "Web" build/web/index.html`，然后 `cd build/web && python3 -m http.server 8000`，浏览器打开 http://localhost:8000 。
+- 网页里 F1 可能被浏览器占用，可用 **`** 键（数字 1 左边）或手柄 Back 打开调试面板。
+- 试玩数据：结算界面或调试面板点“下载 CSV”，浏览器会下载 `playtest_log.csv`。
+- 新增中文文案后运行 `python3 tools/font/font_tool.py build <NotoSansSC[wght].ttf>` 重新生成字体子集；`tests/run_tests.sh` 会检查缺字。
+- 本地无头浏览器检查：`npm i puppeteer-core` 后 `node tools/web/check.mjs http://localhost:8000/index.html /tmp/dl /tmp/shots`。
+- 推送到 main 后由 `.github/workflows/pages.yml` 自动测试、导出并部署。
+
 ## 操作（键盘 / 手柄）
 | 功能 | 键盘 | 手柄 |
 |---|---|---|
@@ -19,7 +29,7 @@
 | 小游戏确认 / 格挡 / 节奏 / 掷骰 | 空格 / J / Z | A |
 | 连击方向 / 躲球移动 / 猜拳（←石头 ↑剪刀 →布） | 方向键 / WASD | 十字键 / 左摇杆 |
 | 切换战斗目标 | ← → 或 Q / E | LB / RB |
-| 调试面板 | F1 | Back / Select |
+| 调试面板 | F1 或 ` | Back / Select |
 
 ## 自动测试
 ```

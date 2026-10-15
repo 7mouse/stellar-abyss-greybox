@@ -7,3 +7,4 @@ export_credentials.cfg
 *.tmp
 .import/
 mono_crash.*.json
+build/

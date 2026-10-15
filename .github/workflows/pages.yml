@@ -1,0 +1,62 @@
+# 网页版（HTML5，单线程）构建并部署到 GitHub Pages
+# 需要：仓库 Settings → Pages → Source 选 “GitHub Actions”
+name: 网页版部署
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7.2
+  GODOT_TAG: 4.7.2-stable
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Godot 与网页导出模板
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_TAG}/Godot_v${GODOT_TAG}_linux.x86_64.zip"
+          unzip -q godot.zip && sudo mv "Godot_v${GODOT_TAG}_linux.x86_64" /usr/local/bin/godot
+          curl -sSL -o tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_TAG}/Godot_v${GODOT_TAG}_export_templates.tpz"
+          T="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$T"
+          unzip -q -j tpl.tpz templates/web_nothreads_release.zip templates/web_nothreads_debug.zip templates/version.txt -d "$T"
+          rm tpl.tpz
+
+      - name: 自动验收（无头）
+        run: |
+          pip install fonttools
+          tests/run_tests.sh
+
+      - name: 导出网页版
+        run: |
+          mkdir -p build/web
+          godot --headless --export-release "Web" build/web/index.html
+          touch build/web/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

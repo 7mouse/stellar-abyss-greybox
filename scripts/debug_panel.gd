@@ -25,7 +25,7 @@ func _ready() -> void:
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(box)
 	var title := Label.new()
-	title.text = "调试面板（F1 / 手柄 Back 开关）"
+	title.text = "调试面板（F1 或 ` 键 / 手柄 Back 开关）"
 	title.add_theme_font_size_override("font_size", 26)
 	box.add_child(title)
 	info = Label.new()
@@ -45,7 +45,7 @@ func _ready() -> void:
 	row.add_child(depth_spin)
 	var row2 := HBoxContainer.new()
 	box.add_child(row2)
-	for pair in [["回满血", func(): GameState.player_hp = GameState.tunables.player_max_hp], ["跳到下一层", _skip_floor], ["清空 CSV 日志", func(): GameState.clear_log()], ["局外材料 +20", func(): GameState.meta_materials += 20]]:
+	for pair in [["回满血", func(): GameState.player_hp = GameState.tunables.player_max_hp], ["跳到下一层", _skip_floor], ["下载 CSV", func(): GameState.download_log()], ["清空 CSV 日志", func(): GameState.clear_log()], ["局外材料 +20", func(): GameState.meta_materials += 20]]:
 		var b := Button.new()
 		b.text = pair[0]
 		b.pressed.connect(pair[1])

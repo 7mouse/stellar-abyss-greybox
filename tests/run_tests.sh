@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 无头运行全部验收；任何引擎/脚本报错也算失败
 cd "$(dirname "$0")/.."
+python3 tools/font/font_tool.py check || exit 1
 godot --headless --import --quit >/dev/null 2>&1
 out=$(mktemp)
 godot --headless res://tests/test_main.tscn 2>&1 | tee "$out" | grep -av '^\[战斗\]'

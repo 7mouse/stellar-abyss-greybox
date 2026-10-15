@@ -59,6 +59,8 @@ func _ready() -> void:
 	_setup_input()
 	debug_panel = preload("res://scripts/debug_panel.gd").new()
 	add_child(debug_panel)
+	if OS.has_feature("web"):
+		_setup_web_hooks()
 
 func skills() -> Array:
 	return [
@@ -222,7 +224,7 @@ func _setup_input() -> void:
 	_action("ui_cancel", [], [JOY_BUTTON_B])
 	_action("mg_action", [KEY_SPACE, KEY_J, KEY_Z], [JOY_BUTTON_A])
 	_action("mg_cancel", [KEY_K, KEY_X], [JOY_BUTTON_B])
-	_action("debug_toggle", [KEY_F1], [JOY_BUTTON_BACK])
+	_action("debug_toggle", [KEY_F1, KEY_QUOTELEFT], [JOY_BUTTON_BACK])
 	_action("move_left", [KEY_A, KEY_LEFT], [JOY_BUTTON_DPAD_LEFT], JOY_AXIS_LEFT_X, -1.0)
 	_action("move_right", [KEY_D, KEY_RIGHT], [JOY_BUTTON_DPAD_RIGHT], JOY_AXIS_LEFT_X, 1.0)
 	_action("move_up", [KEY_W, KEY_UP], [JOY_BUTTON_DPAD_UP], JOY_AXIS_LEFT_Y, -1.0)
@@ -264,6 +266,42 @@ func log_minigame(cfg: MinigameConfig, ctx: Dictionary, result: int, score: floa
 		f.store_line(LOG_HEADER)
 	f.store_line("%s,%s,%d,%s,%d,%s,%s,%.3f,%.3f,%.3f,%d" % [Time.get_datetime_string_from_system(), run_id, int(ctx.get("depth", depth)), cfg.id, cfg.group, cfg.kind, MinigameBase.RESULT_NAMES[result], score, judge_sec, total_sec, 1 if int(ctx.get("auto", -1)) >= 0 else 0])
 	f.close()
+
+## 网页版：把 CSV 作为文件下载到浏览器（user:// 在网页里存于 IndexedDB，玩家拿不到）
+func download_log() -> bool:
+	if not FileAccess.file_exists(log_path):
+		return false
+	var bytes := FileAccess.get_file_as_bytes(log_path)
+	if OS.has_feature("web"):
+		JavaScriptBridge.download_buffer(bytes, "playtest_log.csv", "text/csv")
+		return true
+	return false
+
+# 网页调试钩子：浏览器控制台里可用 greybox.downloadCsv() / greybox.selftestRow() / greybox.currentScene
+var _js_cbs: Array = []
+var _js_obj = null
+var _js_scene := ""
+func _setup_web_hooks() -> void:
+	var win = JavaScriptBridge.get_interface("window")
+	if win == null:
+		return
+	var obj = JavaScriptBridge.create_object("Object")
+	var cb_dl = JavaScriptBridge.create_callback(func(_a): download_log())
+	var cb_row = JavaScriptBridge.create_callback(func(_a): log_minigame(mg_rps, {"depth": depth, "auto": 9}, MinigameBase.Result.GOOD, 0.5, 1.0, 1.7))
+	_js_cbs = [cb_dl, cb_row]
+	obj.downloadCsv = cb_dl
+	obj.selftestRow = cb_row
+	win.greybox = obj
+	_js_obj = obj
+
+## 网页版：把当前场景写到 window.greybox.currentScene（JS 回调拿不到返回值）
+func _process(_d: float) -> void:
+	if _js_obj != null:
+		var s := get_tree().current_scene
+		var path := s.scene_file_path if s else ""
+		if path != _js_scene:
+			_js_scene = path
+			_js_obj.currentScene = path
 
 func clear_log() -> void:
 	if FileAccess.file_exists(log_path):

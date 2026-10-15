@@ -13,6 +13,9 @@ func _ready() -> void:
 	var b := UI.button(self, "返回营地", back_to_camp, Vector2(400, 90))
 	b.position = Vector2(120, 500)
 	b.grab_focus.call_deferred()
+	if OS.has_feature("web"):
+		var d := UI.button(self, "下载试玩数据 CSV", func(): GameState.download_log(), Vector2(400, 80), Color(0.3, 0.35, 0.5))
+		d.position = Vector2(120, 620)
 
 func back_to_camp() -> void:
 	GameState.finish_result()

@@ -185,9 +185,10 @@ static func item_name(it: Dictionary) -> String:
 func roll_drop(rate: float, amount: int, rng: RandomNumberGenerator) -> int:
 	return amount if rng.randf() < rate else 0
 
-func heal_rest() -> int:
+func heal_rest(ratio: float = -1.0) -> int:
 	var before := player_hp
-	player_hp = mini(tunables.player_max_hp, player_hp + int(round(tunables.player_max_hp * tunables.rest_heal_ratio)))
+	var r := tunables.rest_heal_ratio if ratio < 0 else ratio
+	player_hp = mini(tunables.player_max_hp, player_hp + int(round(tunables.player_max_hp * r)))
 	return player_hp - before
 
 func start_battle() -> void:

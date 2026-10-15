@@ -7,6 +7,8 @@ extends Resource
 @export var nodes_min: int = 8
 @export var nodes_max: int = 10
 @export var rest_heal_ratio: float = 0.3
+@export var entrance_rest_floors: String = "" ## 入口固定休息点的层，逗号分隔，如 "3" 或 "2,3"；空 = 无
+@export var entrance_rest_heal: float = 0.3 ## 入口休息点回血比例
 @export var loot_bonus_per_depth: float = 0.25
 @export var final_floor: int = 0 ## 最终层：该层出口 = 通关（假结局，迷宫重置）；0 = 无最终层
 @export var chest_material: int = 3
@@ -58,6 +60,12 @@ extends Resource
 @export_group("调试")
 @export var god_mode: bool = false ## 上帝模式：主角不受伤
 @export var log_enabled: bool = true ## 记录 user://playtest_log.csv
+
+func has_entrance_rest(depth: int) -> bool:
+	for s in entrance_rest_floors.split(",", false):
+		if s.strip_edges().is_valid_int() and int(s) == depth:
+			return true
+	return false
 
 func attack_mult(result: int) -> float:
 	return [atk_mult_perfect, atk_mult_good, atk_mult_fail][result]

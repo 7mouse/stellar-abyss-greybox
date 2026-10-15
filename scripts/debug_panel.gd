@@ -93,7 +93,9 @@ func _section(box: VBoxContainer, title: String, res: Resource) -> void:
 		if not (p.usage & PROPERTY_USAGE_SCRIPT_VARIABLE):
 			continue
 		var t: int = p.type
-		if t != TYPE_INT and t != TYPE_FLOAT and t != TYPE_BOOL:
+		if t != TYPE_INT and t != TYPE_FLOAT and t != TYPE_BOOL and t != TYPE_STRING:
+			continue
+		if t == TYPE_STRING and not p.name in ["entrance_rest_floors"]:
 			continue
 		var row := HBoxContainer.new()
 		var l := Label.new()
@@ -101,7 +103,15 @@ func _section(box: VBoxContainer, title: String, res: Resource) -> void:
 		l.custom_minimum_size = Vector2(330, 0)
 		row.add_child(l)
 		var pname: String = p.name
-		if t == TYPE_BOOL:
+		if t == TYPE_STRING:
+			var le := LineEdit.new()
+			le.text = res.get(pname)
+			le.custom_minimum_size = Vector2(200, 0)
+			le.set_meta("res", res)
+			le.set_meta("prop", pname)
+			le.text_changed.connect(func(v): res.set(pname, v))
+			row.add_child(le)
+		elif t == TYPE_BOOL:
 			var c := CheckBox.new()
 			c.button_pressed = res.get(pname)
 			c.toggled.connect(func(v): res.set(pname, v))
@@ -132,8 +142,8 @@ func probability_text() -> String:
 	return "\n".join(lines)
 
 ## 找到某个资源某个参数对应的输入框（测试用）
-func find_editor(res: Resource, prop: String) -> SpinBox:
-	for n in root.find_children("*", "SpinBox", true, false):
+func find_editor(res: Resource, prop: String) -> Control:
+	for n in root.find_children("*", "Control", true, false):
 		if n.has_meta("res") and n.get_meta("res") == res and n.get_meta("prop", "") == prop:
 			return n
 	return null

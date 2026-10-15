@@ -46,13 +46,27 @@ static func generate(seed: int, depth: int, t: Tunables) -> Dictionary:
 				nodes[cols[ci][rng.randi_range(0, cols[ci].size() - 1)]].next.append(tid)
 		for nid in cols[ci]:
 			nodes[nid].next.sort()
+	# 入口固定休息点：在第 0 列之前插入一个必经的休息节点（不计入 nodes_min/max）
+	if t.has_entrance_rest(depth):
+		for nd in nodes:
+			nd.id += 1
+			nd.col += 1
+			for k in nd.next.size():
+				nd.next[k] += 1
+		for ci in cols.size():
+			for k in cols[ci].size():
+				cols[ci][k] += 1
+		exit_id += 1
+		nodes.push_front({"id": 0, "col": 0, "row": 0, "rows": 1, "type": "rest", "entrance": true, "next": cols[0].duplicate(), "visited": false})
+		cols.push_front([0])
 	# 保证至少一个战斗
 	var has_combat := false
 	for nd in nodes:
 		if nd.type == "combat":
 			has_combat = true
 	if not has_combat:
-		nodes[rng.randi_range(0, exit_id - 1)].type = "combat"
+		var lo := 1 if t.has_entrance_rest(depth) else 0
+		nodes[rng.randi_range(lo, exit_id - 1)].type = "combat"
 	return {"seed": seed, "depth": depth, "nodes": nodes, "cols": cols.size(), "start": cols[0], "exit": exit_id}
 
 static func _pick(rng: RandomNumberGenerator) -> String:

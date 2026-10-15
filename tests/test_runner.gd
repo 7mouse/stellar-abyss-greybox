@@ -124,7 +124,8 @@ func _run() -> void:
 		for dp in [1, 2, 3]:
 			var fd := DungeonGen.generate(sd, dp, t)
 			var n: int = fd.nodes.size()
-			gen_ok = gen_ok and n >= t.nodes_min and n <= t.nodes_max
+			var extra := 1 if t.has_entrance_rest(dp) else 0
+			gen_ok = gen_ok and n >= t.nodes_min + extra and n <= t.nodes_max + extra
 			var exits := 0
 			for nd in fd.nodes:
 				seen_types[nd.type] = true
@@ -135,7 +136,7 @@ func _run() -> void:
 				reach_ok = reach_ok and (nd.type == "exit" or not _bfs(fd, nd.id, "exit").is_empty())
 			gen_ok = gen_ok and exits == 1
 			reach_ok = reach_ok and not _bfs(fd, -1, "exit").is_empty()
-	check(gen_ok, "360 次生成：每层 %d~%d 个节点、恰好 1 个出口" % [t.nodes_min, t.nodes_max])
+	check(gen_ok, "360 次生成：每层 %d~%d 个节点（入口休息层 +1）、恰好 1 个出口" % [t.nodes_min, t.nodes_max])
 	check(types_ok and seen_types.size() == 5, "节点类型覆盖 战斗/宝箱/事件/休息/出口")
 	check(reach_ok, "所有节点均可到达出口（无死路）")
 	check(var_to_str(DungeonGen.generate(777, 1, t)) == var_to_str(DungeonGen.generate(777, 1, t)), "固定种子可复现")
@@ -907,7 +908,7 @@ func test_balance_v1() -> void:
 	var d := Tunables.new()
 	check(d.nodes_min == 8 and d.nodes_max == 10 and is_equal_approx(d.def_mult_good, 0.5) and is_equal_approx(d.enemy_hp_per_depth, 0.2) and is_equal_approx(d.enemy_atk_per_depth, 0.15) and d.final_floor == 0, "tunables.gd 默认值未改（可回滚）")
 	var f: Tunables = load("res://data/tunables.tres")
-	check(f.nodes_min == 11 and f.nodes_max == 13 and is_equal_approx(f.def_mult_good, 0.35) and is_equal_approx(f.enemy_hp_per_depth, 0.25) and is_equal_approx(f.enemy_atk_per_depth, 0.25) and f.final_floor == 3, "tunables.tres 覆盖：节点 11~13、GOOD 防御 35%、敌人成长 HP 25%/攻击 25%、最终层 3")
+	check(f.nodes_min == 12 and f.nodes_max == 14 and is_equal_approx(f.def_mult_good, 0.35) and is_equal_approx(f.enemy_hp_per_depth, 0.25) and is_equal_approx(f.enemy_atk_per_depth, 0.2) and f.final_floor == 3 and f.entrance_rest_floors == "3" and is_equal_approx(f.entrance_rest_heal, 0.7), "tunables.tres 覆盖：节点 12~14、GOOD 防御 35%、敌人成长 HP 25%/攻击 20%、最终层 3、第3层入口休息 70%")
 	check(f.upgrade_cost_base == 6 and is_equal_approx(f.rest_heal_ratio, 0.3), "upgrade_cost_base=6、休息回血 30% 不变")
 	var at := []
 	for e in GameState.enemy_types:
@@ -915,6 +916,37 @@ func test_balance_v1() -> void:
 	check(at == [5, 7, 5], "敌人攻击：近战连击 5、追踪弹 7、均衡 5")
 	check(is_equal_approx(GameState.mg_rps.anim_sec, 0.5) and is_equal_approx(GameState.mg_dice.anim_sec, 0.8), "猜拳 anim_sec 0.5（骰子保持 0.8）")
 	check(GameState.debug_panel.find_editor(t, "final_floor") != null, "F1 面板可改最终层 final_floor")
+	check(GameState.debug_panel.find_editor(t, "entrance_rest_floors") is LineEdit and GameState.debug_panel.find_editor(t, "entrance_rest_heal") != null, "F1 面板可改入口休息层（文本，如 2,3）与回血比例")
+	print("== 第 3 层入口固定休息点 ==")
+	var ok3 := true
+	var ok_other := true
+	var reach := true
+	for sd in 40:
+		var f3 := DungeonGen.generate(sd, 3, t)
+		var e: Dictionary = f3.nodes[0]
+		ok3 = ok3 and f3.start == [0] and e.type == "rest" and e.get("entrance", false) and not e.next.is_empty()
+		for nd in f3.nodes:
+			reach = reach and (nd.type == "exit" or not _bfs(f3, nd.id, "exit").is_empty())
+		for dpp in [1, 2]:
+			var fo := DungeonGen.generate(sd, dpp, t)
+			for nd in fo.nodes:
+				ok_other = ok_other and not nd.get("entrance", false)
+	check(ok3, "第 3 层：入口唯一可选节点是固定休息点")
+	check(reach, "第 3 层：入口之后所有节点仍可到达出口")
+	check(ok_other, "第 1/2 层没有入口休息点")
+	t.entrance_rest_floors = "2,3"
+	check(DungeonGen.generate(5, 2, t).nodes[0].get("entrance", false), "改成 \"2,3\" 后第 2 层也有入口休息点")
+	t.entrance_rest_floors = "3"
+	GameState.new_run()
+	GameState.depth = 3
+	GameState.floor_data = DungeonGen.generate(GameState.run_seed, 3, t)
+	GameState.current_node = -1
+	GameState.player_hp = 20
+	GameState.goto(GameState.SCN_DUNGEON)
+	await wait_scene(GameState.SCN_DUNGEON)
+	scene().visit(0)
+	check(GameState.player_hp == 90, "入口休息回复 70%%（20 → %d）" % GameState.player_hp)
+	scene().dismiss_message()
 	GameState.goto(GameState.SCN_CAMP)
 	await wait_scene(GameState.SCN_CAMP)
 	check(scene().upgrade_buttons[2].text.contains("追踪球速度降低") and scene().upgrade_buttons[1].text.contains("判定窗口 +10%"), "营地文案：第2组“追踪球速度降低”")

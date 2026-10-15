@@ -86,8 +86,12 @@ func visit(id: int) -> void:
 		"event":
 			_message(EVENT_TEXTS[id % EVENT_TEXTS.size()])
 		"rest":
-			var h := GameState.heal_rest()
-			_message("在篝火旁休息，回复 %d 点生命。" % h)
+			if nd.get("entrance", false):
+				var h := GameState.heal_rest(GameState.tunables.entrance_rest_heal if first_time else 0.0)
+				_message("入口营火：休整后回复 %d 点生命。" % h)
+			else:
+				var h := GameState.heal_rest()
+				_message("在篝火旁休息，回复 %d 点生命。" % h)
 		"exit":
 			if GameState.is_final_floor():
 				_clear_popup()

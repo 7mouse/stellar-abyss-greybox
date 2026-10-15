@@ -45,6 +45,9 @@ func walk_to(type: String) -> bool:
 		var d = scene()
 		if d.scene_file_path != GameState.SCN_DUNGEON:
 			return false
+		while d.popup_kind == "discard":
+			d.choose_discard_new()
+			await get_tree().process_frame
 		var path := _bfs(GameState.floor_data, GameState.current_node, type)
 		if path.is_empty():
 			return false
@@ -121,7 +124,7 @@ func _run() -> void:
 		for dp in [1, 2, 3]:
 			var fd := DungeonGen.generate(sd, dp, t)
 			var n: int = fd.nodes.size()
-			gen_ok = gen_ok and n >= 8 and n <= 10
+			gen_ok = gen_ok and n >= t.nodes_min and n <= t.nodes_max
 			var exits := 0
 			for nd in fd.nodes:
 				seen_types[nd.type] = true
@@ -132,7 +135,7 @@ func _run() -> void:
 				reach_ok = reach_ok and (nd.type == "exit" or not _bfs(fd, nd.id, "exit").is_empty())
 			gen_ok = gen_ok and exits == 1
 			reach_ok = reach_ok and not _bfs(fd, -1, "exit").is_empty()
-	check(gen_ok, "360 次生成：每层 8~10 个节点、恰好 1 个出口")
+	check(gen_ok, "360 次生成：每层 %d~%d 个节点、恰好 1 个出口" % [t.nodes_min, t.nodes_max])
 	check(types_ok and seen_types.size() == 5, "节点类型覆盖 战斗/宝箱/事件/休息/出口")
 	check(reach_ok, "所有节点均可到达出口（无死路）")
 	check(var_to_str(DungeonGen.generate(777, 1, t)) == var_to_str(DungeonGen.generate(777, 1, t)), "固定种子可复现")
@@ -195,7 +198,7 @@ func _run() -> void:
 
 	print("== T3 回合制战斗 ==")
 	check(Battle_calc(10, R.PERFECT, true) == 15 and Battle_calc(10, R.GOOD, true) == 10 and Battle_calc(10, R.FAIL, true) == 5, "攻击伤害 150%/100%/50%")
-	check(Battle_calc(10, R.PERFECT, false) == 0 and Battle_calc(10, R.GOOD, false) == 5 and Battle_calc(10, R.FAIL, false) == 10, "防御受伤 0/50%/100%")
+	check(Battle_calc(10, R.PERFECT, false) == 0 and Battle_calc(10, R.GOOD, false) == roundi(10 * t.def_mult_good) and Battle_calc(10, R.FAIL, false) == 10, "防御受伤 0/%d%%/100%%" % roundi(t.def_mult_good * 100))
 	var counts := {}
 	var dmg_by_result := {}
 	for res in [R.PERFECT, R.GOOD, R.FAIL]:
@@ -272,6 +275,7 @@ func _run() -> void:
 	t.heavy_power = 16
 
 	await test_milestone3()
+	await test_balance_v1()
 
 	print("\n结果：%d 通过，%d 失败" % [passes, fails])
 	get_tree().quit(0 if fails == 0 else 1)
@@ -876,7 +880,10 @@ func test_milestone3() -> void:
 					break
 				await wait_scene(GameState.SCN_DUNGEON)
 			elif nd.type == "exit":
-				if fl < 2:
+				if scene().popup_kind == "clear":
+					scene().choose_clear_confirm()
+					await wait_scene(GameState.SCN_DUNGEON)
+				elif fl < 2:
 					scene().choose_descend()
 					await get_tree().process_frame
 					await wait_scene(GameState.SCN_DUNGEON)
@@ -889,6 +896,61 @@ func test_milestone3() -> void:
 			break
 	# 估算：每次判定 预兆0.7 + 判定≈3.8 + 结算演出1.2 秒；玩家每回合选技能≈3 秒；每个节点走动/阅读≈8 秒；每场战斗进出≈5 秒
 	var est := judges * (0.7 + 3.8 + 1.2) + player_turns * 3.0 + nodes_visited * 8.0 + battles * 5.0
-	print("  估算一局：%d 个节点、%d 场战斗、%d 次判定（全 GOOD，%s）→ 约 %.1f 分钟" % [nodes_visited, battles, judges, "中途倒下" if dead else "打到第 3 层撤离", est / 60.0])
+	print("  估算一局：%d 个节点、%d 场战斗、%d 次判定（全 GOOD，%s）→ 约 %.1f 分钟" % [nodes_visited, battles, judges, "中途倒下" if dead else "打通第 3 层", est / 60.0])
 	check(est / 60.0 >= 5.0 and est / 60.0 <= 20.0, "一局时长估算 %.1f 分钟（目标 10~15，需真人计时确认）" % (est / 60.0))
+	GameState.auto_minigame = R.PERFECT
+
+# ======================= 数值调整 v1 + 最终层 =======================
+func test_balance_v1() -> void:
+	var t := GameState.tunables
+	print("== 数值 v1 ==")
+	var d := Tunables.new()
+	check(d.nodes_min == 8 and d.nodes_max == 10 and is_equal_approx(d.def_mult_good, 0.5) and is_equal_approx(d.enemy_hp_per_depth, 0.2) and is_equal_approx(d.enemy_atk_per_depth, 0.15) and d.final_floor == 0, "tunables.gd 默认值未改（可回滚）")
+	var f: Tunables = load("res://data/tunables.tres")
+	check(f.nodes_min == 11 and f.nodes_max == 13 and is_equal_approx(f.def_mult_good, 0.35) and is_equal_approx(f.enemy_hp_per_depth, 0.25) and is_equal_approx(f.enemy_atk_per_depth, 0.25) and f.final_floor == 3, "tunables.tres 覆盖：节点 11~13、GOOD 防御 35%、敌人成长 HP 25%/攻击 25%、最终层 3")
+	check(f.upgrade_cost_base == 6 and is_equal_approx(f.rest_heal_ratio, 0.3), "upgrade_cost_base=6、休息回血 30% 不变")
+	var at := []
+	for e in GameState.enemy_types:
+		at.append(e.attack)
+	check(at == [5, 7, 5], "敌人攻击：近战连击 5、追踪弹 7、均衡 5")
+	check(is_equal_approx(GameState.mg_rps.anim_sec, 0.5) and is_equal_approx(GameState.mg_dice.anim_sec, 0.8), "猜拳 anim_sec 0.5（骰子保持 0.8）")
+	check(GameState.debug_panel.find_editor(t, "final_floor") != null, "F1 面板可改最终层 final_floor")
+	GameState.goto(GameState.SCN_CAMP)
+	await wait_scene(GameState.SCN_CAMP)
+	check(scene().upgrade_buttons[2].text.contains("追踪球速度降低") and scene().upgrade_buttons[1].text.contains("判定窗口 +10%"), "营地文案：第2组“追踪球速度降低”")
+	# 猜拳平局最长耗时
+	var lg: MinigameBase = await spawn(GameState.mg_rps, {"depth": 1, "luck": 0, "seed": 1})
+	var steps := maxi(3, roundi(0.5 / 0.08))
+	lg.queue_free()
+	var worst := 2.5 + 2 * (steps * 0.08 + 0.5) + 0.3
+	check(worst <= 5.0, "猜拳平局最坏耗时 %.1f 秒（+预兆 0.7）" % worst)
+
+	print("== 最终层 / 假结局循环 ==")
+	GameState.auto_minigame = R.PERFECT
+	GameState.auto_skill = 0
+	scene().enter_dungeon()
+	await wait_scene(GameState.SCN_DUNGEON)
+	for loop in 2:
+		var meta_m := GameState.meta_materials
+		var clears := GameState.clear_count
+		for fl in range(1, 4):
+			check(GameState.depth == fl, "第 %d 轮：到达第 %d 层" % [loop + 1, fl])
+			if not await walk_to("exit"):
+				check(false, "走到出口失败")
+				return
+			if fl < 3:
+				check(scene().popup_kind == "exit", "第 %d 层出口：撤离/继续二选一" % fl)
+				scene().choose_descend()
+				await get_tree().process_frame
+				await wait_scene(GameState.SCN_DUNGEON)
+		check(scene().popup_kind == "clear" and GameState.is_final_floor(), "第 3 层出口 → “恭喜通关”（无继续深入）")
+		check(await focus_ok(), "通关弹窗有默认焦点")
+		var loot: Dictionary = GameState.run_loot
+		var old_seed := GameState.run_seed
+		scene().choose_clear_confirm()
+		await get_tree().process_frame
+		check(await wait_scene(GameState.SCN_DUNGEON), "确认后迷宫重置")
+		check(GameState.depth == 1 and GameState.current_node == -1 and GameState.inventory.is_empty() and GameState.player_hp == t.player_max_hp, "重置为第 1 层入口，背包清空，满血")
+		check(GameState.clear_count == clears + 1 and GameState.meta_materials == meta_m + loot.material and GameState.last_result.get("cleared", false), "通关次数 %d，战利品（材料 %d）全部存入局外" % [GameState.clear_count, loot.material])
+		check(GameState.run_seed != old_seed, "重置后生成新的迷宫（种子 %d → %d）" % [old_seed, GameState.run_seed])
 	GameState.auto_minigame = R.PERFECT

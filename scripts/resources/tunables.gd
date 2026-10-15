@@ -8,6 +8,7 @@ extends Resource
 @export var nodes_max: int = 10
 @export var rest_heal_ratio: float = 0.3
 @export var loot_bonus_per_depth: float = 0.25
+@export var final_floor: int = 0 ## 最终层：该层出口 = 通关（假结局，迷宫重置）；0 = 无最终层
 @export var chest_material: int = 3
 @export var chest_shard: int = 1
 @export var chest_shard_rate: float = 0.6 ## 宝箱掉碎片概率

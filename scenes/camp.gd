@@ -29,7 +29,7 @@ func _ready() -> void:
 	enter_btn.grab_focus.call_deferred()
 
 func _upgrade_text(g: int) -> String:
-	var eff := "幸运 +1" if g == 5 else "判定窗口 +10%"
+	var eff := "幸运 +1" if g == 5 else ("追踪球速度降低" if g == 2 else "判定窗口 +10%")
 	return "第%d组 %s  Lv%d → Lv%d（%s）  花费 %d" % [g, GROUP_NAMES[g], GameState.skill_levels[g], GameState.skill_levels[g] + 1, eff, GameState.upgrade_cost(g)]
 
 func _on_upgrade(g: int) -> void:

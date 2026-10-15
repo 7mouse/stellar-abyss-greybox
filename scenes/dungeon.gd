@@ -45,7 +45,7 @@ func reachable() -> Array:
 	return DungeonGen.reachable_from(fd, GameState.current_node)
 
 func _refresh() -> void:
-	header.text = "第 %d 层    HP %d/%d    掉落倍率 %d%%    背包 %d/%d 格（材料 %d  碎片 %d）" % [GameState.depth, GameState.player_hp, GameState.tunables.player_max_hp, roundi(GameState.loot_mult * 100), GameState.inventory.size(), GameState.tunables.backpack_slots, GameState.run_loot.material, GameState.run_loot.shard]
+	header.text = ("第 %d 层" + ("（最终层）" if GameState.is_final_floor() else ("/共 %d 层" % GameState.tunables.final_floor if GameState.tunables.final_floor > 0 else ""))) % GameState.depth + "    HP %d/%d    掉落倍率 %d%%    背包 %d/%d 格（材料 %d  碎片 %d）" % [GameState.player_hp, GameState.tunables.player_max_hp, roundi(GameState.loot_mult * 100), GameState.inventory.size(), GameState.tunables.backpack_slots, GameState.run_loot.material, GameState.run_loot.shard]
 	if popup_node == null and not GameState.pending_loot.is_empty():
 		_discard_choice()
 		return
@@ -89,7 +89,10 @@ func visit(id: int) -> void:
 			var h := GameState.heal_rest()
 			_message("在篝火旁休息，回复 %d 点生命。" % h)
 		"exit":
-			_exit_choice()
+			if GameState.is_final_floor():
+				_clear_popup()
+			else:
+				_exit_choice()
 	_refresh()
 
 func _message(text: String) -> void:
@@ -140,6 +143,18 @@ func choose_discard_new() -> void:
 func _refresh_buttons_only() -> void:
 	for id in buttons:
 		buttons[id].disabled = true
+
+## 最终层出口：恭喜通关 → 迷宫重置（假结局占位）
+func _clear_popup() -> void:
+	var p := UI.popup(self, "恭喜通关！\n向导：“你已经走到了迷宫的尽头。”\n……然而，迷宫的入口再次打开了。（假结局占位）")
+	popup_node = p.panel
+	popup_kind = "clear"
+	var b := UI.button(p.box, "确定（战利品全部带出，迷宫重置）", choose_clear_confirm, Vector2(640, 80), Color(0.6, 0.5, 0.2))
+	b.grab_focus.call_deferred()
+
+func choose_clear_confirm() -> void:
+	_close_popup()
+	GameState.clear_dungeon()
 
 func _close_popup() -> void:
 	if popup_node:

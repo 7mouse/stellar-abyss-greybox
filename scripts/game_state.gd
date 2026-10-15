@@ -47,6 +47,7 @@ var run_seed: int = 0
 var floor_data: Dictionary = {}
 var current_node: int = -1 ## -1 = 刚进入本层，尚未踏上节点
 var last_result: Dictionary = {}
+var clear_count: int = 0 ## 通关（假结局）次数
 
 # ---- 测试钩子 ----
 var auto_minigame: int = -1 ## >=0 时小游戏跳过操作直接给出该判定
@@ -110,6 +111,24 @@ func new_run() -> void:
 	player_hp = tunables.player_max_hp
 	run_seed = tunables.map_seed if tunables.map_seed >= 0 else randi()
 	_gen_floor()
+
+func is_final_floor() -> bool:
+	return tunables.final_floor > 0 and depth >= tunables.final_floor
+
+## 通关最终层（假结局占位）：战利品全部存入局外，迷宫重置，从第 1 层重新开始
+func clear_dungeon() -> void:
+	var loot := run_loot
+	meta_materials += loot.material
+	meta_shards += loot.shard
+	clear_count += 1
+	last_result = {"extracted": true, "cleared": true, "depth": depth, "material": loot.material, "material_lost": 0, "shard": loot.shard}
+	var keep_hp := player_hp
+	new_run()
+	if tunables.map_seed >= 0:
+		run_seed = tunables.map_seed + clear_count * 7919
+		_gen_floor()
+	player_hp = tunables.player_max_hp
+	goto(SCN_DUNGEON)
 
 func descend() -> void:
 	depth += 1

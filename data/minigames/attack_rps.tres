@@ -13,3 +13,4 @@ group = 5
 mode = "rps"
 telegraph_text = "赌一把运气！"
 telegraph_color = Color(0.3, 0.9, 0.5, 1)
+anim_sec = 0.5

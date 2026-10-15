@@ -4,3 +4,9 @@
 
 [resource]
 script = ExtResource("1")
+nodes_min = 11
+nodes_max = 13
+def_mult_good = 0.35
+enemy_hp_per_depth = 0.25
+enemy_atk_per_depth = 0.25
+final_floor = 3

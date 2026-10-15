@@ -61,7 +61,7 @@ func _ready() -> void:
 
 func _process(_d: float) -> void:
 	if root.visible:
-		info.text = "当前层：%d  掉落倍率：%d%%  HP：%d  材料：%d  碎片：%d" % [GameState.depth, roundi(GameState.loot_mult * 100), GameState.player_hp, GameState.run_loot.material, GameState.run_loot.shard]
+		info.text = "通关次数：%d  当前层：%d  掉落倍率：%d%%  HP：%d  材料：%d  碎片：%d" % [GameState.clear_count, GameState.depth, roundi(GameState.loot_mult * 100), GameState.player_hp, GameState.run_loot.material, GameState.run_loot.shard]
 		prob.text = probability_text()
 		if not depth_spin.get_line_edit().has_focus():
 			depth_spin.set_value_no_signal(GameState.depth)

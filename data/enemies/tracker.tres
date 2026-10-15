@@ -6,7 +6,7 @@
 script = ExtResource("1")
 display_name = "追踪术士（追踪弹）"
 max_hp = 22
-attack = 11
+attack = 7
 speed = 7
 pattern = 1
 color = Color(0.6, 0.3, 0.85, 1)

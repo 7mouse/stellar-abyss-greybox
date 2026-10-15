@@ -4,30 +4,41 @@ extends RefCounted
 
 const TYPES := ["combat", "chest", "event", "rest"]
 const WEIGHTS := [0.45, 0.2, 0.2, 0.15]
-const TYPE_CN := {"combat": "战斗", "chest": "宝箱", "event": "事件", "rest": "休息", "exit": "出口"}
+const TYPE_CN := {"combat": "战斗", "chest": "宝箱", "event": "事件", "rest": "休息", "exit": "出口", "elite": "精英", "boss": "首领"}
 
 static func generate(seed: int, depth: int, t: Tunables) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([seed, depth])
 	var n := rng.randi_range(t.nodes_min, t.nodes_max)
 	var middle := n - 1
-	var cols: Array = []
-	var id := 0
+	var sizes: Array = [] ## 每列节点数
 	while middle > 0:
 		var c := mini(rng.randi_range(1, 3), middle)
+		sizes.append(c)
+		middle -= c
+	var fixed := {} ## 列号 -> 固定类型（单节点必经）
+	if t.has_elite(depth) and sizes.size() > 0:
+		var mid := sizes.size() / 2
+		sizes[mid] = 1
+		fixed[mid] = "elite"
+	if t.boss_on_final_floor and t.final_floor > 0 and depth == t.final_floor:
+		sizes.append(1)
+		fixed[sizes.size() - 1] = "boss"
+	var cols: Array = []
+	var id := 0
+	for c in sizes:
 		var col: Array = []
 		for i in c:
 			col.append(id)
 			id += 1
 		cols.append(col)
-		middle -= c
 	var exit_id := id
 	cols.append([exit_id])
 	var nodes: Array = []
 	for ci in cols.size():
 		for ri in cols[ci].size():
 			nodes.append({"id": cols[ci][ri], "col": ci, "row": ri, "rows": cols[ci].size(),
-				"type": "exit" if cols[ci][ri] == exit_id else _pick(rng), "next": [], "visited": false})
+				"type": "exit" if cols[ci][ri] == exit_id else (fixed[ci] if fixed.has(ci) else _pick(rng)), "next": [], "visited": false})
 	nodes.sort_custom(func(a, b): return a.id < b.id)
 	# 连边：每个节点连向下一列 1~2 个；保证下一列每个节点都有入边
 	for ci in cols.size() - 1:
@@ -65,8 +76,12 @@ static func generate(seed: int, depth: int, t: Tunables) -> Dictionary:
 		if nd.type == "combat":
 			has_combat = true
 	if not has_combat:
-		var lo := 1 if t.has_entrance_rest(depth) else 0
-		nodes[rng.randi_range(lo, exit_id - 1)].type = "combat"
+		var cand: Array = []
+		for nd in nodes:
+			if nd.type in ["chest", "event", "rest"] and not nd.get("entrance", false):
+				cand.append(nd.id)
+		if not cand.is_empty():
+			nodes[cand[rng.randi_range(0, cand.size() - 1)]].type = "combat"
 	return {"seed": seed, "depth": depth, "nodes": nodes, "cols": cols.size(), "start": cols[0], "exit": exit_id}
 
 static func _pick(rng: RandomNumberGenerator) -> String:

@@ -18,6 +18,7 @@ var active := false
 var done := false
 var _t_start_us := 0
 var _t_begin_us := 0
+var _judging := false
 
 func start(p_config: MinigameConfig, p_context: Dictionary) -> void:
 	config = p_config
@@ -25,7 +26,10 @@ func start(p_config: MinigameConfig, p_context: Dictionary) -> void:
 	difficulty = compute_difficulty(config, context)
 	_t_start_us = Time.get_ticks_usec()
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	await _play_telegraph()
+	if config.telegraph_sec > 0.0:
+		await _play_telegraph()
+	else:
+		await get_tree().process_frame ## 保证调用方已开始 await finished
 	if done or not is_inside_tree():
 		return
 	var auto: int = int(context.get("auto", -1))
@@ -33,6 +37,10 @@ func start(p_config: MinigameConfig, p_context: Dictionary) -> void:
 		_finish(auto, [1.0, 0.6, 0.0][auto])
 		return
 	elapsed = 0.0
+	# C4：判定期间强制 1 倍速（加速键只加速过场）
+	GameState.judge_begin()
+	_judging = true
+	Engine.time_scale = 1.0
 	_t_begin_us = Time.get_ticks_usec()
 	active = true
 	_begin()
@@ -47,7 +55,7 @@ func eff_depth() -> float:
 	var t: Tunables = GameState.tunables
 	return maxf(1.0, (difficulty - 1.0) / maxf(t.depth_scale, 0.01))
 
-## 预兆提示：图标色块 + 文字 + 音效占位，0.5~1.0 秒
+## 预兆提示：图标色块 + 文字 + 音效占位，0.3~1.0 秒（telegraph_sec ≤ 0 时不播）
 func _play_telegraph() -> void:
 	var layer := Control.new()
 	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -60,7 +68,7 @@ func _play_telegraph() -> void:
 	UI.label(layer, config.telegraph_text, Vector2(vs.x / 2 - 210, vs.y / 2 - 50), 56, config.telegraph_color)
 	Beep.play(self, 660.0, 0.15)
 	UI.label(layer, "♪ 预兆音效（占位）", Vector2(vs.x / 2 - 210, vs.y / 2 + 20), 24, Color(0.8, 0.8, 0.8))
-	await get_tree().create_timer(clampf(config.telegraph_sec, 0.5, 1.0)).timeout
+	await get_tree().create_timer(clampf(config.telegraph_sec, 0.3, 1.0)).timeout
 	if is_instance_valid(layer):
 		layer.queue_free()
 
@@ -81,6 +89,7 @@ func _finish(result: int, score: float) -> void:
 	var begin := _t_begin_us if _t_begin_us > 0 else now
 	# 记录的是游戏内时间（真实时间 × time_scale），正常游玩时二者相等
 	GameState.log_minigame(config, context, result, score, (now - begin) / 1e6 * Engine.time_scale, (now - _t_start_us) / 1e6 * Engine.time_scale)
+	_end_judging()
 	finished.emit(result, score)
 
 # ---- 子类覆写 ----
@@ -92,3 +101,11 @@ func _tick(_delta: float) -> void:
 
 func _on_timeout() -> void:
 	_finish(Result.FAIL, 0.0)
+
+func _end_judging() -> void:
+	if _judging:
+		_judging = false
+		GameState.judge_end()
+
+func _exit_tree() -> void:
+	_end_judging()

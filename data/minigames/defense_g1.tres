@@ -12,3 +12,5 @@ kind = "defense"
 group = 1
 telegraph_text = "敌人摆出连击架势！"
 telegraph_color = Color(1, 0.4, 0.2, 1)
+interval_ms = 200.0
+hits_max = 5

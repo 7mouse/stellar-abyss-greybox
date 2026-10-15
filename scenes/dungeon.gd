@@ -4,6 +4,7 @@ extends Control
 const TYPE_COLORS := {
 	"combat": Color(0.75, 0.25, 0.25), "chest": Color(0.8, 0.65, 0.15), "event": Color(0.35, 0.5, 0.8),
 	"rest": Color(0.3, 0.7, 0.4), "exit": Color(0.85, 0.85, 0.85),
+	"elite": Color(0.95, 0.55, 0.1), "boss": Color(0.6, 0.1, 0.5),
 }
 const EVENT_TEXTS := [
 	"墙上刻着一行字：“这里的一切都是真实的。”（事件占位）",
@@ -21,7 +22,7 @@ func _ready() -> void:
 	fd = GameState.floor_data
 	UI.rect(self, Vector2.ZERO, Vector2(1920, 1080), Color(0.1, 0.1, 0.13))
 	header = UI.label(self, "", Vector2(60, 30), 34)
-	UI.label(self, "红=战斗 黄=宝箱 蓝=事件 绿=休息 白=出口    方向键/摇杆选择，确认键前进", Vector2(60, 1010), 24, Color(0.7, 0.7, 0.7))
+	UI.label(self, "红=战斗 橙=精英 紫=首领 黄=宝箱 蓝=事件 绿=休息 白=出口    方向键/摇杆选择，确认键前进", Vector2(60, 1010), 24, Color(0.7, 0.7, 0.7))
 	for nd in fd.nodes:
 		var b := UI.button(self, DungeonGen.TYPE_CN[nd.type], visit.bind(nd.id), Vector2(150, 90), TYPE_COLORS[nd.type])
 		b.position = node_pos(nd) - Vector2(75, 45)
@@ -69,9 +70,13 @@ func visit(id: int) -> void:
 	var first_time: bool = not nd.visited
 	nd.visited = true
 	match nd.type:
-		"combat":
-			GameState.start_battle()
-			return
+		"combat", "elite", "boss":
+			if not first_time and nd.type != "combat":
+				_message("这里已经没有敌人了。")
+			else:
+				GameState.battle_kind = "normal" if nd.type == "combat" else nd.type
+				GameState.start_battle()
+				return
 		"chest":
 			if first_time:
 				var t := GameState.tunables

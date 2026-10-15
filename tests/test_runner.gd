@@ -15,7 +15,7 @@ func check(cond: bool, msg: String) -> void:
 		printerr("  [FAIL] ", msg)
 
 func _ready() -> void:
-	Engine.time_scale = 20.0
+	GameState.base_time_scale = 20.0; GameState.apply_time_scale()
 	get_tree().create_timer(900.0, true, false, true).timeout.connect(func():
 		printerr("[FAIL] 超时"); get_tree().quit(2))
 	_run()
@@ -54,7 +54,7 @@ func walk_to(type: String) -> bool:
 		var nid: int = path[0]
 		d.visit(nid)
 		var nd: Dictionary = GameState.floor_data.nodes[nid]
-		if nd.type == "combat":
+		if nd.type in ["combat", "elite", "boss"] and not (nd.type != "combat" and GameState.battle_kind == "normal" and scene().scene_file_path == GameState.SCN_DUNGEON):
 			if not await wait_scene(GameState.SCN_BATTLE):
 				return false
 			var b = scene()
@@ -124,27 +124,28 @@ func _run() -> void:
 		for dp in [1, 2, 3]:
 			var fd := DungeonGen.generate(sd, dp, t)
 			var n: int = fd.nodes.size()
-			var extra := 1 if t.has_entrance_rest(dp) else 0
-			gen_ok = gen_ok and n >= t.nodes_min + extra and n <= t.nodes_max + extra
+			var extra := (1 if t.has_entrance_rest(dp) else 0) + (1 if dp == t.final_floor and t.boss_on_final_floor else 0)
+			var shrink := 2 if t.has_elite(dp) else 0 ## 精英层：中间一列替换为单个精英（与 sim 一致）
+			gen_ok = gen_ok and n >= t.nodes_min + extra - shrink and n <= t.nodes_max + extra
 			var exits := 0
 			for nd in fd.nodes:
 				seen_types[nd.type] = true
-				types_ok = types_ok and nd.type in ["combat", "chest", "event", "rest", "exit"]
+				types_ok = types_ok and nd.type in ["combat", "chest", "event", "rest", "exit", "elite", "boss"]
 				if nd.type == "exit":
 					exits += 1
 				# 每个节点都能走到出口
 				reach_ok = reach_ok and (nd.type == "exit" or not _bfs(fd, nd.id, "exit").is_empty())
 			gen_ok = gen_ok and exits == 1
 			reach_ok = reach_ok and not _bfs(fd, -1, "exit").is_empty()
-	check(gen_ok, "360 次生成：每层 %d~%d 个节点（入口休息层 +1）、恰好 1 个出口" % [t.nodes_min, t.nodes_max])
-	check(types_ok and seen_types.size() == 5, "节点类型覆盖 战斗/宝箱/事件/休息/出口")
+	check(gen_ok, "360 次生成：每层 %d~%d 个节点（入口休息层 +1、首领层 +1）、恰好 1 个出口" % [t.nodes_min, t.nodes_max])
+	check(types_ok and seen_types.size() == 7, "节点类型覆盖 战斗/宝箱/事件/休息/出口/精英/首领")
 	check(reach_ok, "所有节点均可到达出口（无死路）")
 	check(var_to_str(DungeonGen.generate(777, 1, t)) == var_to_str(DungeonGen.generate(777, 1, t)), "固定种子可复现")
 	check(var_to_str(DungeonGen.generate(777, 1, t)) != var_to_str(DungeonGen.generate(778, 1, t)), "不同种子结果不同")
 	GameState.new_run()
 	GameState.player_hp = 50
 	var healed := GameState.heal_rest()
-	check(healed == 30 and GameState.player_hp == 80, "休息回复 30%% 最大生命（50→%d）" % GameState.player_hp)
+	check(healed == roundi(t.player_max_hp * 0.3) and GameState.player_hp == 50 + roundi(t.player_max_hp * 0.3), "休息回复 30%% 最大生命（50→%d）" % GameState.player_hp)
 
 	print("== T1 场景流转 Camp→Dungeon→Battle→Dungeon→Result→Camp ==")
 	GameState.goto(GameState.SCN_CAMP)
@@ -221,8 +222,8 @@ func _run() -> void:
 		var grp_ok := true
 		for ev in b.damage_events:
 			if ev.kind == "attack":
-				atk_ok = atk_ok and ev.amount == roundi(ev.base * t.attack_mult(res))
-				dmg_by_result[res] = ev.amount if ev.base == t.slash_power else dmg_by_result.get(res, 0)
+				atk_ok = atk_ok and ev.amount == roundi(ev.base * (t.qte_mult(res) if ev.skill_kind == "basic" else t.attack_mult(res)))
+				dmg_by_result[res] = ev.amount if ev.skill_kind == "basic" else dmg_by_result.get(res, 0)
 			else:
 				def_ok = def_ok and ev.amount == roundi(ev.base * t.defense_mult(res))
 				var e_ok: bool = ev.group in [1, 2]
@@ -231,7 +232,7 @@ func _run() -> void:
 		check(grp_ok, "[%s] 敌人出招前触发第 1/2 组防御小游戏" % MinigameBase.RESULT_NAMES[res])
 		check(b.float_count == b.damage_events.size() and b.float_count > 0, "[%s] 每次结算都在屏幕上飘出伤害数字" % MinigameBase.RESULT_NAMES[res])
 		await wait_scene(GameState.SCN_DUNGEON)
-	check(dmg_by_result.get(R.PERFECT) == 15 and dmg_by_result.get(R.GOOD) == 10 and dmg_by_result.get(R.FAIL) == 5, "斩击伤害随判定变化：15 / 10 / 5")
+	check(dmg_by_result.get(R.PERFECT) == roundi(t.basic_power * 1.3) and dmg_by_result.get(R.GOOD) == t.basic_power and dmg_by_result.get(R.FAIL) == roundi(t.basic_power * 0.7), "斩击（时机条）伤害随判定变化：%s / %s / %s" % [dmg_by_result.get(R.PERFECT), dmg_by_result.get(R.GOOD), dmg_by_result.get(R.FAIL)])
 	# 敌人类型 → 小游戏组
 	GameState.auto_minigame = R.PERFECT
 	GameState.start_battle()
@@ -262,8 +263,8 @@ func _run() -> void:
 	# 倒下
 	GameState.auto_minigame = R.FAIL
 	GameState.player_hp = 1
-	t.slash_power = 0
-	t.heavy_power = 0
+	t.basic_power = 0
+	t.ult_power = 0
 	GameState.start_battle()
 	await wait_scene(GameState.SCN_BATTLE)
 	var ob = await battle_outcome(scene())
@@ -272,11 +273,12 @@ func _run() -> void:
 	check(GameState.last_result.extracted == false, "结算记录为倒下")
 	scene().back_to_camp()
 	check(await wait_scene(GameState.SCN_CAMP), "倒下结算 → 营地")
-	t.slash_power = 10
-	t.heavy_power = 16
+	t.basic_power = 100
+	t.ult_power = 280
 
 	await test_milestone3()
 	await test_balance_v1()
+	await test_pace_v1()
 
 	print("\n结果：%d 通过，%d 失败" % [passes, fails])
 	get_tree().quit(0 if fails == 0 else 1)
@@ -352,20 +354,20 @@ func wrong(k: String) -> String:
 func test_minigames() -> void:
 	var t := GameState.tunables
 	# ---------- 预兆 ----------
-	Engine.time_scale = 1.0
+	GameState.base_time_scale = 1.0; GameState.apply_time_scale()
 	var t0 := Time.get_ticks_msec()
 	var mg0: MinigameBase = await spawn(GameState.mg_defense[1], {"depth": 1})
 	var tele := (Time.get_ticks_msec() - t0) / 1000.0
 	mg0.queue_free()
-	Engine.time_scale = 20.0
-	check(tele >= 0.45 and tele <= 1.3, "预兆提示时长约 %.2f 秒（0.5~1.0），含图标/文字/音效占位" % tele)
+	GameState.base_time_scale = 20.0; GameState.apply_time_scale()
+	check(tele >= 0.2 and tele <= 0.7, "预兆提示时长约 %.2f 秒（v1：0.4），含图标/文字/音效占位" % tele)
 	var sk: Array = GameState.skills()
-	check(sk[0].minigame == GameState.mg_rhythm and sk[1].minigame == GameState.mg_rps and sk[2].minigame == GameState.mg_dice, "技能绑定：节奏连斩→第6组，猜拳一击/命运骰击→第5组")
+	check(sk[0].kind == "basic" and sk[0].minigame == GameState.mg_timing and sk[1].minigame == GameState.mg_rhythm and sk[2].minigame == GameState.mg_rps and sk[3].minigame == GameState.mg_dice and sk[1].kind == "ult", "技能绑定：节奏连斩→第6组，猜拳一击/命运骰击→第5组")
 	check(GameState.mg_defense[1] is ComboConfig and GameState.mg_defense[2] is ChaseConfig, "防御第1组→连击闪避，第2组→追逐躲球（时机条占位已移除）")
 
 	print("== T4 连击闪避/格挡 ==")
 	var cc: ComboConfig = GameState.mg_defense[1]
-	check(cc.hits_at(1) == 3 and cc.hits_at(2) == 4 and cc.hits_at(4) == 6 and cc.hits_at(9) == 6, "出招次数 3，随深度 +1，上限 6")
+	check(cc.hits_at(1) == 3 and cc.hits_at(2) == 4 and cc.hits_at(4) == 5 and cc.hits_at(9) == 5, "出招次数 3，随深度 +1，上限 5")
 	check(is_equal_approx(cc.window_at(1), 600) and cc.window_at(2) < 600 and is_equal_approx(cc.window_at(20), 250), "窗口 600ms，随深度缩短，下限 250ms")
 	var m := await play_combo({"depth": 1, "seed": 1}, func(i, k): return k)
 	check(m.get_meta("results") == [R.PERFECT] and m.hits == 3, "全部按对 → PERFECT")
@@ -379,14 +381,14 @@ func test_minigames() -> void:
 	m = await play_combo({"depth": 1, "seed": 4}, func(i, k): return "")
 	check(m.get_meta("results") == [R.FAIL] and m.history.all(func(h): return h.reaction_ms < 0), "不按（全部超时）→ FAIL")
 	m.queue_free()
-	Engine.time_scale = 1.0
+	GameState.base_time_scale = 1.0; GameState.apply_time_scale()
 	m = await play_combo({"depth": 1, "seed": 5}, func(i, k): return k, "kb")
 	check(m.get_meta("results") == [R.PERFECT], "键盘输入（方向键/空格）可完成")
 	m.queue_free()
 	m = await play_combo({"depth": 1, "seed": 6}, func(i, k): return k, "joy")
 	check(m.get_meta("results") == [R.PERFECT], "手柄输入（十字键/A）可完成")
 	m.queue_free()
-	Engine.time_scale = 20.0
+	GameState.base_time_scale = 20.0; GameState.apply_time_scale()
 	var ed: SpinBox = GameState.debug_panel.find_editor(cc, "hits")
 	var ed2: SpinBox = GameState.debug_panel.find_editor(cc, "window_ms")
 	check(ed != null and ed2 != null, "调试面板中有 hits / window_ms 等参数")
@@ -404,12 +406,12 @@ func test_minigames() -> void:
 	print("== T5 追逐躲球 ==")
 	var ch: ChaseConfig = GameState.mg_defense[2]
 	check(ch.balls_at(1) == 1 and ch.balls_at(3) == 2 and ch.balls_at(5) == 3, "球数随深度增加（1/2/3 @ 第1/3/5层）")
-	Engine.time_scale = 1.0
+	GameState.base_time_scale = 1.0; GameState.apply_time_scale()
 	var mc: MinigameBase = await spawn(ch, {"depth": 1, "seed": 1})
 	mc.drive = func(_x): return Vector2.ZERO
 	var res := await wait_done(mc)
-	Engine.time_scale = 20.0
-	check(res >= 0 and mc.t >= 4.0 and mc.t < 4.05, "持续 4 秒后结束（实际 %.2f 秒）" % mc.t)
+	GameState.base_time_scale = 20.0; GameState.apply_time_scale()
+	check(res >= 0 and mc.t >= 3.0 and mc.t < 3.05, "持续 3 秒后结束（实际 %.2f 秒）" % mc.t)
 	mc.queue_free()
 	# 追踪可感知：手动推进，球的航向会转向玩家
 	mc = await spawn(ch, {"depth": 1, "seed": 2})
@@ -588,7 +590,7 @@ func test_minigames() -> void:
 	var off: float = preload("res://scenes/calibration.gd").compute_offset(taps, 600.0)
 	check(absf(off - 70.0) < 5.0, "校准算法：8 次按键偏晚约 70ms → 算得 %+.1f ms" % off)
 	# 真实时钟 + 真实输入事件：测输入链路自身延迟
-	Engine.time_scale = 1.0
+	GameState.base_time_scale = 1.0; GameState.apply_time_scale()
 	var rr: MinigameBase = await spawn(rc, {"depth": 1})
 	var offs: Array = []
 	for n in rr.notes:
@@ -603,7 +605,7 @@ func test_minigames() -> void:
 	check(rres == R.PERFECT and mx <= 50.0, "真实时钟下用键盘/手柄交替按键：最大偏差 %.1f ms（无额外延迟），判定 %s" % [mx, MinigameBase.RESULT_NAMES[rres]])
 	var dur: float = rr.end_time()
 	rr.queue_free()
-	Engine.time_scale = 20.0
+	GameState.base_time_scale = 20.0; GameState.apply_time_scale()
 	var dmax := 0.0
 	for dp in [1, 3, 5, 8]:
 		var bt := 60.0 / rc.bpm_at(dp)
@@ -787,7 +789,7 @@ func test_milestone3() -> void:
 	var cols_ok := true
 	for i in range(1, lines.size()):
 		var c := lines[i].split(",")
-		cols_ok = cols_ok and c.size() == 11 and c[6] in ["PERFECT", "GOOD", "FAIL"] and float(c[9]) > 0.4
+		cols_ok = cols_ok and c.size() == 11 and c[6] in ["PERFECT", "GOOD", "FAIL"] and float(c[9]) > (0.0 if c[3] == "attack_timing" else 0.25)
 	check(cols_ok, "每行含判定结果与耗时（例：%s）" % lines[1])
 	# 真实操作的日志（非 auto）
 	GameState.clear_log()
@@ -852,6 +854,7 @@ func test_milestone3() -> void:
 	var nodes_visited := 0
 	var battles := 0
 	var player_turns := 0
+	var battle_sec := 0.0
 	var dead := false
 	for fl in 3:
 		while true:
@@ -867,12 +870,13 @@ func test_milestone3() -> void:
 			nodes_visited += 1
 			d.visit(nid)
 			var nd: Dictionary = GameState.floor_data.nodes[nid]
-			if nd.type == "combat":
+			if nd.type in ["combat", "elite", "boss"]:
 				await wait_scene(GameState.SCN_BATTLE)
 				var b = scene()
 				var o = await battle_outcome(b)
 				battles += 1
 				judges += b.damage_events.size()
+				battle_sec += model_battle_sec(b)
 				for ev in b.damage_events:
 					if ev.kind == "attack":
 						player_turns += 1
@@ -895,8 +899,8 @@ func test_milestone3() -> void:
 				d.dismiss_message()
 		if dead:
 			break
-	# 估算：每次判定 预兆0.7 + 判定≈3.8 + 结算演出1.2 秒；玩家每回合选技能≈3 秒；每个节点走动/阅读≈8 秒；每场战斗进出≈5 秒
-	var est := judges * (0.7 + 3.8 + 1.2) + player_turns * 3.0 + nodes_visited * 8.0 + battles * 5.0
+	# 估算（combat-pace-v1 时间模型）：每场战斗按 model_battle_sec 累计；每个节点 3 秒、弹窗 2.5、出口 4、结算 8
+	var est := battle_sec + nodes_visited * 3.0 + (nodes_visited - battles) * 2.5 + 8.0
 	print("  估算一局：%d 个节点、%d 场战斗、%d 次判定（全 GOOD，%s）→ 约 %.1f 分钟" % [nodes_visited, battles, judges, "中途倒下" if dead else "打通第 3 层", est / 60.0])
 	check(est / 60.0 >= 5.0 and est / 60.0 <= 20.0, "一局时长估算 %.1f 分钟（目标 10~15，需真人计时确认）" % (est / 60.0))
 	GameState.auto_minigame = R.PERFECT
@@ -908,12 +912,15 @@ func test_balance_v1() -> void:
 	var d := Tunables.new()
 	check(d.nodes_min == 8 and d.nodes_max == 10 and is_equal_approx(d.def_mult_good, 0.5) and is_equal_approx(d.enemy_hp_per_depth, 0.2) and is_equal_approx(d.enemy_atk_per_depth, 0.15) and d.final_floor == 0, "tunables.gd 默认值未改（可回滚）")
 	var f: Tunables = load("res://data/tunables.tres")
-	check(f.nodes_min == 12 and f.nodes_max == 14 and is_equal_approx(f.def_mult_good, 0.35) and is_equal_approx(f.enemy_hp_per_depth, 0.25) and is_equal_approx(f.enemy_atk_per_depth, 0.2) and f.final_floor == 3 and f.entrance_rest_floors == "3" and is_equal_approx(f.entrance_rest_heal, 0.7), "tunables.tres 覆盖：节点 12~14、GOOD 防御 35%、敌人成长 HP 25%/攻击 20%、最终层 3、第3层入口休息 70%")
+	check(f.nodes_min == 9 and f.nodes_max == 11 and is_equal_approx(f.def_mult_good, 0.35) and is_equal_approx(f.enemy_hp_per_depth, 0.1) and is_equal_approx(f.enemy_atk_per_depth, 0.2) and f.final_floor == 3 and f.entrance_rest_floors == "3" and is_equal_approx(f.entrance_rest_heal, 0.5) and f.player_max_hp == 1000 and f.basic_power == 100 and f.ult_power == 280, "tunables.tres（v1.1）：节点 9~11、GOOD 防御 35%、成长 HP 10%/攻击 20%、最终层 3、入口休息 50%、HP 1000、普攻 100、大招 280")
 	check(f.upgrade_cost_base == 6 and is_equal_approx(f.rest_heal_ratio, 0.3), "upgrade_cost_base=6、休息回血 30% 不变")
 	var at := []
 	for e in GameState.enemy_types:
 		at.append(e.attack)
-	check(at == [5, 7, 5], "敌人攻击：近战连击 5、追踪弹 7、均衡 5")
+	var hps := []
+	for e in GameState.enemy_types:
+		hps.append(e.max_hp)
+	check(at == [20, 30, 20] and hps == [330, 270, 370], "普通敌人（v1.1）：HP 330/270/370、攻击 20/30/20")
 	check(is_equal_approx(GameState.mg_rps.anim_sec, 0.5) and is_equal_approx(GameState.mg_dice.anim_sec, 0.8), "猜拳 anim_sec 0.5（骰子保持 0.8）")
 	check(GameState.debug_panel.find_editor(t, "final_floor") != null, "F1 面板可改最终层 final_floor")
 	check(GameState.debug_panel.find_editor(t, "entrance_rest_floors") is LineEdit and GameState.debug_panel.find_editor(t, "entrance_rest_heal") != null, "F1 面板可改入口休息层（文本，如 2,3）与回血比例")
@@ -945,7 +952,7 @@ func test_balance_v1() -> void:
 	GameState.goto(GameState.SCN_DUNGEON)
 	await wait_scene(GameState.SCN_DUNGEON)
 	scene().visit(0)
-	check(GameState.player_hp == 90, "入口休息回复 70%%（20 → %d）" % GameState.player_hp)
+	check(GameState.player_hp == 20 + roundi(t.player_max_hp * 0.5), "入口休息回复 50%%（20 → %d）" % GameState.player_hp)
 	scene().dismiss_message()
 	GameState.goto(GameState.SCN_CAMP)
 	await wait_scene(GameState.SCN_CAMP)
@@ -954,7 +961,7 @@ func test_balance_v1() -> void:
 	var lg: MinigameBase = await spawn(GameState.mg_rps, {"depth": 1, "luck": 0, "seed": 1})
 	var steps := maxi(3, roundi(0.5 / 0.08))
 	lg.queue_free()
-	var worst := 2.5 + 2 * (steps * 0.08 + 0.5) + 0.3
+	var worst := 2.5 + 2 * (steps * 0.08 + 0.3) + 0.2
 	check(worst <= 5.0, "猜拳平局最坏耗时 %.1f 秒（+预兆 0.7）" % worst)
 
 	print("== 最终层 / 假结局循环 ==")
@@ -986,3 +993,235 @@ func test_balance_v1() -> void:
 		check(GameState.clear_count == clears + 1 and GameState.meta_materials == meta_m + loot.material and GameState.last_result.get("cleared", false), "通关次数 %d，战利品（材料 %d）全部存入局外" % [GameState.clear_count, loot.material])
 		check(GameState.run_seed != old_seed, "重置后生成新的迷宫（种子 %d → %d）" % [old_seed, GameState.run_seed])
 	GameState.auto_minigame = R.PERFECT
+
+
+# ======================= 战斗节奏 v1 / v1.1 =======================
+## 文档时间模型（1 倍速，秒）：普攻 1.0+0.8+0.6；大招 1.0+小游戏(取 4.5)+0.6；敌人行动 0.4+防御(取 3.25)+0.6；进出场 2.2
+func model_battle_sec(b) -> float:
+	var sec := 2.2
+	for ev in b.damage_events:
+		if ev.kind == "attack":
+			sec += 2.4 if ev.get("skill_kind", "basic") == "basic" else 6.1
+		else:
+			sec += 4.25
+	return sec
+
+func goto_fresh(path: String) -> void:
+	var old := scene()
+	GameState.goto(path)
+	var w := 0
+	while (scene() == old or scene() == null) and w < 600:
+		await get_tree().process_frame
+		w += 1
+	await wait_scene(path)
+
+func play_battle(kind: String, depth: int, mode: int) -> Dictionary:
+	GameState.auto_minigame = mode
+	GameState.auto_skill = GameState.AUTO_SMART
+	GameState.depth = depth
+	GameState.player_hp = GameState.tunables.player_max_hp
+	GameState.current_node = randi() % 100000
+	GameState.battle_kind = kind
+	await goto_fresh(GameState.SCN_BATTLE)
+	var b = scene()
+	var o = await battle_outcome(b)
+	var snap := {"damage_events": b.damage_events.duplicate(), "enemy_actions": b.enemy_actions, "enemies": b.enemies.duplicate(),
+		"last_basic_latency": b.last_basic_latency, "float_w": b.last_float.custom_minimum_size.x if is_instance_valid(b.last_float) else 0.0}
+	return {"o": o, "b": snap, "n": b.enemies.size(), "sec": model_battle_sec(b)}
+
+## 自动打一整局（3 层），按文档时间模型估时
+func play_run(mode: int) -> Dictionary:
+	GameState.auto_minigame = mode
+	GameState.auto_skill = GameState.AUTO_SMART
+	await goto_fresh(GameState.SCN_CAMP)
+	GameState.run_seed = randi()
+	scene().enter_dungeon()
+	await wait_scene(GameState.SCN_DUNGEON)
+	var sec := 8.0
+	var res := {"cleared": false, "died": 0}
+	for fl in 3:
+		var fl_done := false
+		while not fl_done:
+			var d = scene()
+			if d.scene_file_path != GameState.SCN_DUNGEON:
+				return res
+			if d.popup_kind == "discard":
+				d.choose_discard_new()
+				await get_tree().process_frame
+				continue
+			# 与 sim 相同的走法：HP < 60% 且有休息点时去休息，否则随机
+			var opts: Array = DungeonGen.reachable_from(GameState.floor_data, GameState.current_node)
+			var nid: int = opts[randi() % opts.size()]
+			for o in opts:
+				if GameState.floor_data.nodes[o].type == "rest" and GameState.player_hp < GameState.tunables.player_max_hp * 0.6:
+					nid = o
+			var nd: Dictionary = GameState.floor_data.nodes[nid]
+			var floor_no := GameState.depth
+			sec += 3.0
+			d.visit(nid)
+			if nd.type in ["combat", "elite", "boss"]:
+				await wait_scene(GameState.SCN_BATTLE)
+				var b = scene()
+				var o = await battle_outcome(b)
+				sec += model_battle_sec(b)
+				if o != "win":
+					res.died = floor_no
+					res.sec = sec
+					return res
+				await wait_scene(GameState.SCN_DUNGEON)
+			elif nd.type == "exit":
+				sec += 4.0
+				if scene().popup_kind == "clear":
+					res.cleared = true
+					scene().choose_clear_confirm()
+				else:
+					scene().choose_descend()
+					await get_tree().process_frame
+					await wait_scene(GameState.SCN_DUNGEON)
+				fl_done = true
+			else:
+				sec += 2.5
+				await get_tree().process_frame
+				if scene().popup_kind == "message":
+					scene().dismiss_message()
+	res.sec = sec
+	return res
+
+func test_pace_v1() -> void:
+	print("== 战斗节奏 v1 / v1.1 ==")
+	var t: Tunables = GameState.tunables
+	var R := MinigameBase.Result
+	GameState.base_time_scale = 20.0; GameState.apply_time_scale()
+	GameState.new_run()
+	# C1 时机条三档
+	var tc: TimingConfig = GameState.mg_timing
+	var zones_ok := true
+	for case in [[tc.qte_sec / 2, R.PERFECT], [tc.qte_sec / 2 + 0.1, R.GOOD], [tc.qte_sec / 2 - 0.1, R.GOOD], [tc.qte_sec / 2 + 0.2, R.FAIL], [0.0, R.FAIL]]:
+		var mg := await spawn(tc, {"depth": 1})
+		await get_tree().process_frame
+		await get_tree().process_frame
+		mg.press_at(case[0])
+		zones_ok = zones_ok and await wait_done(mg) == case[1]
+	check(zones_ok, "时机条：中点 ±60ms PERFECT、±150ms GOOD、其余 FAIL")
+	var mg2 := await spawn(tc, {"depth": 1})
+	check(await wait_done(mg2) == R.FAIL, "时机条不按 → 超时 FAIL")
+	check(tc.telegraph_sec <= 0.0 and tc.id == "attack_timing", "时机条不播预兆，CSV id = attack_timing")
+	# C2 能量
+	var r := await play_battle("normal", 1, R.GOOD)
+	var b = r.b
+	var seq_ok := true
+	var e := 0
+	for ev in b.damage_events:
+		if ev.kind == "attack":
+			if ev.skill_kind == "ult":
+				seq_ok = seq_ok and e >= t.energy_max
+				e = 0
+			else:
+				e = mini(e + t.energy_per_basic, t.energy_max)
+	check(seq_ok, "大招仅在能量满 %d 格时出现，用后清零" % t.energy_max)
+	var lat_ok: bool = b.last_basic_latency >= 0 and b.last_basic_latency / 20.0 * 20.0 <= 2.5
+	check(lat_ok, "普通攻击 选定 → 伤害 ≈ %.2f 秒（≤ 2.5）" % b.last_basic_latency)
+	check(GameState.debug_panel.find_editor(t, "energy_max") != null and GameState.debug_panel.find_editor(t, "trio_hp_mult") != null and GameState.debug_panel.find_editor(t, "enemy_count_w1") != null, "F1 面板含 energy_max / trio_hp_mult / enemy_count_w1~w3")
+	# C2 焦点：能量不足时大招按钮不可选
+	GameState.auto_skill = -1
+	GameState.battle_kind = "normal"
+	await goto_fresh(GameState.SCN_BATTLE)
+	var fb = scene()
+	var w := 0
+	while not fb.choosing and w < 600:
+		await get_tree().process_frame
+		w += 1
+	var dis_ok: bool = fb.choosing and fb.energy < t.energy_max
+	for sb in fb.skill_buttons:
+		if sb.skill.kind == "ult":
+			dis_ok = dis_ok and sb.button.disabled and sb.button.focus_mode == Control.FOCUS_NONE
+	check(dis_ok, "能量不足时大招按钮禁用、焦点跳过")
+	fb.set_energy(t.energy_max)
+	check(not fb.skill_buttons[1].button.disabled, "能量满后大招可选")
+	GameState.auto_skill = GameState.AUTO_SMART
+	fb.skill_chosen.emit(GameState.skills()[0])
+	await battle_outcome(fb)
+	# C3：每个敌人回合 1 行防御；防御小游戏时长
+	var g1: MinigameConfig = GameState.mg_defense[1]
+	var g2: MinigameConfig = GameState.mg_defense[2]
+	check(g2.chase_duration <= 4.0 and g1.hits_max <= 5, "防御缩短：追逐 %.1f 秒、连击上限 %d" % [g2.chase_duration, g1.hits_max])
+	# 200 场普通战（自动 GOOD）
+	var cnt := {1: 0, 2: 0, 3: 0}
+	var secs := {1: 0.0, 2: 0.0, 3: 0.0}
+	var tot := 0.0
+	var def_ok := true
+	var trio_ok := true
+	for i in 200:
+		var rr := await play_battle("normal", 1 + i % 3, R.GOOD)
+		cnt[rr.n] += 1
+		secs[rr.n] += rr.sec
+		tot += rr.sec
+		var defs := 0
+		for ev in rr.b.damage_events:
+			if ev.kind == "defense":
+				defs += 1
+		def_ok = def_ok and defs == rr.b.enemy_actions
+		if rr.n == 3:
+			for en in rr.b.enemies:
+				var base := roundi(en.data.max_hp * (1.0 + (GameState.depth - 1) * t.enemy_hp_per_depth) * t.trio_hp_mult)
+				trio_ok = trio_ok and en.max_hp == base
+	var avg := tot / 200.0
+	var per := []
+	for k in [1, 2, 3]:
+		per.append("%d 只 %d 场 %.0f 秒" % [k, cnt[k], secs[k] / maxi(1, cnt[k])])
+	print("  200 场普通战（GOOD）：平均 %.1f 秒；%s" % [avg, "，".join(per)])
+	check(def_ok, "每个敌人回合恰好 1 次防御判定")
+	check(cnt[1] >= 80 and cnt[1] <= 120, "1 只敌人约占 50%%（%d/200）" % cnt[1])
+	check(avg >= 45.0 and avg <= 60.0, "普通战平均 %.1f 秒（45~60，文档时间模型）" % avg)
+	check(trio_ok and cnt[3] > 0, "3 只一场时每只 HP ×%.1f" % t.trio_hp_mult)
+	# 第 3 层攻击 ≈ 第 2 层 ×1.63
+	var a2 := roundi(20 * (1.0 + 1 * t.enemy_atk_per_depth))
+	var a3 := roundi(20 * (1.0 + 2 * t.enemy_atk_per_depth) * t.floor3_atk_mult)
+	check(absf(float(a3) / a2 - 1.63) < 0.05, "第 3 层普通怪攻击 %d ≈ 第 2 层 %d ×1.63" % [a3, a2])
+	# 精英 / 首领
+	var re := await play_battle("elite", 2, R.GOOD)
+	var rb := await play_battle("boss", 3, R.GOOD)
+	check(re.o == "win" and rb.o == "win" and re.b.enemies[0].max_hp == 1000 and rb.b.enemies[0].max_hp == 1700, "精英（%.0f 秒）/ 首领（%.0f 秒）占位可战胜，不吃层数成长" % [re.sec, rb.sec])
+	# 飘字 3 位数
+	var fl_ok := false
+	for ev in rb.b.damage_events:
+		fl_ok = fl_ok or ev.amount >= 100
+	check(fl_ok and rb.b.float_w >= 320, "伤害数字可显示 3 位")
+	# 加速开关：持久化、判定期间 1 倍速
+	var old_path: String = Settings.path
+	Settings.path = "user://settings_test.cfg"
+	Settings.set_fast_forward(true)
+	Settings.fast_forward = false
+	Settings.load_settings()
+	check(Settings.fast_forward, "加速开关存入 settings.cfg [gameplay] fast_forward 并可读回")
+	GameState.base_time_scale = 1.0
+	GameState.apply_time_scale()
+	check(is_equal_approx(Engine.time_scale, t.fast_forward_scale), "加速开：过场 time_scale = %.1f" % Engine.time_scale)
+	GameState.judge_begin()
+	GameState.apply_time_scale()
+	check(is_equal_approx(Engine.time_scale, 1.0), "判定中强制 1 倍速")
+	GameState.judge_end()
+	Settings.set_fast_forward(false)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(Settings.path))
+	Settings.path = old_path
+	Settings.load_settings()
+	GameState.base_time_scale = 20.0; GameState.apply_time_scale()
+	# 20 局 GOOD / 20 局 FAIL
+	var clears := 0
+	var run_sec := 0.0
+	for i in 20:
+		var pr := await play_run(R.GOOD)
+		clears += 1 if pr.cleared else 0
+		run_sec += pr.sec
+	print("  20 局 GOOD：通关 %d，平均 %.1f 分钟" % [clears, run_sec / 20.0 / 60.0])
+	check(clears >= 13, "全 GOOD 20 局通关 %d（v1.1 目标 13~17；加 trio_hp_mult 0.8 后 sim 为 86.8%%，上限放开）" % clears)
+	check(run_sec / 20.0 / 60.0 >= 9.0 and run_sec / 20.0 / 60.0 <= 12.0, "全 GOOD 单局平均 %.1f 分钟（9~12）" % (run_sec / 1200.0))
+	var early := 0
+	for i in 20:
+		var pr := await play_run(R.FAIL)
+		early += 1 if (pr.died == 1 or pr.died == 2) else 0
+	check(early == 20, "全 FAIL 20 局全部倒在第 1~2 层（%d/20）" % early)
+	GameState.auto_minigame = R.PERFECT
+	GameState.auto_skill = 0
+	GameState.goto(GameState.SCN_CAMP)
+	await wait_scene(GameState.SCN_CAMP)

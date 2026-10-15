@@ -117,7 +117,7 @@ func choose(hand: int) -> void:
 		foe_box.color = HAND_COLOR[foe]
 		big.text = ["负", "平", "胜"][o + 1]
 		info.text = "你：%s    敌人：%s%s" % [HANDS[hand], HANDS[foe], "    平局，再来一次！" if o == 0 and i == 0 else ""]
-		await get_tree().create_timer(0.5).timeout
+		await get_tree().create_timer(0.3).timeout
 	_done(out[0])
 
 func roll() -> void:
@@ -131,7 +131,7 @@ func roll() -> void:
 		big.text = str(v)
 		me_box.color = Color(0.3, 0.8, 0.4) if v >= cfg.dice_target else Color(0.7, 0.25, 0.25)
 		info.text = ("大成功！" if v == 6 else ("成功！" if v >= cfg.dice_target else "失败……")) + ("    幸运触发重掷！" if i == 0 and out[1].size() == 2 else "")
-		await get_tree().create_timer(0.5).timeout
+		await get_tree().create_timer(0.3).timeout
 	_done(out[0])
 
 func _shuffle_anim(dice := false) -> void:
@@ -149,7 +149,7 @@ func _shuffle_anim(dice := false) -> void:
 func _done(r: int) -> void:
 	stage = "done"
 	title.text = "判定：" + RESULT_CN[r]
-	await get_tree().create_timer(0.3).timeout
+	await get_tree().create_timer(0.2).timeout
 	_finish(r, [1.0, 0.6, 0.0][r])
 
 func _on_timeout() -> void:

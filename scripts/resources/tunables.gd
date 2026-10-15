@@ -32,13 +32,33 @@ extends Resource
 @export_group("主角")
 @export var player_max_hp: int = 100
 @export var player_speed: int = 10
-@export var slash_power: int = 10 ## 节奏连斩
-@export var heavy_power: int = 16 ## 命运骰击
-@export var rps_power: int = 13 ## 猜拳一击
+@export var basic_power: int = 10 ## 普通攻击“斩击”（时机条）
+@export var ult_power: int = 28 ## 大招（节奏连斩 / 猜拳一击 / 命运骰击）基础威力
+@export var qte_mult_perfect: float = 1.3 ## 时机条倍率
+@export var qte_mult_good: float = 1.0
+@export var qte_mult_fail: float = 0.7
+
+@export_group("能量（大招）")
+@export var energy_max: int = 3
+@export var energy_per_basic: int = 1 ## 每次普通攻击 +能量
+@export var energy_per_perfect_def: int = 1 ## 每次防御 PERFECT 额外 +能量
+
+@export_group("精英与首领（占位）")
+@export var elite_floors: String = "2" ## 中段必经精英的层（逗号分隔）
+@export var boss_on_final_floor: bool = true ## 最终层出口前必经首领
+@export var elite_drop_units: int = 3 ## 精英掉落按 N 个普通敌人计算
+@export var boss_drop_units: int = 5
+
+@export_group("加速")
+@export var fast_forward_scale: float = 2.0 ## 加速开启时的倍速（小游戏判定期间强制 1 倍）；开关状态存于 Settings
 
 @export_group("敌人")
-@export var enemy_min: int = 1
-@export var enemy_max: int = 3
+## 每场普通战敌人数量权重：1 只 / 2 只 / 3 只（调试面板暂不支持数组，拆成 3 个 float）
+@export var enemy_count_w1: float = 0.5
+@export var enemy_count_w2: float = 0.25
+@export var enemy_count_w3: float = 0.25
+@export var trio_hp_mult: float = 0.8 ## 一场 3 只普通敌人时，每只 HP 乘此系数
+@export var floor3_atk_mult: float = 1.4 ## 最终层普通敌人攻击系数（不影响精英/首领）
 @export var enemy_hp_per_depth: float = 0.2
 @export var enemy_atk_per_depth: float = 0.15
 
@@ -63,6 +83,19 @@ extends Resource
 
 func has_entrance_rest(depth: int) -> bool:
 	for s in entrance_rest_floors.split(",", false):
+		if s.strip_edges().is_valid_int() and int(s) == depth:
+			return true
+	return false
+
+var enemy_count_weights: PackedFloat32Array:
+	get:
+		return PackedFloat32Array([enemy_count_w1, enemy_count_w2, enemy_count_w3])
+
+func qte_mult(result: int) -> float:
+	return [qte_mult_perfect, qte_mult_good, qte_mult_fail][result]
+
+func has_elite(depth: int) -> bool:
+	for s in elite_floors.split(",", false):
 		if s.strip_edges().is_valid_int() and int(s) == depth:
 			return true
 	return false

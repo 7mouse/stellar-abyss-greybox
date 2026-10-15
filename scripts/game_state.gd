@@ -13,6 +13,9 @@ var enemy_types: Array[EnemyData] = [
 	preload("res://data/enemies/tracker.tres"),
 	preload("res://data/enemies/balanced.tres"),
 ]
+var elite_data: EnemyData = preload("res://data/enemies/elite_placeholder.tres")
+var boss_data: EnemyData = preload("res://data/enemies/boss_placeholder.tres")
+var mg_timing: TimingConfig = preload("res://data/minigames/attack_timing.tres")
 var mg_rhythm: RhythmConfig = preload("res://data/minigames/attack_rhythm.tres")
 var mg_rps: LuckConfig = preload("res://data/minigames/attack_rps.tres")
 var mg_dice: LuckConfig = preload("res://data/minigames/attack_dice.tres")
@@ -51,7 +54,14 @@ var clear_count: int = 0 ## 通关（假结局）次数
 
 # ---- 测试钩子 ----
 var auto_minigame: int = -1 ## >=0 时小游戏跳过操作直接给出该判定
-var auto_skill: int = -1 ## >=0 时战斗自动选该技能
+var auto_skill: int = -1 ## >=0 时战斗自动选该技能（大招能量不足时退回普通攻击）；AUTO_SMART = 能量满放大招，否则普通攻击
+const AUTO_SMART := 99
+var battle_kind := "normal" ## 下一场战斗：normal / elite / boss
+
+# ---- 时间倍率（C4 / v1.1 §4）----
+var base_time_scale := 1.0 ## 测试用基准倍率；正常游玩为 1
+var _judging := 0
+var ff_label: Label
 
 var debug_panel: CanvasLayer
 
@@ -61,16 +71,54 @@ func _ready() -> void:
 	add_child(debug_panel)
 	if OS.has_feature("web"):
 		_setup_web_hooks()
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	var hud := CanvasLayer.new()
+	hud.layer = 90
+	add_child(hud)
+	ff_label = Label.new()
+	ff_label.text = "▶▶ 2×"
+	ff_label.position = Vector2(1720, 20)
+	ff_label.add_theme_font_size_override("font_size", 36)
+	ff_label.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
+	hud.add_child(ff_label)
+	Settings.fast_forward_changed.connect(func(_on): apply_time_scale())
+	apply_time_scale()
+
+## 加速开关（Tab / Shift / 手柄 RT，按一下切换，状态持久化）
+func _input(e: InputEvent) -> void:
+	if e.is_action_pressed("fast_forward") and not e.is_echo():
+		Settings.toggle_fast_forward()
+
+func judge_begin() -> void:
+	_judging += 1
+	apply_time_scale()
+
+func judge_end() -> void:
+	_judging = maxi(0, _judging - 1)
+	apply_time_scale()
+
+func is_judging() -> bool:
+	return _judging > 0
+
+func apply_time_scale() -> void:
+	var ff := Settings.fast_forward
+	Engine.time_scale = 1.0 if _judging > 0 else base_time_scale * (tunables.fast_forward_scale if ff else 1.0)
+	if ff_label:
+		var s := get_tree().current_scene if is_inside_tree() else null
+		var p := s.scene_file_path if s else ""
+		ff_label.text = "▶▶ %s×" % str(snappedf(tunables.fast_forward_scale, 0.1)).trim_suffix(".0")
+		ff_label.visible = ff and (p == SCN_BATTLE or p == SCN_DUNGEON)
 
 func skills() -> Array:
 	return [
-		{"name": "节奏连斩", "power": tunables.slash_power, "minigame": mg_rhythm},
-		{"name": "猜拳一击", "power": tunables.rps_power, "minigame": mg_rps},
-		{"name": "命运骰击", "power": tunables.heavy_power, "minigame": mg_dice},
+		{"name": "斩击", "kind": "basic", "power": tunables.basic_power, "minigame": mg_timing},
+		{"name": "节奏连斩", "kind": "ult", "power": tunables.ult_power, "minigame": mg_rhythm},
+		{"name": "猜拳一击", "kind": "ult", "power": tunables.ult_power, "minigame": mg_rps},
+		{"name": "命运骰击", "kind": "ult", "power": tunables.ult_power, "minigame": mg_dice},
 	]
 
 func all_minigames() -> Array:
-	return [mg_defense[1], mg_defense[2], mg_rps, mg_dice, mg_rhythm]
+	return [mg_timing, mg_defense[1], mg_defense[2], mg_rps, mg_dice, mg_rhythm]
 
 func luck() -> int:
 	return base_luck + int(skill_levels.get(5, 0))
@@ -231,6 +279,12 @@ func _setup_input() -> void:
 	_action("move_down", [KEY_S, KEY_DOWN], [JOY_BUTTON_DPAD_DOWN], JOY_AXIS_LEFT_Y, 1.0)
 	_action("target_prev", [KEY_Q], [JOY_BUTTON_LEFT_SHOULDER])
 	_action("target_next", [KEY_E], [JOY_BUTTON_RIGHT_SHOULDER])
+	_action("fast_forward", [KEY_TAB, KEY_SHIFT], [], JOY_AXIS_TRIGGER_RIGHT, 1.0)
+	# Tab 用作加速，不再用于界面焦点切换
+	for a in ["ui_focus_next", "ui_focus_prev"]:
+		for ev in InputMap.action_get_events(a):
+			if ev is InputEventKey and (ev.keycode == KEY_TAB or ev.physical_keycode == KEY_TAB):
+				InputMap.action_erase_event(a, ev)
 
 func _action(name: String, keys: Array, buttons: Array, axis: int = -1, axis_val: float = 0.0) -> void:
 	if not InputMap.has_action(name):
@@ -296,6 +350,7 @@ func _setup_web_hooks() -> void:
 
 ## 网页版：把当前场景写到 window.greybox.currentScene（JS 回调拿不到返回值）
 func _process(_d: float) -> void:
+	apply_time_scale()
 	if _js_obj != null:
 		var s := get_tree().current_scene
 		var path := s.scene_file_path if s else ""

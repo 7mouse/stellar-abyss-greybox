@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="TimingConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/timing_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+scene_path = "res://minigames/timing_bar.tscn"
+duration = 30.0
+id = "attack_timing"
+display_name = "斩击·时机条"
+kind = "attack"
+group = 6
+telegraph_sec = 0.0
+telegraph_text = ""

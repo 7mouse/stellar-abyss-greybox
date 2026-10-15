@@ -12,3 +12,5 @@ kind = "defense"
 group = 2
 telegraph_text = "追踪弹锁定了你！"
 telegraph_color = Color(0.8, 0.3, 1, 1)
+chase_duration = 3.0
+ball_speed_per_depth = 25.0

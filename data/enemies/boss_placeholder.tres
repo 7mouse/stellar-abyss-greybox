@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "首领·深渊看门人（占位）"
+max_hp = 1700
+attack = 70
+speed = 8
+pattern = 2
+color = Color(0.9, 0.15, 0.35, 1)
+actions_per_round = 2
+rank = "boss"

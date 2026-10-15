@@ -4,11 +4,14 @@
 
 [resource]
 script = ExtResource("1")
-nodes_min = 12
-nodes_max = 14
+nodes_min = 9
+nodes_max = 11
 def_mult_good = 0.35
-enemy_hp_per_depth = 0.25
+enemy_hp_per_depth = 0.1
 enemy_atk_per_depth = 0.2
 final_floor = 3
 entrance_rest_floors = "3"
-entrance_rest_heal = 0.7
+entrance_rest_heal = 0.5
+player_max_hp = 1000
+basic_power = 100
+ult_power = 280

@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1")
 display_name = "迷宫守卫（均衡）"
-max_hp = 34
-attack = 5
+max_hp = 370
+attack = 20
 speed = 9
 pattern = 2
 color = Color(0.8, 0.55, 0.15, 1)

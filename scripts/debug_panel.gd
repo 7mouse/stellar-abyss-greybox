@@ -95,7 +95,7 @@ func _section(box: VBoxContainer, title: String, res: Resource) -> void:
 		var t: int = p.type
 		if t != TYPE_INT and t != TYPE_FLOAT and t != TYPE_BOOL and t != TYPE_STRING:
 			continue
-		if t == TYPE_STRING and not p.name in ["entrance_rest_floors"]:
+		if t == TYPE_STRING and not p.name in ["entrance_rest_floors", "elite_floors"]:
 			continue
 		var row := HBoxContainer.new()
 		var l := Label.new()

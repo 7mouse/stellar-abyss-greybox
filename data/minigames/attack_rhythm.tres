@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RhythmConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/rhythm_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+scene_path = "res://minigames/rhythm_keys.tscn"
+duration = 30.0
+id = "rhythm"
+display_name = "节奏按键（第6组）"
+kind = "attack"
+group = 6
+telegraph_text = "跟上节拍！"
+telegraph_color = Color(0.3, 0.8, 1, 1)

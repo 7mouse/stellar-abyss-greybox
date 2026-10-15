@@ -5,6 +5,7 @@ const SCN_CAMP := "res://scenes/camp.tscn"
 const SCN_DUNGEON := "res://scenes/dungeon.tscn"
 const SCN_BATTLE := "res://scenes/battle.tscn"
 const SCN_RESULT := "res://scenes/result.tscn"
+const SCN_CALIBRATION := "res://scenes/calibration.tscn"
 
 var tunables: Tunables = preload("res://data/tunables.tres")
 var enemy_types: Array[EnemyData] = [
@@ -12,8 +13,9 @@ var enemy_types: Array[EnemyData] = [
 	preload("res://data/enemies/tracker.tres"),
 	preload("res://data/enemies/balanced.tres"),
 ]
-var mg_slash: MinigameConfig = preload("res://data/minigames/attack_slash.tres")
-var mg_heavy: MinigameConfig = preload("res://data/minigames/attack_heavy.tres")
+var mg_rhythm: RhythmConfig = preload("res://data/minigames/attack_rhythm.tres")
+var mg_rps: LuckConfig = preload("res://data/minigames/attack_rps.tres")
+var mg_dice: LuckConfig = preload("res://data/minigames/attack_dice.tres")
 var mg_defense := {
 	1: preload("res://data/minigames/defense_g1.tres"),
 	2: preload("res://data/minigames/defense_g2.tres"),
@@ -49,9 +51,13 @@ func _ready() -> void:
 
 func skills() -> Array:
 	return [
-		{"name": "斩击", "power": tunables.slash_power, "minigame": mg_slash},
-		{"name": "重斩", "power": tunables.heavy_power, "minigame": mg_heavy},
+		{"name": "节奏连斩", "power": tunables.slash_power, "minigame": mg_rhythm},
+		{"name": "猜拳一击", "power": tunables.rps_power, "minigame": mg_rps},
+		{"name": "命运骰击", "power": tunables.heavy_power, "minigame": mg_dice},
 	]
+
+func all_minigames() -> Array:
+	return [mg_defense[1], mg_defense[2], mg_rps, mg_dice, mg_rhythm]
 
 func luck() -> int:
 	return base_luck + int(skill_levels.get(5, 0))

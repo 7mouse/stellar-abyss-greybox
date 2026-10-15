@@ -94,7 +94,7 @@ func _run() -> void:
 	GameState.auto_skill = 0
 
 	print("== 通用约定 ==")
-	var mgs: MinigameConfig = GameState.mg_slash
+	var mgs: MinigameConfig = GameState.mg_rhythm
 	check(absf(MinigameBase.compute_difficulty(mgs, {"depth": 2, "trait_bonus": 0.5}) - (t.base_difficulty + 2 * t.depth_scale - 0.5)) < 0.001, "难度公式 = base + depth*scale − trait_bonus")
 	check(ProjectSettings.get_setting("display/window/size/viewport_width") == 1920 and ProjectSettings.get_setting("display/window/size/viewport_height") == 1080, "基准分辨率 1920x1080")
 	for a in ["mg_action", "debug_toggle", "move_left", "move_up"]:
@@ -104,42 +104,7 @@ func _run() -> void:
 			has_key = has_key or e is InputEventKey
 			has_joy = has_joy or e is InputEventJoypadButton or e is InputEventJoypadMotion
 		check(has_key and has_joy, "输入 %s 同时有键盘和手柄映射" % a)
-	# 占位小游戏真实判定（非 auto）
-	var mg: MinigameBase = load(mgs.scene_path).instantiate()
-	add_child(mg)
-	var got := []
-	mg.finished.connect(func(r, s): got.append([r, s]))
-	Engine.time_scale = 1.0
-	var t0 := Time.get_ticks_msec()
-	mg.start(mgs, {"depth": 1, "luck": 0, "trait_bonus": 0.0})
-	while not mg.active and not mg.done:
-		await get_tree().process_frame
-	var tele := (Time.get_ticks_msec() - t0) / 1000.0
-	Engine.time_scale = 20.0
-	check(tele >= 0.45 and tele <= 1.3, "预兆提示时长约 %.2f 秒（0.5~1.0）" % tele)
-	mg.evaluate(0.5)
-	check(got.size() == 1 and got[0][0] == R.PERFECT, "时机条正中心 → PERFECT")
-	mg.queue_free()
-	for p in [[0.5 + mg.good_w * 0.4, R.GOOD], [0.0, R.FAIL]]:
-		var m2: MinigameBase = load(mgs.scene_path).instantiate()
-		add_child(m2)
-		var g2 := []
-		m2.finished.connect(func(r, s): g2.append(r))
-		m2.start(mgs, {"depth": 1})
-		while not m2.active:
-			await get_tree().process_frame
-		m2.evaluate(p[0])
-		check(g2 == [p[1]], "时机条位置 %.2f → %s" % [p[0], MinigameBase.RESULT_NAMES[p[1]]])
-		m2.queue_free()
-	var m3: MinigameBase = load(mgs.scene_path).instantiate()
-	add_child(m3)
-	var g3 := []
-	m3.finished.connect(func(r, s): g3.append(r))
-	m3.start(mgs, {"depth": 1})
-	while g3.is_empty():
-		await get_tree().process_frame
-	check(g3 == [R.FAIL], "超时不操作 → FAIL")
-	m3.queue_free()
+	await test_minigames()
 	# 调试面板
 	GameState.debug_panel.toggle()
 	check(GameState.debug_panel.is_open(), "F1 调试面板可打开")
@@ -307,3 +272,341 @@ func _run() -> void:
 
 func Battle_calc(b: int, r: int, atk: bool) -> int:
 	return preload("res://scenes/battle.gd").calc_damage(b, r, atk)
+
+# ======================= 小游戏 T4~T7 =======================
+func spawn(cfg: MinigameConfig, ctx: Dictionary) -> MinigameBase:
+	var mg: MinigameBase = load(cfg.scene_path).instantiate()
+	add_child(mg)
+	mg.set_meta("results", [])
+	mg.finished.connect(func(r, s): mg.get_meta("results").append(r))
+	mg.start(cfg, ctx)
+	while not mg.active and not mg.done:
+		await get_tree().process_frame
+	return mg
+
+func wait_done(mg: MinigameBase, limit := 20.0) -> int:
+	var w := 0.0
+	while not mg.done and w < limit:
+		await get_tree().process_frame
+		w += get_process_delta_time()
+	var r: Array = mg.get_meta("results")
+	return r[0] if r.size() > 0 else -1
+
+func key_ev(code: int, pressed := true) -> InputEventKey:
+	var e := InputEventKey.new()
+	e.physical_keycode = code
+	e.keycode = code
+	e.pressed = pressed
+	return e
+
+func joy_ev(btn: int, pressed := true) -> InputEventJoypadButton:
+	var e := InputEventJoypadButton.new()
+	e.button_index = btn
+	e.pressed = pressed
+	return e
+
+func tap(ev: InputEvent) -> void:
+	Input.parse_input_event(ev)
+	await get_tree().process_frame
+	var up = ev.duplicate()
+	up.pressed = false
+	Input.parse_input_event(up)
+	await get_tree().process_frame
+
+const KB := {"move_up": KEY_UP, "move_down": KEY_DOWN, "move_left": KEY_LEFT, "move_right": KEY_RIGHT, "mg_action": KEY_SPACE}
+const JOY := {"move_up": JOY_BUTTON_DPAD_UP, "move_down": JOY_BUTTON_DPAD_DOWN, "move_left": JOY_BUTTON_DPAD_LEFT, "move_right": JOY_BUTTON_DPAD_RIGHT, "mg_action": JOY_BUTTON_A}
+
+## 连击：在每次出招期间按下 answer(i, key) 返回的动作（"" = 不按）
+func play_combo(ctx: Dictionary, answer: Callable, device := "") -> MinigameBase:
+	var mg: MinigameBase = await spawn(GameState.mg_defense[1], ctx)
+	var handled := -1
+	while not mg.done:
+		if mg.phase == "prompt" and mg.idx != handled:
+			handled = mg.idx
+			var want: String = mg.sequence[mg.idx]
+			var a: String = answer.call(mg.idx, want)
+			if a != "":
+				if device == "kb":
+					await tap(key_ev(KB[a]))
+				elif device == "joy":
+					await tap(joy_ev(JOY[a]))
+				else:
+					mg.press(a)
+		await get_tree().process_frame
+	return mg
+
+func wrong(k: String) -> String:
+	return "move_up" if k != "move_up" else "move_down"
+
+func test_minigames() -> void:
+	var t := GameState.tunables
+	# ---------- 预兆 ----------
+	Engine.time_scale = 1.0
+	var t0 := Time.get_ticks_msec()
+	var mg0: MinigameBase = await spawn(GameState.mg_defense[1], {"depth": 1})
+	var tele := (Time.get_ticks_msec() - t0) / 1000.0
+	mg0.queue_free()
+	Engine.time_scale = 20.0
+	check(tele >= 0.45 and tele <= 1.3, "预兆提示时长约 %.2f 秒（0.5~1.0），含图标/文字/音效占位" % tele)
+	var sk: Array = GameState.skills()
+	check(sk[0].minigame == GameState.mg_rhythm and sk[1].minigame == GameState.mg_rps and sk[2].minigame == GameState.mg_dice, "技能绑定：节奏连斩→第6组，猜拳一击/命运骰击→第5组")
+	check(GameState.mg_defense[1] is ComboConfig and GameState.mg_defense[2] is ChaseConfig, "防御第1组→连击闪避，第2组→追逐躲球（时机条占位已移除）")
+
+	print("== T4 连击闪避/格挡 ==")
+	var cc: ComboConfig = GameState.mg_defense[1]
+	check(cc.hits_at(1) == 3 and cc.hits_at(2) == 4 and cc.hits_at(4) == 6 and cc.hits_at(9) == 6, "出招次数 3，随深度 +1，上限 6")
+	check(is_equal_approx(cc.window_at(1), 600) and cc.window_at(2) < 600 and is_equal_approx(cc.window_at(20), 250), "窗口 600ms，随深度缩短，下限 250ms")
+	var m := await play_combo({"depth": 1, "seed": 1}, func(i, k): return k)
+	check(m.get_meta("results") == [R.PERFECT] and m.hits == 3, "全部按对 → PERFECT")
+	m.queue_free()
+	m = await play_combo({"depth": 2, "seed": 2}, func(i, k): return wrong(k) if i == 1 else k)
+	check(m.get_meta("results") == [R.GOOD] and m.hits == 4, "错 1 次 → GOOD（第 2 层 4 连击）")
+	m.queue_free()
+	m = await play_combo({"depth": 1, "seed": 3}, func(i, k): return wrong(k) if i < 2 else k)
+	check(m.get_meta("results") == [R.FAIL], "错 2 次 → FAIL")
+	m.queue_free()
+	m = await play_combo({"depth": 1, "seed": 4}, func(i, k): return "")
+	check(m.get_meta("results") == [R.FAIL] and m.history.all(func(h): return h.reaction_ms < 0), "不按（全部超时）→ FAIL")
+	m.queue_free()
+	Engine.time_scale = 1.0
+	m = await play_combo({"depth": 1, "seed": 5}, func(i, k): return k, "kb")
+	check(m.get_meta("results") == [R.PERFECT], "键盘输入（方向键/空格）可完成")
+	m.queue_free()
+	m = await play_combo({"depth": 1, "seed": 6}, func(i, k): return k, "joy")
+	check(m.get_meta("results") == [R.PERFECT], "手柄输入（十字键/A）可完成")
+	m.queue_free()
+	Engine.time_scale = 20.0
+	var ed: SpinBox = GameState.debug_panel.find_editor(cc, "hits")
+	var ed2: SpinBox = GameState.debug_panel.find_editor(cc, "window_ms")
+	check(ed != null and ed2 != null, "调试面板中有 hits / window_ms 等参数")
+	ed.value = 5
+	ed2.value = 400
+	m = await spawn(cc, {"depth": 1, "seed": 7})
+	check(m.hits == 5 and is_equal_approx(m.window, 0.4), "面板改 hits=5、window_ms=400 后下一次立即生效")
+	m.queue_free()
+	ed.value = 3
+	ed2.value = 600
+	var c1t: float = 3 * (0.6 + 0.3)
+	var c6t: float = 6 * (cc.window_at(4) / 1000.0 + 0.3)
+	check(c1t >= 2.5 and c6t <= 6.0, "判定耗时：第1层 %.1f 秒、6 连击 %.1f 秒（+预兆约 0.7 秒）" % [c1t, c6t])
+
+	print("== T5 追逐躲球 ==")
+	var ch: ChaseConfig = GameState.mg_defense[2]
+	check(ch.balls_at(1) == 1 and ch.balls_at(3) == 2 and ch.balls_at(5) == 3, "球数随深度增加（1/2/3 @ 第1/3/5层）")
+	Engine.time_scale = 1.0
+	var mc: MinigameBase = await spawn(ch, {"depth": 1, "seed": 1})
+	mc.drive = func(_x): return Vector2.ZERO
+	var res := await wait_done(mc)
+	Engine.time_scale = 20.0
+	check(res >= 0 and mc.t >= 4.0 and mc.t < 4.05, "持续 4 秒后结束（实际 %.2f 秒）" % mc.t)
+	mc.queue_free()
+	# 追踪可感知：手动推进，球的航向会转向玩家
+	mc = await spawn(ch, {"depth": 1, "seed": 2})
+	mc.active = false
+	mc.player_pos = Vector2(100, 320)
+	mc.balls[0].pos = Vector2(320, 100)
+	mc.balls[0].vel = Vector2(1, 0) * ch.ball_speed
+	var a0: float = absf(wrapf((mc.player_pos - mc.balls[0].pos).angle() - mc.balls[0].vel.angle(), -PI, PI))
+	for i in 30:
+		mc.step(1.0 / 60.0, Vector2.ZERO)
+	var a1: float = absf(wrapf((mc.player_pos - mc.balls[0].pos).angle() - mc.balls[0].vel.angle(), -PI, PI))
+	check(a1 < a0 - 0.4, "球朝角色转向（0.5 秒内航向偏差 %.0f° → %.0f°）" % [rad_to_deg(a0), rad_to_deg(a1)])
+	mc.queue_free()
+	var stand_hit_runs := 0
+	var stand_hits := 0
+	var dodge_ok := 0
+	var dodge_hits := 0
+	var N := 40
+	for sd in N:
+		for mode in ["stand", "dodge"]:
+			var b: MinigameBase = await spawn(ch, {"depth": 1, "seed": 100 + sd})
+			b.active = false
+			while not b.done:
+				var mv := Vector2.ZERO
+				if mode == "dodge":
+					mv = dodge_bot(b)
+				b.step(1.0 / 60.0, mv)
+			if mode == "stand":
+				stand_hits += b.hits
+				if b.hits > 0:
+					stand_hit_runs += 1
+			else:
+				dodge_hits += b.hits
+				if b.get_meta("results")[0] != R.FAIL:
+					dodge_ok += 1
+			b.queue_free()
+	check(stand_hit_runs >= N * 0.9, "站着不动 %d/%d 局被击中，平均 %.1f 次（追踪有威胁）" % [stand_hit_runs, N, stand_hits / float(N)])
+	check(dodge_ok / float(N) >= 0.8, "简单躲避 AI 有 %d%% 局非 FAIL，平均被击中 %.2f 次（可躲）" % [roundi(dodge_ok * 100.0 / N), dodge_hits / float(N)])
+	# 第 3 层（2 个球）也可躲
+	var d3_ok := 0
+	for sd in 20:
+		var b: MinigameBase = await spawn(ch, {"depth": 3, "seed": 300 + sd})
+		b.active = false
+		while not b.done:
+			b.step(1.0 / 60.0, dodge_bot(b))
+		if b.get_meta("results")[0] != R.FAIL:
+			d3_ok += 1
+		b.queue_free()
+	check(d3_ok >= 6 and d3_ok / 20.0 < dodge_ok / float(N), "第 3 层（2 球）同一躲避 AI 非 FAIL %d/20，低于第 1 层（难度随层数提升）" % d3_ok)
+	# 键盘/手柄移动
+	for dev in ["kb", "joy"]:
+		var b: MinigameBase = await spawn(ch, {"depth": 1, "seed": 9})
+		var x0: float = b.player_pos.x
+		var ev: InputEvent
+		if dev == "kb":
+			ev = key_ev(KEY_RIGHT)
+		else:
+			ev = InputEventJoypadMotion.new()
+			ev.axis = JOY_AXIS_LEFT_X
+			ev.axis_value = 1.0
+		Input.parse_input_event(ev)
+		for i in 5:
+			await get_tree().process_frame
+		var x1: float = b.player_pos.x
+		if dev == "kb":
+			Input.parse_input_event(key_ev(KEY_RIGHT, false))
+		else:
+			var r0 := InputEventJoypadMotion.new()
+			r0.axis = JOY_AXIS_LEFT_X
+			r0.axis_value = 0.0
+			Input.parse_input_event(r0)
+		await get_tree().process_frame
+		check(x1 > x0 + 5, "%s 可移动角色（x %.0f → %.0f）" % ["键盘方向键" if dev == "kb" else "手柄左摇杆", x0, x1])
+		b.queue_free()
+
+	print("== T6 运气：猜拳 / 骰子 ==")
+	var rp: LuckConfig = GameState.mg_rps
+	var dc: LuckConfig = GameState.mg_dice
+	for lk in [0, 3]:
+		var want := rp.rps_win_rate(lk)
+		var sim: Dictionary = preload("res://minigames/luck_game.gd").simulate(rp, lk, 1000, 42 + lk)
+		var pr: Array = rp.outcome_probs(lk)
+		check(absf(sim.first - want) <= 0.03, "猜拳 幸运%d：1000 次模拟单局胜率 %.1f%%，设定 %.1f%%（误差 %.1f%%）" % [lk, sim.first * 100, want * 100, absf(sim.first - want) * 100])
+		check(absf(sim.perfect - pr[0]) <= 0.03 and absf(sim.good - pr[1]) <= 0.03 and absf(sim.fail - pr[2]) <= 0.03, "猜拳 幸运%d：判定分布 P/G/F 模拟 %.1f/%.1f/%.1f%% vs 理论 %.1f/%.1f/%.1f%%" % [lk, sim.perfect * 100, sim.good * 100, sim.fail * 100, pr[0] * 100, pr[1] * 100, pr[2] * 100])
+	for lk in [0, 2]:
+		var sim: Dictionary = preload("res://minigames/luck_game.gd").simulate(dc, lk, 1000, 77 + lk)
+		var pr: Array = dc.outcome_probs(lk)
+		check(absf(sim.first - dc.dice_base_rate()) <= 0.03 and absf(sim.perfect - pr[0]) <= 0.03 and absf(sim.good - pr[1]) <= 0.03, "骰子 幸运%d：1000 次模拟 首掷成功 %.1f%%（设定 %.1f%%），P/G/F %.1f/%.1f/%.1f%% vs 理论 %.1f/%.1f/%.1f%%" % [lk, sim.first * 100, dc.dice_base_rate() * 100, sim.perfect * 100, sim.good * 100, sim.fail * 100, pr[0] * 100, pr[1] * 100, pr[2] * 100])
+	# 多种子稳健性
+	var within := 0
+	var max_err := 0.0
+	for sd in 50:
+		var s1: Dictionary = preload("res://minigames/luck_game.gd").simulate(rp, 0, 1000, 1000 + sd)
+		var err := absf(s1.first - rp.rps_win_rate(0))
+		max_err = maxf(max_err, err)
+		if err <= 0.03:
+			within += 1
+	check(within >= 45, "50 组不同种子的 1000 次模拟：%d 组误差 ≤3%%（最大 %.1f%%，统计上约 95%% 预期）" % [within, max_err * 100])
+	var ptxt: String = GameState.debug_panel.probability_text()
+	check(ptxt.contains("33.0%") and ptxt.contains("50.0%"), "调试面板显示实际概率：" + ptxt.replace("\n", " / "))
+	# 实际操作：猜拳（键盘←=石头）与骰子（手柄A）
+	var lg: MinigameBase = await spawn(rp, {"depth": 1, "luck": 0, "seed": 5})
+	var gt0 := 0.0
+	await tap(key_ev(KEY_LEFT))
+	var r6 := await wait_done(lg)
+	check(r6 in [R.PERFECT, R.GOOD, R.FAIL] and lg.stage == "done", "猜拳：键盘出拳后播放动画并给出判定（%s）" % MinigameBase.RESULT_NAMES[r6])
+	lg.queue_free()
+	lg = await spawn(dc, {"depth": 1, "luck": 0, "seed": 6})
+	await tap(joy_ev(JOY_BUTTON_A))
+	r6 = await wait_done(lg)
+	check(r6 in [R.PERFECT, R.GOOD, R.FAIL], "骰子：手柄 A 掷骰后给出判定（%s）" % MinigameBase.RESULT_NAMES[r6])
+	lg.queue_free()
+	lg = await spawn(dc, {"depth": 1, "luck": 0, "seed": 8})
+	var tt := 0.0
+	while not lg.done:
+		await get_tree().process_frame
+		tt += get_process_delta_time()
+	check(tt >= 2.5 and tt <= 6.0, "不操作 2.5 秒后自动出手，总耗时 %.1f 秒" % tt)
+	lg.queue_free()
+
+	print("== T7 节奏按键 ==")
+	var rc: RhythmConfig = GameState.mg_rhythm
+	check(is_equal_approx(rc.bpm_at(1), 100) and rc.bpm_at(3) > rc.bpm_at(1), "BPM 随深度提高（%d → %d @ 第3层）" % [rc.bpm_at(1), rc.bpm_at(3)])
+	check(rc.notes_at(1) == 4 and rc.notes_at(5) == 8 and rc.notes_at(9) == 8, "音符数 4~8")
+	var rm: MinigameBase = await spawn(rc, {"depth": 1})
+	rm.manual_clock = true
+	var align := true
+	var beat_ok := true
+	for n in rm.notes:
+		rm.song_t = n.t
+		rm.advance()
+		align = align and absf(n.rect.position.y + 15 - rm.line_y) < 0.5
+		beat_ok = beat_ok and rm.last_beat == roundi(n.t / rm.beat)
+		rm.press_at(n.t)
+	rm.song_t = rm.end_time() + 0.01
+	rm.advance()
+	check(align, "每个音符恰好在其拍点时刻落到判定线")
+	check(beat_ok, "节拍器在音符拍点上发声（音符时间 = (空拍 + i) × 60/BPM）")
+	check(rm.get_meta("results") == [R.PERFECT], "全部踩点 → PERFECT")
+	rm.queue_free()
+	var cases := [[0.04, R.PERFECT, "全部 +40ms（PERFECT 窗口内）"], [0.08, R.GOOD, "全部 +80ms（GOOD 窗口，比例 0.75）"], [-0.1, R.GOOD, "全部 −100ms"], [0.2, R.FAIL, "全部 +200ms（超出窗口）"], [999.0, R.FAIL, "完全不按"]]
+	for c in cases:
+		var r7: MinigameBase = await spawn(rc, {"depth": 1})
+		r7.manual_clock = true
+		for n in r7.notes:
+			if c[0] < 900:
+				r7.song_t = n.t + c[0]
+				r7.advance()
+				r7.press_at(n.t + c[0])
+		r7.song_t = r7.end_time() + 0.5
+		r7.advance()
+		check(r7.get_meta("results") == [c[1]], "%s → %s" % [c[2], MinigameBase.RESULT_NAMES[c[1]]])
+		r7.queue_free()
+	var r8: MinigameBase = await spawn(rc, {"depth": 1})
+	r8.manual_clock = true
+	for i in r8.notes.size():
+		if i % 2 == 0:
+			r8.press_at(r8.notes[i].t)
+	r8.song_t = r8.end_time() + 0.5
+	r8.advance()
+	check(r8.get_meta("results") == [R.FAIL], "只按中一半（比例 0.5）→ FAIL")
+	r8.queue_free()
+	t.rhythm_offset_ms = 100.0
+	var r9: MinigameBase = await spawn(rc, {"depth": 1})
+	r9.manual_clock = true
+	for n in r9.notes:
+		r9.press_at(n.t + 0.1)
+	r9.song_t = r9.end_time() + 0.5
+	r9.advance()
+	check(r9.get_meta("results") == [R.PERFECT], "校准值 +100ms 时，晚 100ms 按 → PERFECT（校准生效）")
+	r9.queue_free()
+	t.rhythm_offset_ms = 0.0
+	var taps: Array = []
+	for i in range(1, 9):
+		taps.append(i * 600.0 + 70.0 + (i % 3 - 1) * 10.0)
+	var off: float = preload("res://scenes/calibration.gd").compute_offset(taps, 600.0)
+	check(absf(off - 70.0) < 5.0, "校准算法：8 次按键偏晚约 70ms → 算得 %+.1f ms" % off)
+	# 真实时钟 + 真实输入事件：测输入链路自身延迟
+	Engine.time_scale = 1.0
+	var rr: MinigameBase = await spawn(rc, {"depth": 1})
+	var offs: Array = []
+	for n in rr.notes:
+		while rr.song_t < n.t and not rr.done:
+			await get_tree().process_frame
+		await tap(joy_ev(JOY_BUTTON_A) if offs.size() % 2 else key_ev(KEY_SPACE))
+		offs.append(n.offset_ms)
+	var rres := await wait_done(rr)
+	var mx := 0.0
+	for o in offs:
+		mx = maxf(mx, absf(o))
+	check(rres == R.PERFECT and mx <= 50.0, "真实时钟下用键盘/手柄交替按键：最大偏差 %.1f ms（无额外延迟），判定 %s" % [mx, MinigameBase.RESULT_NAMES[rres]])
+	var dur: float = rr.end_time()
+	rr.queue_free()
+	Engine.time_scale = 20.0
+	var dmax := 0.0
+	for dp in [1, 3, 5, 8]:
+		var bt := 60.0 / rc.bpm_at(dp)
+		dmax = maxf(dmax, (rc.lead_beats + rc.notes_at(dp) - 1) * bt + rc.good_ms / 1000.0 + 0.2)
+	check(dur >= 2.5 and dmax <= 6.0, "判定耗时：第1层 %.1f 秒，各层最长 %.1f 秒" % [dur, dmax])
+
+## 简单躲避 AI：远离各球（越近权重越大），并向场地中心回拉，侧向闪避
+func dodge_bot(b) -> Vector2:
+	var v := Vector2.ZERO
+	for ball in b.balls:
+		var d: Vector2 = b.player_pos - ball.pos
+		var dist := maxf(d.length(), 1.0)
+		var w := 1.0 / (dist * dist) * 40000.0
+		v += d.normalized() * w + d.normalized().orthogonal() * w * 0.8
+	var a: float = b.cfg.arena_size
+	v += (Vector2(a / 2, a / 2) - b.player_pos) / a * 1.2
+	return v.normalized()

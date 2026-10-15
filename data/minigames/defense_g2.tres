@@ -1,14 +1,14 @@
-[gd_resource type="Resource" script_class="MinigameConfig" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="ChaseConfig" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/resources/minigame_config.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/resources/chase_config.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
-id = "defense_g2"
-display_name = "闪避·时机条（第2组占位）"
+scene_path = "res://minigames/chase_balls.tscn"
+duration = 30.0
+id = "chase_balls"
+display_name = "追逐躲球（第2组）"
 kind = "defense"
 group = 2
-scene_path = "res://minigames/timing_bar.tscn"
-telegraph_text = "追踪弹来袭！"
+telegraph_text = "追踪弹锁定了你！"
 telegraph_color = Color(0.8, 0.3, 1, 1)
-difficulty_offset = 0.0

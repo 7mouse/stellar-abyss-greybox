@@ -16,6 +16,7 @@ func _ready() -> void:
 	box.position = Vector2(120, 460)
 	add_child(box)
 	enter_btn = UI.button(box, "下潜迷宫（从第 1 层开始）", enter_dungeon, Vector2(520, 90), Color(0.2, 0.45, 0.3))
+	UI.button(box, "节奏输入延迟校准", func(): GameState.goto(GameState.SCN_CALIBRATION), Vector2(520, 80))
 	UI.label(self, "操作：方向键/左摇杆 选择，空格/回车/手柄A 确认，F1 调试面板", Vector2(120, 980), 24, Color(0.7, 0.7, 0.7))
 	enter_btn.grab_focus.call_deferred()
 

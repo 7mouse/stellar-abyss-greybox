@@ -3,6 +3,7 @@ extends CanvasLayer
 
 var root: PanelContainer
 var info: Label
+var prob: Label
 
 func _ready() -> void:
 	layer = 100
@@ -27,8 +28,11 @@ func _ready() -> void:
 	box.add_child(title)
 	info = Label.new()
 	box.add_child(info)
+	prob = Label.new()
+	prob.add_theme_color_override("font_color", Color(0.6, 1, 0.7))
+	box.add_child(prob)
 	_section(box, "全局参数", GameState.tunables)
-	for cfg in [GameState.mg_slash, GameState.mg_heavy, GameState.mg_defense[1], GameState.mg_defense[2]]:
+	for cfg in GameState.all_minigames():
 		_section(box, "小游戏：" + cfg.display_name, cfg)
 	for e in GameState.enemy_types:
 		_section(box, "敌人：" + e.display_name, e)
@@ -37,6 +41,7 @@ func _ready() -> void:
 func _process(_d: float) -> void:
 	if root.visible:
 		info.text = "当前层：%d  掉落倍率：%d%%  HP：%d  材料：%d  碎片：%d" % [GameState.depth, roundi(GameState.loot_mult * 100), GameState.player_hp, GameState.run_loot.material, GameState.run_loot.shard]
+		prob.text = probability_text()
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("debug_toggle"):
@@ -74,6 +79,8 @@ func _section(box: VBoxContainer, title: String, res: Resource) -> void:
 			row.add_child(c)
 		else:
 			var s := SpinBox.new()
+			s.set_meta("res", res)
+			s.set_meta("prop", pname)
 			s.min_value = -100000
 			s.max_value = 100000
 			s.step = 1.0 if t == TYPE_INT else 0.01
@@ -82,3 +89,22 @@ func _section(box: VBoxContainer, title: String, res: Resource) -> void:
 			s.value_changed.connect(func(v): res.set(pname, int(v) if t == TYPE_INT else v))
 			row.add_child(s)
 		box.add_child(row)
+
+## 运气小游戏的实际概率（随幸运与参数实时变化）
+func probability_text() -> String:
+	var lk := GameState.luck()
+	var lines := ["运气实际概率（幸运 %d）：" % lk]
+	var r: LuckConfig = GameState.mg_rps
+	var pr: Array = r.outcome_probs(lk)
+	lines.append("猜拳 单局胜率 %.1f%%｜PERFECT %.1f%% GOOD %.1f%% FAIL %.1f%%" % [r.rps_win_rate(lk) * 100, pr[0] * 100, pr[1] * 100, pr[2] * 100])
+	var d: LuckConfig = GameState.mg_dice
+	var pd: Array = d.outcome_probs(lk)
+	lines.append("骰子 首掷成功 %.1f%% 重掷 %.1f%%｜PERFECT %.1f%% GOOD %.1f%% FAIL %.1f%%" % [d.dice_base_rate() * 100, d.dice_reroll_rate(lk) * 100, pd[0] * 100, pd[1] * 100, pd[2] * 100])
+	return "\n".join(lines)
+
+## 找到某个资源某个参数对应的输入框（测试用）
+func find_editor(res: Resource, prop: String) -> SpinBox:
+	for n in root.find_children("*", "SpinBox", true, false):
+		if n.get_meta("res", null) == res and n.get_meta("prop", "") == prop:
+			return n
+	return null

@@ -15,8 +15,9 @@ extends Resource
 @export_group("主角")
 @export var player_max_hp: int = 100
 @export var player_speed: int = 10
-@export var slash_power: int = 10
-@export var heavy_power: int = 16
+@export var slash_power: int = 10 ## 节奏连斩
+@export var heavy_power: int = 16 ## 命运骰击
+@export var rps_power: int = 13 ## 猜拳一击
 
 @export_group("敌人")
 @export var enemy_min: int = 1
@@ -36,6 +37,9 @@ extends Resource
 @export var def_mult_perfect: float = 0.0
 @export var def_mult_good: float = 0.5
 @export var def_mult_fail: float = 1.0
+
+@export_group("节奏")
+@export var rhythm_offset_ms: float = 0.0 ## 输入延迟校准（正值=玩家按得偏晚）
 
 @export_group("调试")
 @export var god_mode: bool = false

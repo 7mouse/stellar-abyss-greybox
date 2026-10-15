@@ -37,6 +37,12 @@ static func compute_difficulty(cfg: MinigameConfig, ctx: Dictionary) -> float:
 	var t: Tunables = GameState.tunables
 	return maxf(0.0, t.base_difficulty + cfg.difficulty_offset + float(ctx.get("depth", 1)) * t.depth_scale - float(ctx.get("trait_bonus", 0.0)))
 
+## 有效深度：把难度换算回“层数”尺度，供各小游戏的随深度参数使用。
+## 默认参数下等于当前层数；base_difficulty/difficulty_offset 升高或特长加成降低都会平移它。
+func eff_depth() -> float:
+	var t: Tunables = GameState.tunables
+	return maxf(1.0, (difficulty - 1.0) / maxf(t.depth_scale, 0.01))
+
 ## 预兆提示：图标色块 + 文字 + 音效占位，0.5~1.0 秒
 func _play_telegraph() -> void:
 	var layer := Control.new()
@@ -48,6 +54,7 @@ func _play_telegraph() -> void:
 	UI.rect(layer, Vector2(vs.x / 2 - 360, vs.y / 2 - 60), Vector2(120, 120), config.telegraph_color)
 	UI.label(layer, "！", Vector2(vs.x / 2 - 320, vs.y / 2 - 50), 72, Color.BLACK)
 	UI.label(layer, config.telegraph_text, Vector2(vs.x / 2 - 210, vs.y / 2 - 50), 56, config.telegraph_color)
+	Beep.play(self, 660.0, 0.15)
 	UI.label(layer, "♪ 预兆音效（占位）", Vector2(vs.x / 2 - 210, vs.y / 2 + 20), 24, Color(0.8, 0.8, 0.8))
 	await get_tree().create_timer(clampf(config.telegraph_sec, 0.5, 1.0)).timeout
 	if is_instance_valid(layer):

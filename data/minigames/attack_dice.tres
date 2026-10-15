@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="LuckConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/luck_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+scene_path = "res://minigames/luck_game.tscn"
+duration = 30.0
+id = "luck_dice"
+display_name = "掷骰（第5组）"
+kind = "attack"
+group = 5
+mode = "dice"
+telegraph_text = "命运之骰！"
+telegraph_color = Color(0.9, 0.9, 0.3, 1)

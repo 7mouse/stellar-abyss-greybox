@@ -31,3 +31,4 @@ theme/custom_font="res://assets/fonts/NotoSansSC-Greybox.ttf"
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.05, 0.05, 0.06, 1)

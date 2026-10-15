@@ -41,6 +41,12 @@ func until(c: Callable, t := 8.0) -> bool:
 		await get_tree().physics_frame
 	return true
 
+## 去掉随机特质/缺陷，避免影响数值断言
+func plain() -> void:
+	var ind := Lineage.current()
+	ind.trait = ""
+	ind.flaw = ""
+
 func scene() -> Node:
 	return get_tree().current_scene
 
@@ -66,6 +72,7 @@ func _run() -> void:
 	await test_enemies()
 	await test_guards_and_exit()
 	await test_boons()
+	await test_rooms()
 	await test_village()
 	await test_death_flow()
 	await test_full_flow_input()
@@ -217,6 +224,8 @@ class Src extends Node2D:
 # ---------------- T2 主角 ----------------
 func test_player() -> void:
 	print("== T2 主角控制器 ==")
+	Lineage.wipe()
+	plain()
 	Game.run = null
 	await make_arena()
 	var p := await make_player()
@@ -265,6 +274,8 @@ func test_player() -> void:
 # ---------------- T3 普攻与技能 ----------------
 func test_attacks() -> void:
 	print("== T3 普攻与技能 ==")
+	Lineage.wipe()
+	plain()
 	Game.run = null
 	await make_arena()
 	var p := await make_player()
@@ -333,6 +344,7 @@ func test_enemies() -> void:
 		arena.queue_free()
 		await frames(2)
 	Lineage.wipe()
+	plain()
 	Game.start_run()
 	check(await wait_scene(Game.SCN_FLOOR), "进入第 1 层")
 	var f := scene()
@@ -494,6 +506,7 @@ func test_boons() -> void:
 	scene().finish()
 	await wait_scene(Game.SCN_VILLAGE)
 	Lineage.wipe()
+	plain()
 	Game.start_run()
 	await wait_scene(Game.SCN_FLOOR)
 	var f := scene()
@@ -786,3 +799,49 @@ func test_csv() -> void:
 	var ds := Log.rows("deaths")
 	check(ds.size() == 2 and ds[0] == Log.HEADERS.deaths, "deaths.csv 有数据：%s" % (ds[1] if ds.size() > 1 else ""))
 	check(Log.download_all() == 3, "三张表都可下载（网页版逐个下载）")
+
+# ---------------- T6 战斗房 / 篝火 / 宝箱 ----------------
+func test_rooms() -> void:
+	print("== T6 战斗房波次 / 篝火 / 宝箱 ==")
+	Lineage.wipe()
+	plain()
+	Game.auto_pick = 0
+	Game.start_run()
+	await wait_scene(Game.SCN_FLOOR)
+	var f := scene()
+	var src := Src.new()
+	f.add_child(src)
+	var cid: int = f.layout.first_combat
+	f.player.global_position = FloorGen.room_center(f.layout.rooms[cid])
+	await frames(3)
+	var n1: int = f.enemies_in_room(cid).size()
+	check(f.doors_locked(cid) and n1 >= 3 and n1 <= 5, "进战斗房：门锁上，第 1 波 %d 只（3~5）" % n1)
+	for e in f.enemies_in_room(cid):
+		e.take_hit(9999, src, Vector2.ZERO)
+	await secs(1.0)
+	check(f.doors_locked(cid) and f.enemies_in_room(cid).is_empty(), "第 1 波清完：门仍锁着，等第 2 波")
+	await secs(1.3)
+	var n2: int = f.enemies_in_room(cid).size()
+	check(n2 >= 3 and n2 <= 5 and f.rooms_state[cid].wave == 2, "清完 2 秒后刷出第 2 波 %d 只" % n2)
+	for e in f.enemies_in_room(cid):
+		e.take_hit(9999, src, Vector2.ZERO)
+	await secs(0.5)
+	check(not f.doors_locked(cid) and f.rooms_state[cid].cleared, "2 波都清完：门打开")
+	check(Game.run.boons.size() == 1, "第 1 个战斗房奖励 3 选 1：%s" % (Game.run.boons[0].display_name if Game.run.boons.size() else "无"))
+	f.player.global_position = FloorGen.room_center(f.layout.rooms[0])
+	await frames(3)
+	check(f.room_at(f.player.global_position) == 0, "本层房间可以回头走（回到入口）")
+	for r in f.layout.rooms:
+		if r.type == "campfire":
+			f.player.hp = 40
+			f.player.global_position = FloorGen.room_center(r) + Vector2(0, 40)
+			await frames(2)
+			f.interact()
+			check(f.player.hp == 40 + roundi(f.player.max_hp * 0.3) and f.nearest_interactable().is_empty(), "篝火回复 30%%（40 → %d），只能用一次" % f.player.hp)
+		if r.type == "chest":
+			var before: int = Game.run.count_of("moss")
+			f.player.global_position = FloorGen.room_center(r) + Vector2(0, 40)
+			await frames(2)
+			f.interact()
+			check(Game.run.count_of("moss") - before >= 3, "宝箱掉材料 3~5")
+	Game.auto_pick = -1

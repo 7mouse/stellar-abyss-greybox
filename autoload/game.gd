@@ -186,7 +186,7 @@ func _action(name: String, keys: Array, buttons: Array, axis := -1, axis_val := 
 		mb.button_index = mouse
 		InputMap.action_add_event(name, mb)
 
-# ---------- 网页调试钩子：greybox.downloadCsv() / greybox.selftestRow() / greybox.currentScene ----------
+# ---------- 网页调试钩子：greybox.downloadCsv() / greybox.selftestRow() / greybox.startRun() / greybox.currentScene ----------
 var _js_refs := []
 var _js_obj
 func _setup_web() -> void:
@@ -196,9 +196,11 @@ func _setup_web() -> void:
 	_js_obj = JavaScriptBridge.create_object("Object")
 	var cb_dl = JavaScriptBridge.create_callback(func(_a): Log.download_all())
 	var cb_row = JavaScriptBridge.create_callback(func(_a): Log.write("floors", ["selftest", 0, 0, "selftest", 0, 0, 0, 0, 0, 0, 0, "", 1, 1, 0, 0, ""]))
-	_js_refs = [cb_dl, cb_row]
+	var cb_run = JavaScriptBridge.create_callback(func(_a): start_run())
+	_js_refs = [cb_dl, cb_row, cb_run]
 	_js_obj.downloadCsv = cb_dl
 	_js_obj.selftestRow = cb_row
+	_js_obj.startRun = cb_run
 	win.greybox = _js_obj
 
 func _update_web() -> void:

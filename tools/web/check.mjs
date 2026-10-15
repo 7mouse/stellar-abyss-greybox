@@ -20,23 +20,28 @@ try { await page.waitForFunction('window.greybox && window.greybox.currentScene'
 ok(true, `引擎启动完成（${((Date.now() - t0) / 1000).toFixed(1)} 秒）`);
 const scene = () => page.evaluate('window.greybox.currentScene');
 const waitScene = async (s, ms = 15000) => { const e = Date.now() + ms; while (Date.now() < e) { if ((await scene()) === s) return true; await new Promise(r => setTimeout(r, 200)); } return false; };
-ok(await page.evaluate('!window.crossOriginIsolated') && await waitScene('res://scenes/camp.tscn'), '无 COOP/COEP 头也能运行（单线程版），进入营地');
+ok(await page.evaluate('!window.crossOriginIsolated') && await waitScene('res://scenes/village/village.tscn'), '无 COOP/COEP 头也能运行（单线程版），进入起程村');
 await new Promise(r => setTimeout(r, 1500));
-await page.screenshot({ path: `${shots}/1_camp.png` });
+await page.screenshot({ path: `${shots}/1_opening.png` });
+await new Promise(r => setTimeout(r, 10000)); // 第一次进入：开场旁白约 10 秒
+await page.screenshot({ path: `${shots}/2_village.png` });
 await page.mouse.click(640, 360); // 让画布获得焦点
-await page.keyboard.press('Enter');
-ok(await waitScene('res://scenes/dungeon.tscn'), '键盘回车：营地 → 迷宫');
-await new Promise(r => setTimeout(r, 1000));
-await page.screenshot({ path: `${shots}/2_dungeon.png` });
+await page.evaluate('window.greybox.startRun()');
+ok(await waitScene('res://scenes/floor/floor.tscn'), '起程村 → 下潜第 1 层');
+await new Promise(r => setTimeout(r, 800));
+await page.keyboard.down('KeyD'); await new Promise(r => setTimeout(r, 900)); await page.keyboard.up('KeyD');
+await page.keyboard.press('KeyJ'); await new Promise(r => setTimeout(r, 300));
+await page.keyboard.press('Space'); await new Promise(r => setTimeout(r, 500));
+await page.screenshot({ path: `${shots}/3_floor.png` });
 await page.keyboard.press('Backquote');
 await new Promise(r => setTimeout(r, 800));
-await page.screenshot({ path: `${shots}/3_debug_panel.png` });
+await page.screenshot({ path: `${shots}/4_debug_panel.png` });
 await page.keyboard.press('Backquote');
 await page.evaluate('window.greybox.selftestRow(); window.greybox.selftestRow(); window.greybox.downloadCsv()');
 let csv = null; const e = Date.now() + 10000;
-while (Date.now() < e && !csv) { const f = fs.readdirSync(dl).find(n => n.endsWith('.csv')); if (f) csv = fs.readFileSync(`${dl}/${f}`, 'utf8'); else await new Promise(r => setTimeout(r, 300)); }
+while (Date.now() < e && !csv) { const f = fs.readdirSync(dl).find(n => n === 'floors.csv'); if (f) csv = fs.readFileSync(`${dl}/${f}`, 'utf8'); else await new Promise(r => setTimeout(r, 300)); }
 const lines = csv ? csv.trim().split('\n') : [];
-ok(lines.length >= 3 && lines[0].startsWith('time,run_id,depth,minigame'), `CSV 下载成功（${lines.length} 行）：${lines[1] || ''}`);
+ok(lines.length >= 3 && lines[0].startsWith('time,run_id,gen_no,depth,result,floor_sec'), `floors.csv 下载成功（${lines.length} 行）：${lines[1] || ''}`);
 ok(errors.length === 0, `控制台无错误${errors.length ? '：' + errors.join(' | ') : ''}`);
 fs.writeFileSync(`${shots}/console.log`, logs.join('\n'));
 await browser.close();

@@ -20,8 +20,8 @@ func _ready() -> void:
 	for r in [Rect2(-40, -40, MAP.x + 80, 40), Rect2(-40, MAP.y, MAP.x + 80, 40), Rect2(-40, 0, 40, MAP.y), Rect2(MAP.x, 0, 40, MAP.y)]:
 		_wall(r)
 	_fac("incubator", "培养槽", Vector2(500, 380), Vector2(120, 160), Color(0.35, 0.8, 0.85), func(): _open("res://scenes/village/incubator.gd"))
-	_fac("vault", "保险箱", Vector2(800, 300), Vector2(140, 100), Color(0.7, 0.6, 0.3), func(): _open("res://scenes/village/vault_ui.gd"))
-	_fac("epitaph", "墓志铭墙", Vector2(1250, 220), Vector2(320, 60), Color(0.55, 0.55, 0.6), func(): _open("res://scenes/village/epitaph_wall.gd"))
+	_fac("vault", "保险箱", Vector2(820, 420), Vector2(140, 100), Color(0.7, 0.6, 0.3), func(): _open("res://scenes/village/vault_ui.gd"))
+	_fac("epitaph", "墓志铭墙", Vector2(1250, 340), Vector2(320, 60), Color(0.55, 0.55, 0.6), func(): _open("res://scenes/village/epitaph_wall.gd"))
 	_fac("bench", "简易强化台", Vector2(1700, 380), Vector2(140, 90), Color(0.6, 0.4, 0.3), func(): _open("res://scenes/village/bench.gd"))
 	_fac("well", "下潜井口", Vector2(1200, 1100), Vector2(160, 160), Color(0.08, 0.08, 0.1), _dive)
 	_fac("board", "布告栏", Vector2(400, 900), Vector2(120, 80), Color(0.5, 0.42, 0.3), func(): play_opening(true))

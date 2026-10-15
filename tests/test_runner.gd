@@ -17,6 +17,13 @@ func _ready() -> void:
 	get_tree().create_timer(800.0, true, false, true).timeout.connect(func(): printerr("[FAIL] 超时"); get_tree().quit(2))
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	DP = Game.debug_panel
+	# 固定随机：楼层布局（局种子）、全局 randf（敌人初始冷却）、Game/Lineage 的 rng。TEST_SEED 环境变量可换种子
+	var sd := int(OS.get_environment("TEST_SEED")) if OS.has_environment("TEST_SEED") else 424242
+	print("测试种子 ", sd)
+	Game.run_seed_override = sd
+	seed(sd)
+	Game.rng.seed = sd
+	Lineage.rng.seed = sd + 1
 	Lineage.save_path = "user://test_lineage.json"
 	Log.dir = "user://test_logs"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(Log.dir))
@@ -359,6 +366,12 @@ func test_enemies() -> void:
 		e.queue_free()
 	await frames(2)
 	Game.god_mode = false
+	# 冲刺可能把玩家带进相邻战斗房：触发刷怪，测试清怪后房间“清空”弹出强化 3 选 1 并暂停游戏
+	# （视楼层布局而定 → 之前随种子偶发失败）。这段测试期间把战斗房暂时标为已清空，结束后恢复。
+	var saved_cleared := {}
+	for rid in f.rooms_state:
+		saved_cleared[rid] = f.rooms_state[rid].cleared
+		f.rooms_state[rid].cleared = true
 	for id in Game.enemies:
 		for dodge in [false, true]:
 			for e in get_tree().get_nodes_in_group("enemies"):
@@ -370,7 +383,8 @@ func test_enemies() -> void:
 			var dist: float = {"mushling": 60.0, "rootshot": 380.0, "shellbug": 90.0}[id]
 			var e: EnemyBase = f.spawn_enemy(id, gp + Vector2(dist, 0), -1)
 			e.cooldown = 0.0
-			await until(func(): return not (e.state != EnemyBase.S.WINDUP))
+			if not await until(func(): return not (e.state != EnemyBase.S.WINDUP)):
+				printerr("    调试：%s 状态 %d aggro %s cd %.2f 距离 %.0f 敌 %s 玩家 %s 玩家hp %d paused %s 场景 %s" % [id, e.state, e.aggro, e.cooldown, e.global_position.distance_to(f.player.global_position), e.global_position, f.player.global_position, f.player.hp, get_tree().paused, scene().name])
 			var hp0: int = f.player.hp
 			await until(func(): return not (e.state == EnemyBase.S.WINDUP and e.state_t < e.windup - 0.04))
 			if dodge:
@@ -414,6 +428,9 @@ func test_enemies() -> void:
 	check(Game.enemies.mushling.max_hp == 30 and roundi(30 * Game.floors[2].hp_scale()) == 47 and roundi(12 * Game.floors[2].dmg_scale()) == 15, "楼层成长：小鬼 HP 30→第 3 层 47，甲虫伤害 12→15")
 	for e in get_tree().get_nodes_in_group("enemies"):
 		e.queue_free()
+	for rid in saved_cleared:
+		f.rooms_state[rid].cleared = saved_cleared[rid]
+	check(not get_tree().paused, "T4 结束时游戏没有被弹窗暂停")
 
 # ---------------- T5 层守 + T6 撤离 + T14 线索 2 ----------------
 func kill_guard(f: Node) -> void:

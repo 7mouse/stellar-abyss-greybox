@@ -1,6 +1,6 @@
 """灰盒 2 模拟（设计师 docs/sim2/sim_g2.py 的副本，参数按游戏 79dce9c 对齐，并补充统计）。
 不改设计文档；与原脚本的差异见 MISMATCH 注释。用法: python3 tools/sim/sim_g2_game.py [runs] [--doc]
-覆盖键：guardN_hp/dmg/iv/xp、wavesN（第 N 层每房波数）、heal_between、legacy_power、summon_every、guard_hit_mult
+覆盖键：guardN_hp/dmg/iv/xp、wavesN（第 N 层每房波数）、enemy_dmgN（第 N 层普通怪伤害倍率）、dmg_scale（每层伤害成长）、campfire（篝火回血）、heal_between、legacy_power、summon_every、guard_hit_mult
 --doc：原脚本参数（对照）；默认：游戏参数。可用 --set KEY=VAL 覆盖（例：--set guard3_hp=520）。"""
 import random, sys, statistics as st, math, json
 
@@ -28,7 +28,8 @@ if not DOC:   # 主策决定（灰盒 2 调参）：层守 1/2 HP、层守 3 120
     WAVES[3] = 3; PLAYER["heal_between_floors"] = 0.40
 GUARD_MATS = {1:8, 2:8, 3:8 if DOC else 12}               # MISMATCH：游戏第 3 层层守掉材料 12
 TRINKET_CH = {1:0.25, 2:0.30, 3:0.50}
-GUARD_HEAL_ROOM = 0.30
+GUARD_HEAL_ROOM = 0.30   # 层守前篝火（游戏 FloorData.campfire_heal）
+ENEMY_DMG_MULT = {1:1.0, 2:1.0, 3:1.0} if DOC else {1:0.6, 2:0.6, 3:1.0}   # 主策：第 1 层（教学层）×0.6、第 2 层 ×0.6   # 普通怪（含召唤物）伤害倍率（游戏 FloorData.enemy_dmg_mult）
 BOON_ATK = 0.10
 LEGACY_POWER = OVR.get("legacy_power", 0.5)
 PHASE2_SEC = 1.0          # 二阶段演出（无敌）
@@ -40,6 +41,9 @@ for k, v in OVR.items():
         n, f = k[5], k.split("_")[1]; GUARD[int(n)][["hp","dmg","iv","xp"].index(f)] = v
     elif k == "summon_every": pass
     elif k.startswith("waves"): WAVES[int(k[5])] = int(v)
+    elif k.startswith("enemy_dmg") and k[9:].isdigit(): ENEMY_DMG_MULT[int(k[9:])] = v
+    elif k == "dmg_scale": SCALE["dmg"] = v
+    elif k == "campfire": GUARD_HEAL_ROOM = v
     elif k == "heal_between": PLAYER["heal_between_floors"] = v
     elif k == "guard_hit_mult":
         for p in PROFILE.values(): p["guard_hit"] *= v
@@ -76,14 +80,14 @@ def fight(enemies, hp, s, prof, rng, guard=None, depth=1):
             summ = depth == 2 or (depth == 3 and phase2)
             if summ and t >= next_summon:
                 h, dm, iv, _ = ENEMIES["mushling"]
-                for _ in range(2): pool.append([h*SCALE["hp"]**(depth-1), dm*SCALE["dmg"]**(depth-1), iv])
+                for _ in range(2): pool.append([h*SCALE["hp"]**(depth-1), dm*ENEMY_DMG_MULT[depth]*SCALE["dmg"]**(depth-1), iv])
                 next_summon = t + SUMMON_EVERY
         pool = [e for e in pool if e[0] > 0 or e is g]
         if hp <= 0: return 0, t
     return hp, t
 
 def floor_run(n, s, prof, rng, stats):
-    t = 0.0; sc_h = SCALE["hp"]**(n-1); sc_d = SCALE["dmg"]**(n-1)
+    t = 0.0; sc_h = SCALE["hp"]**(n-1); sc_d = ENEMY_DMG_MULT[n]*SCALE["dmg"]**(n-1)
     rooms = rng.randint(*FLOOR["combat_rooms"]); extra = rng.randint(*FLOOR["rooms_extra"])
     if DOC: boons_here = rng.randint(2, 3)
     else: boons_here = 2 + sum(1 for _ in range(extra) if rng.random() < 0.5)   # MISMATCH：游戏 2 个奖励房 + 强化支路（50%）= 2~4

@@ -42,6 +42,8 @@ func _ready() -> void:
 	for a in g.attacks:
 		_section("攻击", a.display_name, a)
 	_section("攻击", g.skill.display_name, g.skill)
+	if g.skill2:
+		_section("攻击", g.skill2.display_name, g.skill2)
 	for id in g.enemies:
 		_section("敌人：" + g.enemies[id].display_name, g.enemies[id].display_name, g.enemies[id])
 	for fd in g.floors:
@@ -394,7 +396,7 @@ func export_res(res: Resource) -> String:
 
 func export_all() -> Array:
 	var out := []
-	var list: Array = [load("res://data/aggro_rules.tres"), Game.player_stats, Game.skill, Game.clues, Lineage.legacy_rules, Lineage.vault_rules, Lineage.meta_rules, Game.recall]
+	var list: Array = [load("res://data/aggro_rules.tres"), Game.player_stats, Game.skill, Game.skill2, Game.clues, Lineage.legacy_rules, Lineage.vault_rules, Lineage.meta_rules, Game.recall]
 	list += Game.attacks
 	list += Game.enemies.values()
 	list += Game.floors

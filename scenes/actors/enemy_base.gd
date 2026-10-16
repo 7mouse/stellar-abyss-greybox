@@ -39,6 +39,9 @@ var telegraph_delay := 0.0
 var invulnerable := false
 var aggro := true
 var _lunge_left := 0.0
+var retreat_cd_left := 0.0
+var retreat_left := 0.0
+var retreats := 0 ## 被贴近后撤的次数（冷却内不再次触发）
 var feel_flash_t := 0.0
 var feel_moss := false
 var _windup_started := 0.0
@@ -153,6 +156,7 @@ func _prof_physics_process(delta: float) -> void:
 	slow_left = maxf(0.0, slow_left - delta)
 	hz_slow_left = maxf(0.0, hz_slow_left - delta)
 	cooldown = maxf(0.0, cooldown - delta)
+	retreat_cd_left = maxf(0.0, retreat_cd_left - delta)
 	if target == null or not is_instance_valid(target):
 		var ps := get_tree().get_nodes_in_group("player")
 		target = ps[0] if not ps.is_empty() else null
@@ -273,6 +277,17 @@ func _chase(delta: float) -> void:
 	facing = to.normalized() if dist > 1 else facing
 	var dir := nav_dir(target.global_position, delta)
 	if data.id == "rootshot":
+		if data.retreat_cd > 0.0 and dist <= 160.0 and retreat_cd_left <= 0.0 and retreat_left <= 0.0:
+			retreat_left = 90.0
+			retreat_cd_left = data.retreat_cd
+			retreats += 1
+		if retreat_left > 0.0:
+			var away := -to.normalized() if dist > 1.0 else -facing
+			var step := minf(retreat_left, speed() * delta)
+			retreat_left -= step
+			move_and_collide(away * step)
+			velocity = Vector2.ZERO
+			return
 		if dist < data.keep_distance:
 			dir = nav_dir(global_position - to.normalized() * 160.0, delta) ## 后退目标点同样走导航
 		elif dist <= data.attack_range:
@@ -356,7 +371,10 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 	if hp <= 0:
 		_die()
 		return true
-	poise_acc += real
+	var poise_mult := 1.0
+	if src and src.get("poise_dmg_mult") != null:
+		poise_mult = float(src.poise_dmg_mult)
+	poise_acc += real * poise_mult
 	if poise_acc >= poise or stagger > 0.0:
 		poise_acc = 0.0
 		hitbox.end()

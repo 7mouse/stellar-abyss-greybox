@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("s")
 id = "shellbug"
-display_name = "硬壳甲虫"
+display_name = "史莱姆"
 max_hp = 70
 damage = 12
 move_speed = 80.0

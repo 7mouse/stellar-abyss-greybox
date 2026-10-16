@@ -14,6 +14,9 @@ var arc_deg := 120.0
 var dir := Vector2.RIGHT
 var stagger_sec := 0.0
 var slow_sec := 0.0
+var width := 0.0 ## >0：朝向矩形（长 radius、宽 width）
+var poise_dmg_mult := 1.0
+var is_heavy := false
 var source: Node
 var source_name := ""
 var active := false
@@ -26,6 +29,9 @@ func begin(p_dmg: int, p_radius: float, p_arc: float, p_dir: Vector2) -> void:
 	radius = p_radius
 	arc_deg = p_arc
 	dir = p_dir.normalized() if p_dir.length() > 0.01 else Vector2.RIGHT
+	width = 0.0
+	poise_dmg_mult = 1.0
+	is_heavy = false
 	hit.clear()
 	active = true
 
@@ -52,7 +58,8 @@ func check() -> void:
 			continue
 		if hit_once_per_target and hit.has(hb.owner_actor):
 			continue
-		if hb.overlaps_sector(global_position, dir, radius, arc_deg):
+		var overlapped: bool = hb.overlaps_rect(global_position, dir, radius, width) if width > 0.0 else hb.overlaps_sector(global_position, dir, radius, arc_deg)
+		if overlapped:
 			hit[hb.owner_actor] = true
 			var kb_len := knockback
 			var event := ""
@@ -71,7 +78,14 @@ func check() -> void:
 		for p in get_tree().get_nodes_in_group("projectiles"):
 			if is_instance_valid(p) and p.team != team:
 				var d: Vector2 = p.global_position - global_position
-				if d.length() <= radius + p.radius and (arc_deg >= 360.0 or absf(rad_to_deg(dir.angle_to(d))) <= arc_deg / 2.0 + 15.0):
+				var in_vol := false
+				if width > 0.0:
+					var along := d.dot(dir)
+					var side := absf(d.dot(Vector2(-dir.y, dir.x)))
+					in_vol = along >= -p.radius and along <= radius + p.radius and side <= width * 0.5 + p.radius
+				else:
+					in_vol = d.length() <= radius + p.radius and (arc_deg >= 360.0 or absf(rad_to_deg(dir.angle_to(d))) <= arc_deg / 2.0 + 15.0)
+				if in_vol:
 					p.destroy()
 
 func _draw() -> void:

@@ -39,6 +39,9 @@ var phase := "" ## windup / active / recovery
 var phase_t := 0.0
 var attack_buffered := false
 var skill_cd_left := 0.0
+var skill2_cd_left := 0.0
+var _lunge_left := 0.0
+var _lunge_dir := Vector2.RIGHT
 var hurt_t := 0.0
 var kb_vel := Vector2.ZERO
 var _mouse_aim_t := -10.0
@@ -182,6 +185,8 @@ func _unhandled_input(e: InputEvent) -> void:
 		try_attack()
 	elif e.is_action_pressed("skill"):
 		try_skill()
+	elif e.is_action_pressed("skill2"):
+		try_skill2()
 
 # ---------- 动作 ----------
 func try_attack() -> bool:
@@ -216,6 +221,24 @@ func try_skill() -> bool:
 	phase = "windup"
 	phase_t = 0.0
 	skill_cd_left = skill_cooldown()
+	_lunge_left = 0.0
+	return true
+
+func try_skill2() -> bool:
+	if state in [S.DEAD, S.HURT, S.DASH, S.SKILL] or skill2_cd_left > 0.0:
+		return false
+	if Game.skill2 == null:
+		return false
+	if state == S.ATTACK:
+		hitbox.end()
+	_update_facing()
+	atk = Game.skill2
+	NoiseBus.emit_kind(global_position, "combat")
+	state = S.SKILL
+	phase = "windup"
+	phase_t = 0.0
+	_lunge_left = 0.0
+	skill2_cd_left = Game.skill2.cooldown
 	return true
 
 func try_dash() -> bool:
@@ -272,6 +295,7 @@ func _prof_physics_process(delta: float) -> void:
 	dash_iframe_left = maxf(0.0, dash_iframe_left - delta)
 	hit_flash_t = maxf(0.0, hit_flash_t - delta)
 	skill_cd_left = maxf(0.0, skill_cd_left - delta)
+	skill2_cd_left = maxf(0.0, skill2_cd_left - delta)
 	combo_timer = maxf(0.0, combo_timer - delta)
 	for k in dash_cd.size():
 		dash_cd[k] = maxf(0.0, dash_cd[k] - delta)
@@ -325,19 +349,36 @@ func _prof_physics_process(delta: float) -> void:
 func _tick_attack(delta: float) -> void:
 	phase_t += delta
 	var seg := combo_i if state == S.ATTACK else -1
+	var active_dt := 0.0
 	if phase == "windup" and phase_t >= atk.windup:
 		phase = "active"
 		phase_t -= atk.windup
+		active_dt = minf(phase_t, atk.active)
 		hitbox.knockback = atk.knockback
 		hitbox.stagger_sec = atk.stagger_sec
 		hitbox.slow_sec = float(mods.get("skill_slow_sec", 0)) if state == S.SKILL else 0.0
 		HitFeedback.begin_swing()
 		hitbox.begin(attack_damage(atk, seg), atk.attack_range, atk.arc_deg, facing)
+		hitbox.width = atk.width
+		hitbox.poise_dmg_mult = atk.poise_dmg_mult
+		hitbox.is_heavy = atk.is_heavy
+		if atk.lunge_px > 0.0:
+			_lunge_left = atk.lunge_px
+			_lunge_dir = facing
 		hitbox.check()
+	elif phase == "active":
+		active_dt = delta
+		if phase_t >= atk.active:
+			active_dt = maxf(0.0, delta - (phase_t - atk.active))
+	if phase == "active" and _lunge_left > 0.0 and active_dt > 0.0 and atk.lunge_px > 0.0:
+		var step := minf(_lunge_left, atk.lunge_px / atk.active * active_dt)
+		var col := move_and_collide(_lunge_dir * step)
+		_lunge_left -= step if col == null else col.get_travel().length()
 	if phase == "active" and phase_t >= atk.active:
 		phase = "recovery"
 		phase_t -= atk.active
 		hitbox.end()
+		_lunge_left = 0.0
 	if phase == "recovery" and phase_t >= atk.recovery:
 		if state == S.ATTACK:
 			var finished := combo_i

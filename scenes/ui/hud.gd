@@ -23,6 +23,7 @@ var shard_label: Label
 var info: Label
 var skill_box: Control
 var skill_label: Label
+var skill2_label: Label
 var prompt: Label
 var toast: Label
 var boss_back: ColorRect
@@ -115,9 +116,10 @@ func _build_actions() -> void:
 	heavy_btn = _btn(Vector2(1564, 948), Vector2(86, 86), "heavy", func(): show_toast("还没有重攻击"))
 	dash_btn = _btn(Vector2(1584, 828), Vector2(86, 86), "dash", _press_dash)
 	skill_box = _btn(Vector2(1704, 728), Vector2(96, 96), "skill", _press_skill)
-	skill2_btn = _btn(Vector2(1836, 768), Vector2(96, 96), "skill2", func(): show_toast("还没有第二个技能"))
+	skill2_btn = _btn(Vector2(1836, 768), Vector2(96, 96), "skill2", _press_skill2)
 	attack_btn = _btn(Vector2(1736, 868), Vector2(156, 156), "attack", _press_attack)
 	skill_label = UI.label(self, "", Vector2(1488, 688), 20, CREAM)
+	skill2_label = UI.label(self, "", Vector2(1760, 700), 18, CREAM)
 
 func _icon(parent: Node, name: String, pos: Vector2, px: float) -> TextureRect:
 	var t := TextureRect.new()
@@ -200,6 +202,11 @@ func _press_skill() -> void:
 		return
 	player.try_skill()
 
+func _press_skill2() -> void:
+	if _we_paused or player == null:
+		return
+	player.try_skill2()
+
 func show_boss(g: Node) -> void:
 	var on := g != null and is_instance_valid(g)
 	boss_back.visible = on
@@ -227,9 +234,16 @@ func _prof_process(delta: float) -> void:
 	hp_text.text = "HP %d / %d" % [player.hp, player.max_hp]
 	level_label.text = str(Game.level())
 	var cd := player.skill_cd_left
-	skill_label.text = "根须横扫 " + ("就绪" if cd <= 0.0 else "%.1f 秒" % cd)
+	var name1 := Game.skill.display_name if Game.skill else "技能"
+	skill_label.text = name1 + " " + ("就绪" if cd <= 0.0 else "%.1f 秒" % cd)
 	if skill_box is CanvasItem:
 		skill_box.modulate = Color.WHITE if cd <= 0.0 else Color(0.55, 0.55, 0.55)
+	var cd2 := player.skill2_cd_left
+	var name2 := Game.skill2.display_name if Game.skill2 else "技能 2"
+	if skill2_label:
+		skill2_label.text = name2 + " " + ("就绪" if cd2 <= 0.0 else "%.1f 秒" % cd2)
+	if skill2_btn:
+		skill2_btn.modulate = Color.WHITE if cd2 <= 0.0 else Color(0.55, 0.55, 0.55)
 	if dash_btn:
 		dash_btn.modulate = Color.WHITE if player.charges_ready() > 0 else Color(0.45, 0.45, 0.45)
 	var r := Game.run

@@ -14,6 +14,7 @@ const FINAL_FLOOR := 3
 var player_stats: PlayerStats = preload("res://data/player_stats.tres")
 var attacks: Array[AttackData] = [preload("res://data/attacks/light_1.tres"), preload("res://data/attacks/light_2.tres"), preload("res://data/attacks/light_3.tres")]
 var skill: AttackData = preload("res://data/attacks/skill_sweep.tres")
+var skill2: AttackData = preload("res://data/attacks/skill_thrust.tres")
 var enemies := {"mushling": preload("res://data/enemies/mushling.tres"), "rootshot": preload("res://data/enemies/rootshot.tres"), "shellbug": preload("res://data/enemies/shellbug.tres")}
 var floors: Array[FloorData] = [preload("res://data/floors/floor_1.tres"), preload("res://data/floors/floor_2.tres"), preload("res://data/floors/floor_3.tres")]
 var affixes := {"frenzy": preload("res://data/guards/affix_frenzy.tres"), "summon": preload("res://data/guards/affix_summon.tres"), "hardshell": preload("res://data/guards/affix_hardshell.tres"), "spore": preload("res://data/guards/affix_spore.tres")}
@@ -291,6 +292,8 @@ func _setup_input() -> void:
 	_action("attack", [KEY_J], [JOY_BUTTON_X], -1, 0.0, MOUSE_BUTTON_LEFT)
 	_action("dash", [KEY_SPACE, KEY_SHIFT], [JOY_BUTTON_A])
 	_action("skill", [KEY_K, KEY_Q], [JOY_BUTTON_Y], -1, 0.0, MOUSE_BUTTON_RIGHT)
+	## 与 recall 共用 R / RB。物理按键优先技能 2；只发 recall 动作事件时仍回村。
+	_action("skill2", [KEY_R], [JOY_BUTTON_RIGHT_SHOULDER])
 	_action("interact", [KEY_E, KEY_F], [JOY_BUTTON_B])
 	_action("recall", [KEY_R], [JOY_BUTTON_RIGHT_SHOULDER])
 	_action("debug_toggle", [KEY_F1, KEY_QUOTELEFT], [JOY_BUTTON_BACK])

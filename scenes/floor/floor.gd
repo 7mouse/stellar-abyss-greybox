@@ -516,10 +516,16 @@ func _tick_hold(it: Dictionary, delta: float) -> void:
 		hold_t = 0.0
 		it.cb.call()
 
+## 物理 R / RB 同时绑了技能 2 和回村符。技能 2 吃掉这次按键；单独的 recall 动作事件仍回村。
+func skill2_takes_key(e: InputEvent) -> bool:
+	if e is InputEventAction:
+		return e.action == "skill2"
+	return e.is_action("skill2")
+
 func _unhandled_input(e: InputEvent) -> void:
 	if get_tree().paused:
 		return
-	if e.is_action_pressed("recall"):
+	if e.is_action_pressed("recall") and not skill2_takes_key(e):
 		try_recall()
 	elif channeling and e.is_action_pressed("ui_cancel"):
 		interrupt_recall()

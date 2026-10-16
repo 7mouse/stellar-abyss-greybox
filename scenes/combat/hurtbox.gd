@@ -22,6 +22,14 @@ func _norm(p: Vector2) -> Vector2:
 func overlaps_circle(c: Vector2, r: float) -> bool:
 	return _norm(c).length() <= r + rx
 
+## 朝向矩形：从 origin 沿 dir 长 length、宽 width，椭圆按半径外扩
+func overlaps_rect(origin: Vector2, dir: Vector2, length: float, width: float) -> bool:
+	var axis := dir.normalized() if dir.length() > 0.01 else Vector2.RIGHT
+	var d := global_position - origin
+	var along := d.dot(axis)
+	var side := absf(d.dot(Vector2(-axis.y, axis.x)))
+	return along >= -rx and along <= length + rx and side <= width * 0.5 + ry
+
 func overlaps_sector(origin: Vector2, dir: Vector2, r: float, arc_deg: float) -> bool:
 	var d := global_position - origin
 	if d.length() > r + rx:

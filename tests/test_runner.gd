@@ -76,6 +76,7 @@ func _run() -> void:
 	test_save()
 	await test_player()
 	await test_attacks()
+	await test_skill2()
 	await test_enemies()
 	await test_guards_and_exit()
 	await test_boons()
@@ -460,9 +461,115 @@ func test_attacks() -> void:
 	p.try_skill()
 	await until(func(): return not (p.state == Player.S.SKILL))
 	await frames(2)
-	check(b3 - e.hp == 40 and p.skill_cd_left > 5.0, "根须横扫造成 40 伤害，进入 6 秒冷却")
+	check(b3 - e.hp == 40 and p.skill_cd_left > 5.0, "回身横斩造成 40 伤害，进入 6 秒冷却")
 	check("秒" in hud.skill_text(), "技能冷却显示在 HUD：%s" % hud.skill_text())
 	check(not p.try_skill(), "冷却中不能再放")
+
+func test_skill2() -> void:
+	print("== T2 破甲突刺 / 重击 / 后撤 ==")
+	if arena and is_instance_valid(arena):
+		arena.queue_free()
+		await frames(2)
+	Lineage.wipe()
+	plain()
+	Game.run = null
+	check(Game.attacks[0].is_heavy == false and Game.attacks[1].is_heavy == false and Game.attacks[2].is_heavy and Game.skill.is_heavy and Game.skill2.is_heavy, "is_heavy 只在普攻第 3 段、回身横斩、破甲突刺上为 true")
+	check(Game.skill.display_name == "回身横斩" and Game.skill2.display_name == "破甲突刺" and is_equal_approx(Game.skill2.cooldown, 8.0) and is_equal_approx(Game.skill2.lunge_px, 140.0) and is_equal_approx(Game.skill2.poise_dmg_mult, 3.0) and is_equal_approx(Game.skill2.width, 60.0), "技能 2：破甲突刺，冷却 8、位移 140、削韧 ×3、宽 60")
+	check(is_equal_approx(Game.enemies.mushling.attack_active, 0.12) and is_equal_approx(Game.enemies.mushling.recover_sec, 0.35) and is_equal_approx(Game.enemies.rootshot.recover_sec, 0.35) and is_equal_approx(Game.enemies.rootshot.retreat_cd, 3.0), "野猪/孢子菇的判定和后摇沿用原默认，孢子菇后撤冷却 3 秒")
+	var key_ok := false
+	var joy_ok := false
+	for ev in InputMap.action_get_events("skill2"):
+		if ev is InputEventKey and ev.physical_keycode == KEY_R:
+			key_ok = true
+		if ev is InputEventJoypadButton and ev.button_index == JOY_BUTTON_RIGHT_SHOULDER:
+			joy_ok = true
+	check(key_ok and joy_ok, "技能 2：键盘 R，手柄 RB")
+	await make_arena()
+	var floor_probe = load("res://scenes/floor/floor.gd").new()
+	var key_ev := InputEventKey.new()
+	key_ev.physical_keycode = KEY_R
+	key_ev.pressed = true
+	var recall_ev := InputEventAction.new()
+	recall_ev.action = "recall"
+	recall_ev.pressed = true
+	check(floor_probe.skill2_takes_key(key_ev) and not floor_probe.skill2_takes_key(recall_ev), "物理 R 交给技能 2；单独的 recall 动作事件仍可回村")
+	floor_probe.free()
+	var p := await make_player()
+	p.facing = Vector2.RIGHT
+	p.sim_aim = Vector2.RIGHT
+	p.sim_move = Vector2.ZERO
+	var action := InputEventAction.new()
+	action.action = "skill2"
+	action.pressed = true
+	p._unhandled_input(action)
+	check(p.state == Player.S.SKILL and p.atk == Game.skill2 and p.skill2_cd_left > 7.5 and p.iframe_left <= 0.0, "skill2 动作进入破甲突刺，冷却从 8 秒起，位移中没有无敌")
+	check(not p.try_skill2(), "技能 2 冷却中不能再放")
+	var origin := p.global_position
+	await until(func(): return p.state != Player.S.SKILL)
+	var travelled := p.global_position.distance_to(origin)
+	check(absf(travelled - 140.0) <= 5.0, "技能 2 位移 %.1f px（140±5）" % travelled)
+	await secs(0.2)
+	p.global_position = Vector2.ZERO
+	p.skill2_cd_left = 0.0
+	var a := await make_enemy("mushling", Vector2(50, 0), 500)
+	var b := await make_enemy("mushling", Vector2(130, 8), 500)
+	a.aggro = false
+	b.aggro = false
+	a.set_physics_process(false)
+	b.set_physics_process(false)
+	var ha := a.hp
+	var hb := b.hp
+	p.try_skill2()
+	await until(func(): return p.state != Player.S.SKILL)
+	check(ha - a.hp == 30 and hb - b.hp == 30, "技能 2 穿透路径上的两个敌人，各 30 伤害（%d / %d）" % [ha - a.hp, hb - b.hp])
+	p.global_position = Vector2.ZERO
+	p.skill2_cd_left = 0.0
+	var saved_stagger := Game.skill2.stagger_sec
+	Game.skill2.stagger_sec = 0.0
+	var soft := await make_enemy("shellbug", Vector2(70, 0), 999)
+	var hard := await make_enemy("shellbug", Vector2(70, 16), 999)
+	soft.aggro = false
+	hard.aggro = false
+	soft.set_physics_process(false)
+	hard.set_physics_process(false)
+	soft.poise = 89.0
+	soft.poise_acc = 0.0
+	hard.poise = 91.0
+	hard.poise_acc = 0.0
+	p.try_skill2()
+	await until(func(): return p.state != Player.S.SKILL)
+	check(soft.state == EnemyBase.S.HURT and hard.state != EnemyBase.S.HURT and is_equal_approx(hard.poise_acc, 90.0), "技能 2 削韧 30×3=90：poise 89 硬直，poise 91 累进 %.0f" % hard.poise_acc)
+	var src := Src.new()
+	arena.add_child(src)
+	var plain_bug := await make_enemy("shellbug", Vector2(-200, 0), 999)
+	plain_bug.aggro = false
+	plain_bug.set_physics_process(false)
+	plain_bug.poise = 91.0
+	plain_bug.take_hit(30, src, Vector2.ZERO)
+	check(plain_bug.state != EnemyBase.S.HURT and is_equal_approx(plain_bug.poise_acc, 30.0) and is_equal_approx(hard.poise_acc / plain_bug.poise_acc, 3.0), "同样 30 伤害，普攻削韧是技能 2 的 1/3")
+	Game.skill2.stagger_sec = saved_stagger
+	# 孢子菇被贴近后撤一次，3 秒内不再次
+	for e in [a, b, soft, hard, plain_bug]:
+		if is_instance_valid(e):
+			e.queue_free()
+	await frames(2)
+	p.global_position = Vector2.ZERO
+	var rs := await make_enemy("rootshot", Vector2(100, 0))
+	rs.cooldown = 99.0
+	rs.aggro = true
+	rs.target = p
+	await secs(0.9)
+	var n1 := rs.retreats
+	var away := rs.global_position.distance_to(p.global_position) > 140.0
+	rs.retreat_left = 0.0
+	rs.global_position = p.global_position + Vector2(80, 0)
+	await secs(0.4)
+	var n2 := rs.retreats
+	rs.retreat_cd_left = 0.0
+	rs.retreat_left = 0.0
+	rs.global_position = p.global_position + Vector2(80, 0)
+	await secs(0.4)
+	check(n1 == 1 and away and n2 == 1 and rs.retreats == 2, "孢子菇贴近后撤 1 次（冷却内不再次，冷却结束再撤）：%d → %d → %d" % [n1, n2, rs.retreats])
 
 # ---------------- T4 敌人 ----------------
 func test_enemies() -> void:
@@ -524,8 +631,8 @@ func test_enemies() -> void:
 	f.player.try_attack()
 	await secs(0.3)
 	f.player.sim_aim = Vector2.ZERO
-	check(not is_instance_valid(pr), "根须射手的子弹可以被普攻打消")
-	# poise：甲虫 30 poise，一下 10 不硬直
+	check(not is_instance_valid(pr), "根须孢子菇的子弹可以被普攻打消")
+	# poise：史莱姆 30 poise，一下 10 不硬直
 	var sb: EnemyBase = f.spawn_enemy("shellbug", f.player.global_position + Vector2(300, 0))
 	await frames(2)
 	var src := Src.new()
@@ -534,12 +641,12 @@ func test_enemies() -> void:
 	var no_stagger := sb.state != EnemyBase.S.HURT
 	sb.take_hit(10, src, Vector2.ZERO)
 	sb.take_hit(10, src, Vector2.ZERO)
-	check(no_stagger and sb.state == EnemyBase.S.HURT, "硬壳甲虫 poise 30：累计 30 伤害才硬直")
+	check(no_stagger and sb.state == EnemyBase.S.HURT, "史莱姆 poise 30：累计 30 伤害才硬直")
 	var mu: EnemyBase = f.spawn_enemy("mushling", f.player.global_position + Vector2(-300, 0))
 	await frames(2)
 	mu.take_hit(1, src, Vector2.ZERO)
 	check(mu.state == EnemyBase.S.HURT, "普通怪 poise 0：一下就硬直")
-	check(Game.enemies.mushling.max_hp == 30 and roundi(30 * Game.floors[2].hp_scale()) == 47 and roundi(12 * Game.floors[2].dmg_scale()) == 15, "楼层成长：小鬼 HP 30→第 3 层 47，甲虫伤害 12→15")
+	check(Game.enemies.mushling.max_hp == 30 and roundi(30 * Game.floors[2].hp_scale()) == 47 and roundi(12 * Game.floors[2].dmg_scale()) == 15, "楼层成长：发芽野猪 HP 30→第 3 层 47，史莱姆伤害 12→15")
 	for e in get_tree().get_nodes_in_group("enemies"):
 		e.queue_free()
 	check(not get_tree().paused, "T4 结束时游戏没有被弹窗暂停")
@@ -602,7 +709,7 @@ func test_guards_and_exit() -> void:
 	f.guard.summon_t = 9.99
 	await secs(0.2)
 	var sums: Array = f.guard_zone_enemies()
-	check(sums.size() == 2 and sums.all(func(e): return f.guard_rect.has_point(e.home_pos) and e.home_pos.distance_to(f.player.global_position) >= 159.0), "召唤：一次召 2 只菌菇小鬼，刷在层主区内、离主角 ≥ 160px")
+	check(sums.size() == 2 and sums.all(func(e): return f.guard_rect.has_point(e.home_pos) and e.home_pos.distance_to(f.player.global_position) >= 159.0), "召唤：一次召 2 只发芽野猪，刷在层主区内、离主角 ≥ 160px")
 	Game.clues.log_repeat_chance = 0.0
 	await kill_guard(f)
 	await frames(1)
@@ -1629,7 +1736,7 @@ func test_nav_chase() -> void:
 			await frames(2)
 			rs._shoot(Vector2.LEFT)
 			await secs(0.6)
-			check(get_tree().get_nodes_in_group("projectiles").is_empty(), "根须射手朝墙开火，子弹在墙上消失")
+			check(get_tree().get_nodes_in_group("projectiles").is_empty(), "根须孢子菇朝墙开火，子弹在墙上消失")
 			rs.queue_free()
 		Game.god_mode = false
 	await frames(2)
@@ -1937,7 +2044,7 @@ func _test_snare(f: Node, src: Node) -> void:
 		if not space.intersect_ray(q).is_empty() and f.guard_rect.has_point(c):
 			blocked += 1
 	check(L.root_pillars.size() == 4 and blocked == 4 and MapGen.blocks_sight(MapGen.T_ROOT), "根须射手王：场地 4 根根柱，%d 根挡住视线 / 子弹射线（OPAQUE 层）" % blocked)
-	check(g.gdata.minions == "mushling:2" and is_equal_approx(g.active_affixes[0].summon_every, 10.0), "小弟：菌菇小鬼 ×2，每 10 秒召唤")
+	check(g.gdata.minions == "mushling:2" and is_equal_approx(g.active_affixes[0].summon_every, 10.0), "小弟：发芽野猪 ×2，每 10 秒召唤")
 	await kill_guard(f)
 	await until(func(): return f.exit_active)
 
@@ -2159,7 +2266,7 @@ func test_recall_charm() -> void:
 	Game.run = Run.new()
 	Game.run.seed = 7
 	Game.run.depth = 2
-	check(rules.roll_elite("shellbug", "elite-ok") and Game.run.charm_source == "elite" and Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1, "精英（硬壳甲虫）按精英概率掉符，来源记为 elite")
+	check(rules.roll_elite("shellbug", "elite-ok") and Game.run.charm_source == "elite" and Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1, "精英（史莱姆）按精英概率掉符，来源记为 elite")
 	check(rules.roll_chest("after-elite") and Game.run.sealed_count(RecallCharm.ITEM_ID) == 1, "已经有符时宝箱继续掷，多出来的那张封印")
 	# 封印的第二张不能用；存进去就解开。进层最多带 1 张
 	check(rules.can_use() and rules.consume() and Game.run.charm_uses == 1 and Game.run.unsealed_count(RecallCharm.ITEM_ID) == 0 and Game.run.sealed_count(RecallCharm.ITEM_ID) == 1, "用掉没封印的那张，封印的还在")
@@ -2622,7 +2729,7 @@ func test_hit_feel() -> void:
 	e.aggro = false
 	e.set_physics_process(false)
 	p.try_attack()
-	check(await until(func(): return e.hp < 500), "普攻打中菌菇小鬼")
+	check(await until(func(): return e.hp < 500), "普攻打中发芽野猪")
 	check(absf(e.velocity.length() - 100.0) < 1.0 and e.feel_flash_t > 0.0, "普攻 1 击退 20px（速度 %.1f）、受击闪白 %.0f ms" % [e.velocity.length(), e.feel_flash_t * 1000.0])
 	Settings.set_camera_shake(saved_shake)
 	Settings.set_hitstop_enabled(saved_hs)

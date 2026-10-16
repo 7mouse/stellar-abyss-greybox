@@ -5,7 +5,8 @@
 [resource]
 script = ExtResource("s")
 id = "skill_sweep"
-display_name = "根须横扫"
+display_name = "回身横斩"
+is_heavy = true
 damage = 40
 windup = 0.2
 active = 0.1

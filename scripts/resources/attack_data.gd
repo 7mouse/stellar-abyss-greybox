@@ -10,6 +10,10 @@ extends Resource
 @export var recovery := 0.16
 @export var attack_range := 90.0
 @export var arc_deg := 120.0 ## ≥360 表示以自身为圆心的圆
+@export var width := 0.0 ## >0 时判定改为朝向矩形：长 attack_range、宽 width，穿透路径上的敌人
+@export var lunge_px := 0.0 ## 判定期间沿朝向前冲的距离；冲刺中没有无敌
+@export var poise_dmg_mult := 1.0 ## 削韧倍率（伤害 × 此值累进 poise）
+@export var is_heavy := false ## 重击：普攻第 3 段、技能 1、技能 2
 @export var knockback := 0.0
 @export var cooldown := 0.0
 @export var hitstop_sec := 0.05

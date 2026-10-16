@@ -161,20 +161,20 @@ def icons():
 def main():
     os.makedirs(ACT, exist_ok=True)
     os.makedirs(HUD, exist_ok=True)
-    hero = Image.open(os.path.join(ART, "hero_sheet_v1.jpg")).convert("RGB")
-    mobs = Image.open(os.path.join(ART, "mossroot_basic3_v1.jpg")).convert("RGB")
-    # 高俯视 3/4 那一格，当作局内占位
-    save(drop_shadow(crop_box(hero, (948, 63, 1200, 322), 8)), os.path.join(ACT, "hero.png"))
-    # 头像：正面头和围巾
-    head = crop_box(hero, (90, 8, 270, 188), 4)
+    hero = Image.open(os.path.join(ART, "hero_sheet_v2.jpg")).convert("RGB")
+    mobs = Image.open(os.path.join(ART, "mossroot_basic3_v2.jpg")).convert("RGB")
+    # 高俯视 3/4 那一格，当作局内占位。不带下排的尘土和剑光
+    save(drop_shadow(crop_box(hero, (900, 40, 1240, 340), 8)), os.path.join(ACT, "hero.png"))
+    # 头像：正面的头和围巾
+    head = crop_box(hero, (60, 8, 280, 190), 4)
     side = max(head.size)
     plate = Image.new("RGBA", (side, side), (0, 0, 0, 0))
     plate.paste(head, ((side - head.width) // 2, (side - head.height) // 2), head)
-    save(circle_crop(plate, 256), os.path.join(HUD, "portrait.png"))
-    # 上排站姿：野猪、孢子菇、石壳甲
-    save(drop_shadow(crop_box(mobs, (46, 56, 383, 314), 8)), os.path.join(ACT, "boar.png"))
-    save(drop_shadow(crop_box(mobs, (513, 57, 757, 309), 8)), os.path.join(ACT, "shroom.png"))
-    save(drop_shadow(crop_box(mobs, (859, 34, 1240, 323), 8)), os.path.join(ACT, "beetle.png"))
+    save(circle_crop(plate, 256), os.path.join(HUD, "portrait.png"), 256)
+    # 上排站姿。下排有尘土、箭头和弹，不用
+    save(drop_shadow(crop_box(mobs, (80, 80, 460, 350), 8)), os.path.join(ACT, "slime.png"))
+    save(drop_shadow(crop_box(mobs, (470, 30, 850, 350), 8)), os.path.join(ACT, "boar.png"))
+    save(drop_shadow(crop_box(mobs, (860, 20, 1240, 350), 8)), os.path.join(ACT, "shroom.png"))
     icons()
 
 

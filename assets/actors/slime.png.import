@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bkscmixxl4c2f"
-path="res://.godot/imported/beetle.png-b572a4d6f53d7c52e09399668848bc80.ctex"
+uid="uid://d1k1cvss45k70"
+path="res://.godot/imported/slime.png-6dac6ccf153802efc45fd788becc184c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/actors/beetle.png"
-dest_files=["res://.godot/imported/beetle.png-b572a4d6f53d7c52e09399668848bc80.ctex"]
+source_file="res://assets/actors/slime.png"
+dest_files=["res://.godot/imported/slime.png-6dac6ccf153802efc45fd788becc184c.ctex"]
 
 [params]
 

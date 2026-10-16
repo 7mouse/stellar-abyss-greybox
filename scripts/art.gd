@@ -9,13 +9,13 @@ const PORTRAIT := "res://assets/hud/portrait.png"
 const ENEMY := {
 	"mushling": "res://assets/actors/boar.png",
 	"rootshot": "res://assets/actors/shroom.png",
-	"shellbug": "res://assets/actors/beetle.png",
+	"shellbug": "res://assets/actors/slime.png",
 }
 ## 只影响画出来的高度，不改碰撞和 data.size
 const VISUAL_H := {
-	"mushling": 74.0,
+	"mushling": 78.0,
 	"rootshot": 86.0,
-	"shellbug": 80.0,
+	"shellbug": 56.0,
 }
 
 static func hero() -> Texture2D:

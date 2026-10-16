@@ -6,6 +6,7 @@ extends CharacterBody2D
 signal hp_changed(cur: int, max: int)
 signal died(cause: String)
 signal dashed(from: Vector2, to: Vector2)
+signal damaged(amount: int)
 
 enum S { IDLE, MOVE, ATTACK, DASH, SKILL, HURT, DEAD }
 const SIZE := Vector2(40, 64)
@@ -338,6 +339,8 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		Game.run.dmg_taken += real
 		Game.run.floor_stats["dmg_taken"] = int(Game.run.floor_stats.get("dmg_taken", 0)) + real
 	Log.write("hits", [Game.run.id if Game.run else "", depth_now, sname, "主角", real, false])
+	if real > 0:
+		damaged.emit(real)
 	DamageNumber.spawn(get_parent(), global_position, real, Color(1, 0.4, 0.4))
 	hp_changed.emit(hp, max_hp)
 	iframe_left = stats.hurt_iframes

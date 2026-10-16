@@ -24,6 +24,12 @@ var aggro: AggroRules
 var wall_rects: Array = []
 var interactables: Array = [] ## {pos, text, cb, enabled(Callable), id, key, hold}
 var used := {} ## 互动 key -> true（每个只能用一次）
+var killed_ids: Array = [] ## 本层已击杀的地图怪 id（p组:序号 / c营地:序号），回村后再进来不刷新
+var channeling := false
+var channel_t := 0.0
+var _recall_done := false
+var _recall_was_blocked := false
+var last_recall_hint := ""
 var guard: Guard
 var guard_dead := false
 var guard_rect := Rect2()
@@ -73,6 +79,7 @@ func _ready() -> void:
 	var t0 := Time.get_ticks_usec()
 	layout = MapGen.generate(Game.run.seed, depth, fd)
 	gen_ms = (Time.get_ticks_usec() - t0) / 1000.0
+	_apply_floor_memory()
 	rng.seed = hash([Game.run.seed, depth, "floor"])
 	world = Node2D.new()
 	world.y_sort_enabled = true
@@ -88,6 +95,7 @@ func _ready() -> void:
 	player.refresh_stats()
 	player.hp = mini(Game.run.hp, player.max_hp)
 	player.died.connect(_on_player_died)
+	player.damaged.connect(_on_player_damaged)
 	player.dashed.connect(_on_dashed)
 	_spawn_patrols()
 	_spawn_camps()
@@ -105,7 +113,8 @@ func _ready() -> void:
 	minimap.setup(self)
 	hud.add_child(minimap)
 	Game.run.floor_stats = {"t0": Time.get_ticks_msec() / 1000.0, "combat_sec": 0.0, "guard_sec": 0.0, "hp_start": player.hp, "dmg_taken": 0, "kills": 0, "level_start": Game.level(),
-		"chunks_visited": 0, "encounters": 0, "chasers_peak": 0, "camps_cleared": 0, "nodes_taken": 0}
+		"chunks_visited": 0, "encounters": 0, "chasers_peak": 0, "camps_cleared": 0, "nodes_taken": 0,
+		"charm_used": 0, "charm_floor": 0, "charm_interrupted": 0, "charm_source": Game.run.charm_source if Game.recall.carrying() else ""}
 	hud.show_toast("第 %d 层 · 苔根林窟 · %s" % [depth, fd.ecology.display_name] if fd.ecology else "第 %d 层 · 苔根林窟" % depth)
 
 # ---------- 构建 ----------
@@ -131,6 +140,11 @@ func _build_map() -> void:
 			_solid(r, MapGen.KIND_COLORS[MapGen.T_RUIN])
 		for i in c.obstacles.size():
 			_solid(c.obstacles[i], Color(0, 0, 0, 0), true, MapGen.blocks_sight(c.obstacle_kinds[i]))
+		if c.get("no_recall", false):
+			var rc := MapGen.chunk_rect(c, cp)
+			var tint := UI.rect(self, rc.position, rc.size, Color(0.55, 0.12, 0.12, 0.16))
+			tint.z_index = -8
+			UI.label(self, "陷阱", rc.get_center() + Vector2(-36, -24), 40, Color(1, 0.45, 0.4))
 	# 层主区：入口栅栏 + 入口线触发器
 	guard_rect = MapGen.chunk_rect(layout.chunks[layout.guard_chunk], cp)
 	NoiseBus.wall_rect = guard_rect
@@ -182,13 +196,13 @@ func _build_map() -> void:
 	for i in sp.chest.size():
 		var p: Vector2 = sp.chest[i]
 		var k := "chest_%d" % i
-		var r := UI.rect(self, p - Vector2(36, 26), Vector2(72, 52), Color(0.85, 0.7, 0.25))
+		var r := UI.rect(self, p - Vector2(36, 26), Vector2(72, 52), Color(0.4, 0.35, 0.2) if used.has(k) else Color(0.85, 0.7, 0.25))
 		r.z_index = -5
 		_add_interact(p, "打开宝箱", _open_chest.bind(k, r), func(): return not used.has(k), "chest", k, 0.6)
 	for i in sp.node.size():
 		var p: Vector2 = sp.node[i]
 		var k := "node_%d" % i
-		var r := UI.rect(self, p - Vector2(24, 24), Vector2(48, 48), Color(0.35, 0.95, 0.7))
+		var r := UI.rect(self, p - Vector2(24, 24), Vector2(48, 48), Color(0.2, 0.3, 0.25) if used.has(k) else Color(0.35, 0.95, 0.7))
 		r.z_index = -5
 		_add_interact(p, "采集萤苔丛", _take_node.bind(k, r), func(): return not used.has(k), "node", k, 1.0)
 	# 环境机关（生态 §8.1）
@@ -298,7 +312,8 @@ func _build_overlay() -> void:
 		ln.points = PackedVector2Array([rc.position, Vector2(rc.end.x, rc.position.y), rc.end, Vector2(rc.position.x, rc.end.y), rc.position])
 		chunk_overlay.add_child(ln)
 		var mark := "（最短路）" if layout.path.has(c.id) else ""
-		UI.label(chunk_overlay, "#%d %s%s" % [c.id, TYPE_NAMES[c.type], mark], rc.position + Vector2(24, 20), 40, Color(1, 1, 0.5))
+		var trap := " 陷阱" if c.get("no_recall", false) else ""
+		UI.label(chunk_overlay, "#%d %s%s%s" % [c.id, TYPE_NAMES[c.type], mark, trap], rc.position + Vector2(24, 20), 40, Color(1, 1, 0.5))
 
 func show_chunk_grid(on: bool) -> void:
 	if chunk_overlay:
@@ -359,7 +374,7 @@ func spawn_enemy(eid: String, pos: Vector2, group := "") -> EnemyBase:
 	return e
 
 ## 地图怪：挂 EnemyAI。style = walk（巡逻）/ post（射手驻守）/ camp（营地待机）；route = 巡逻路线（含队形偏移）
-func _map_enemy(eid: String, pos: Vector2, group: String, style := "", route: Array = []) -> EnemyBase:
+func _map_enemy(eid: String, pos: Vector2, group: String, style := "", route: Array = [], rid := "") -> EnemyBase:
 	var e := spawn_enemy(eid, pos, group)
 	e.rules = aggro
 	e.no_go = guard_rect
@@ -370,7 +385,15 @@ func _map_enemy(eid: String, pos: Vector2, group: String, style := "", route: Ar
 	e.ai = ai
 	e.add_child(ai)
 	e.state = EnemyBase.S.PATROL
+	if rid != "":
+		e.set_meta("rid", rid)
+		e.died.connect(_on_tracked_died)
 	return e
+
+func _on_tracked_died(e: EnemyBase) -> void:
+	var id := str(e.get_meta("rid", ""))
+	if id != "" and not killed_ids.has(id):
+		killed_ids.append(id)
 
 func _spawn_patrols() -> void:
 	var gi := 0
@@ -378,20 +401,31 @@ func _spawn_patrols() -> void:
 		var c: Vector2 = p.points[0]
 		for i in p.size:
 			var off := Vector2(45, 0).rotated(TAU * i / p.size)
-			var eid := _pick_enemy()
-			var route: Array = p.points.map(func(q): return q + off)
-			_map_enemy(eid, c + off, "p%d" % gi, "", route)
+			var eid := _pick_enemy() ## 跳过已击杀的也要掷一次，回来时活着的还是原来的种类
+			var rid := "p%d:%d" % [gi, i]
+			if not killed_ids.has(rid):
+				var route: Array = p.points.map(func(q): return q + off)
+				_map_enemy(eid, c + off, "p%d" % gi, "", route, rid)
 		gi += 1
 
 func _spawn_camps() -> void:
 	for cs in layout.spawn_points.camp:
 		var st: Dictionary = camps_state[cs.chunk]
+		var alive := 0
 		for i in cs.size:
-			var e := _map_enemy(_pick_enemy(), cs.center + Vector2(150, 0).rotated(TAU * i / cs.size), "c%d" % cs.chunk, "camp")
+			var eid := _pick_enemy()
+			var rid := "c%d:%d" % [cs.chunk, i]
+			if killed_ids.has(rid):
+				continue
+			var e := _map_enemy(eid, cs.center + Vector2(150, 0).rotated(TAU * i / cs.size), "c%d" % cs.chunk, "camp", [], rid)
 			e.set_meta("camp", cs.chunk)
 			e.died.connect(_on_camp_member_died.bind(cs.chunk))
-		st.alive = cs.size
+			alive += 1
+		st.alive = alive
 		st.total = cs.size
+		if alive == 0 and cs.size > 0:
+			st.cleared = true
+			(st.shrine_rect as ColorRect).color = Color(0.55, 0.5, 1)
 
 func _on_camp_member_died(_e: EnemyBase, cid: int) -> void:
 	var st: Dictionary = camps_state[cid]
@@ -415,7 +449,7 @@ func _physics_process(delta: float) -> void:
 	Prof.add("floor", _p)
 
 func _prof_physics_process(delta: float) -> void:
-	if player == null or not is_instance_valid(player):
+	if player == null or not is_instance_valid(player) or Game.run == null:
 		return
 	var fighting := false
 	for e in get_tree().get_nodes_in_group("enemies"):
@@ -437,6 +471,7 @@ func _prof_physics_process(delta: float) -> void:
 		hud.show_boss(guard)
 	else:
 		hud.show_boss(null)
+	_tick_recall(delta)
 	var it := nearest_interactable()
 	_tick_hold(it, delta)
 	if it.is_empty():
@@ -479,7 +514,14 @@ func _tick_hold(it: Dictionary, delta: float) -> void:
 		it.cb.call()
 
 func _unhandled_input(e: InputEvent) -> void:
-	if e.is_action_pressed("interact") and not get_tree().paused:
+	if get_tree().paused:
+		return
+	if e.is_action_pressed("recall"):
+		try_recall()
+	elif channeling and e.is_action_pressed("ui_cancel"):
+		interrupt_recall()
+		get_viewport().set_input_as_handled()
+	elif e.is_action_pressed("interact"):
 		interact()
 
 func nearest_interactable() -> Dictionary:
@@ -550,6 +592,8 @@ func _open_chest(key: String, vis: ColorRect = null) -> void:
 	for st in got:
 		Game.run.add_item(st)
 		names.append("%s ×%d" % [st.item.display_name, st.count])
+	if Game.recall.roll_chest(key):
+		names.append(Game.recall.display_name)
 	hud.show_toast("宝箱：" + "，".join(names))
 
 func _take_node(key: String, vis: ColorRect = null) -> void:
@@ -647,6 +691,7 @@ func debug_enter_guard_zone() -> void:
 	cam.snap()
 
 func _on_guard_died(_g: EnemyBase) -> void:
+	Game.recall.on_lord_killed(depth)
 	guard_dead = true
 	guard_killed_at = Time.get_ticks_msec() / 1000.0
 	_guard_log_flash()
@@ -702,9 +747,124 @@ func choose_exit(descend: bool) -> bool:
 	return true
 
 func _on_player_died(cause: String) -> void:
+	interrupt_recall()
 	Game.run.hp = 0
 	Game.log_floor("death")
 	Game.on_player_died(cause)
+
+func _on_player_damaged(_amount: int) -> void:
+	if channeling:
+		interrupt_recall()
+
+# ---------- 回村符 ----------
+func recall_blocked() -> bool:
+	if player == null:
+		return false
+	if guard_rect.has_point(player.global_position):
+		return true
+	var k := MapGen.chunk_at(layout, player.global_position)
+	return k >= 0 and bool(layout.chunks[k].get("no_recall", false))
+
+func _show_recall_block() -> void:
+	last_recall_hint = Game.recall.blocked_hint
+	if hud:
+		hud.show_toast(last_recall_hint)
+
+func try_recall() -> bool:
+	if _recall_done or channeling or popup_open or player == null or player.state == Player.S.DEAD:
+		return false
+	if not Game.recall.carrying():
+		if hud:
+			hud.show_toast("没有回村符")
+		return false
+	if recall_blocked():
+		_show_recall_block()
+		return false
+	channeling = true
+	channel_t = 0.0
+	player.input_enabled = false
+	player.velocity = Vector2.ZERO
+	return true
+
+func interrupt_recall() -> void:
+	if not channeling:
+		return
+	channeling = false
+	channel_t = 0.0
+	if player:
+		player.input_enabled = true
+	Game.run.floor_stats["charm_interrupted"] = int(Game.run.floor_stats.get("charm_interrupted", 0)) + 1
+	if hud:
+		hud.show_toast("引导被打断，回村符没有消耗")
+
+func _tick_recall(delta: float) -> void:
+	if player == null or not is_instance_valid(player):
+		return
+	var blocked := recall_blocked()
+	if blocked and not _recall_was_blocked:
+		_show_recall_block()
+	if blocked and channeling:
+		interrupt_recall()
+	_recall_was_blocked = blocked
+	if hud:
+		if channeling:
+			hud.channel_label.text = "回村引导 %.1f / %.1f 秒" % [channel_t, Game.recall.channel_sec]
+		elif blocked and Game.recall.carrying():
+			hud.channel_label.text = Game.recall.blocked_hint
+		elif Game.recall.carrying():
+			hud.channel_label.text = Game.recall.use_hint
+		else:
+			hud.channel_label.text = ""
+	if not channeling:
+		return
+	channel_t += delta
+	player.velocity = Vector2.ZERO
+	if channel_t >= Game.recall.channel_sec:
+		_finish_recall()
+
+func _finish_recall() -> void:
+	if _recall_done:
+		return
+	_recall_done = true
+	channeling = false
+	if player:
+		player.input_enabled = true
+	if not Game.recall.consume():
+		_recall_done = false
+		return
+	_snapshot_floor()
+	Game.run.hp = player.hp
+	Game.run.floor_stats["charm_used"] = 1
+	Game.run.floor_stats["charm_floor"] = depth
+	Game.run.floor_stats["charm_source"] = Game.run.charm_source
+	Game.log_floor("recall")
+	Game.recall_to_village()
+
+func _snapshot_floor() -> void:
+	var picked: Array = []
+	for k in used:
+		picked.append(k)
+	Game.run.floor_memory[depth] = {
+		"seed": Game.run.seed,
+		"killed": killed_ids.duplicate(),
+		"picked": picked,
+		"guard_dead": guard_dead,
+		"corpse_taken": corpse_taken,
+	}
+
+func _apply_floor_memory() -> void:
+	var mem: Dictionary = Game.run.floor_memory.get(depth, {})
+	if mem.is_empty():
+		return
+	for k in mem.get("picked", []):
+		used[str(k)] = true
+	killed_ids = []
+	for id in mem.get("killed", []):
+		killed_ids.append(str(id))
+	corpse_taken = bool(mem.get("corpse_taken", false))
+	guard_dead = bool(mem.get("guard_dead", false))
+	if guard_dead:
+		exit_active = true
 
 # ---------- 调试：视野锥和声音圈、追击计数 ----------
 func _on_noise(pos: Vector2, radius: float, _kind: String) -> void:

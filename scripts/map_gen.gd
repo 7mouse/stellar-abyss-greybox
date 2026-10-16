@@ -255,7 +255,29 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 					spawn.hazard.append({"id": hz.id, "idx": hi, "pos": p, "chunk": ch.id})
 					break
 	L["spawn_points"] = spawn
+	_mark_traps(rng, L, fd)
 	return L
+
+## 陷阱房：普通区块打上 no_recall，不改类型、不改刷怪，所以敌人总数和巡逻期望不变。数量读 recall_charm.tres
+static func _mark_traps(rng: RandomNumberGenerator, L: Dictionary, fd: FloorData) -> void:
+	var rules: RecallCharm = load("res://data/recall_charm.tres")
+	var n := rules.trap_count(fd.depth)
+	for ch in L.chunks:
+		ch["no_recall"] = false
+	var traps: Array = []
+	if n > 0:
+		var pool: Array = []
+		for ch in L.chunks:
+			if NORMAL.has(ch.type):
+				pool.append(ch)
+		for i in mini(n, pool.size()):
+			var j := rng.randi_range(i, pool.size() - 1)
+			var tmp = pool[i]
+			pool[i] = pool[j]
+			pool[j] = tmp
+			pool[i]["no_recall"] = true
+			traps.append(pool[i].id)
+	L["traps"] = traps
 
 static func _loot_point(rng: RandomNumberGenerator, chunks: Array, loot_chunks: Array, routes: Dictionary, taken: Array, solids: Array, cp: float, grid: Dictionary) -> Vector2:
 	var last := Vector2.ZERO

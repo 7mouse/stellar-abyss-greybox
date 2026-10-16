@@ -29,6 +29,10 @@ await page.mouse.click(640, 360); // 让画布获得焦点
 await page.evaluate('window.greybox.startRun()');
 ok(await waitScene('res://scenes/floor/floor.tscn'), '起程村 → 下潜第 1 层');
 await new Promise(r => setTimeout(r, 800));
+// 开放地图：楼层启动时打印“[map] 第 1 层：区块 30，生成 x ms，导航烘焙 y ms”
+const mapLine = logs.find(l => l.includes('[map]')) || '';
+const mm = mapLine.match(/区块 (\d+)，生成 ([\d.]+) ms，导航烘焙 ([\d.]+) ms/);
+ok(mm && +mm[1] === 30 && +mm[2] + +mm[3] <= 800 && +mm[3] <= 600, `开放地图：${mapLine.trim() || '没有 [map] 日志'}（生成 + 烘焙 ≤ 800 ms，烘焙 ≤ 600 ms）`);
 await page.keyboard.down('KeyD'); await new Promise(r => setTimeout(r, 900)); await page.keyboard.up('KeyD');
 await page.keyboard.press('KeyJ'); await new Promise(r => setTimeout(r, 300));
 await page.keyboard.press('Space'); await new Promise(r => setTimeout(r, 500));

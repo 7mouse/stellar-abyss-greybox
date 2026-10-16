@@ -5,6 +5,7 @@ extends Camera2D
 var target: Node2D
 var smooth_sec := 0.15
 var _shake := 0.0
+var limit_rect := Rect2() ## 非空时，画面停在这块矩形里
 
 func _ready() -> void:
 	process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
@@ -23,5 +24,9 @@ func _physics_process(delta: float) -> void:
 	if target and is_instance_valid(target):
 		var k := 1.0 - exp(-delta / maxf(0.001, smooth_sec / 3.0))
 		global_position = global_position.lerp(target.global_position, k)
+	if limit_rect.size.x > 1.0 and limit_rect.size.y > 1.0:
+		var half := get_viewport_rect().size / zoom * 0.5
+		global_position.x = clampf(global_position.x, limit_rect.position.x + half.x, limit_rect.end.x - half.x)
+		global_position.y = clampf(global_position.y, limit_rect.position.y + half.y, limit_rect.end.y - half.y)
 	offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _shake
 	_shake = move_toward(_shake, 0.0, 40.0 * delta)

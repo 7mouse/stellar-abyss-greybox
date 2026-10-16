@@ -53,12 +53,21 @@ def crop_box(src, box, pad=6):
     return im.crop((x0, y0, x1, y1))
 
 
-def circle_crop(im, size=256):
-    im = im.resize((size, size), Image.Resampling.LANCZOS)
+def circle_cover(im, size=96):
+    """圆内留下原来的透明，不把空像素涂成不透明黑。"""
+    im = im.convert("RGBA")
+    scale = size / max(im.size)
+    nw = max(1, int(round(im.width * scale)))
+    nh = max(1, int(round(im.height * scale)))
+    im = im.resize((nw, nh), Image.Resampling.LANCZOS)
+    plate = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    plate.paste(im, ((size - nw) // 2, (size - nh) // 2), im)
     mask = Image.new("L", (size, size), 0)
-    ImageDraw.Draw(mask).ellipse((1, 1, size - 2, size - 2), fill=255)
-    im.putalpha(mask)
-    return im
+    ImageDraw.Draw(mask).ellipse((0, 0, size - 1, size - 1), fill=255)
+    r, g, b, a = plate.split()
+    aa = np.minimum(np.array(a), np.array(mask))
+    plate.putalpha(Image.fromarray(aa, "L"))
+    return plate
 
 
 def drop_shadow(im):
@@ -84,7 +93,7 @@ def tighten(im, max_side=160):
     return im
 
 
-def save(im, path, max_side=160):
+def save(im, path, max_side=128):
     im = tighten(im, max_side)
     im.save(path)
     print(path, im.size)
@@ -164,13 +173,12 @@ def main():
     hero = Image.open(os.path.join(ART, "hero_sheet_v2.jpg")).convert("RGB")
     mobs = Image.open(os.path.join(ART, "mossroot_basic3_v2.jpg")).convert("RGB")
     # 高俯视 3/4 那一格，当作局内占位。不带下排的尘土和剑光
-    save(drop_shadow(crop_box(hero, (900, 40, 1240, 340), 8)), os.path.join(ACT, "hero.png"))
-    # 头像：正面的头和围巾
+    save(drop_shadow(crop_box(hero, (900, 40, 1240, 340), 8)), os.path.join(ACT, "hero.png"), 128)
+    # 头像按界面上的 96 像素出图，圆外保持透明
     head = crop_box(hero, (60, 8, 280, 190), 4)
-    side = max(head.size)
-    plate = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-    plate.paste(head, ((side - head.width) // 2, (side - head.height) // 2), head)
-    save(circle_crop(plate, 256), os.path.join(HUD, "portrait.png"), 256)
+    portrait = circle_cover(head, 96)
+    portrait.save(os.path.join(HUD, "portrait.png"))
+    print(os.path.join(HUD, "portrait.png"), portrait.size)
     # 上排站姿。下排有尘土、箭头和弹，不用
     save(drop_shadow(crop_box(mobs, (80, 80, 460, 350), 8)), os.path.join(ACT, "slime.png"))
     save(drop_shadow(crop_box(mobs, (470, 30, 850, 350), 8)), os.path.join(ACT, "boar.png"))

@@ -104,6 +104,8 @@ func _ready() -> void:
 	cam = FollowCam.new()
 	cam.target = player
 	cam.smooth_sec = Game.player_stats.cam_smooth_sec
+	var lim: Rect2 = layout.bounds.grow(float(fd.map_border_px))
+	cam.limit_rect = lim
 	add_child(cam)
 	cam.make_current()
 	cam.snap()

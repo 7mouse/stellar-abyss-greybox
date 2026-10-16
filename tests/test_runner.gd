@@ -2132,7 +2132,7 @@ func test_recall_charm() -> void:
 	var oldp := p.get_basename() + ".old.csv"
 	check(FileAccess.file_exists(oldp) and "time,run_id,gen_no,depth,result\n" in FileAccess.get_file_as_string(oldp), "旧 floors.csv 表头被改名为 .old.csv")
 	var hdr_rows := Log.rows("floors")
-	check(hdr_rows.size() >= 2 and hdr_rows[0] == Log.HEADERS.floors and "charm_stash_run" in hdr_rows[0] and "unbossed_mat_out" in hdr_rows[0] and hdr_rows[0].ends_with("unbossed_mat_out"), "新 floors.csv 用带 charm_* 和风险监控列的表头")
+	check(hdr_rows.size() >= 2 and hdr_rows[0] == Log.HEADERS.floors and "charm_stash_run" in hdr_rows[0] and "unbossed_mat_out" in hdr_rows[0] and "charm_stock" in hdr_rows[0] and hdr_rows[0].ends_with("charm_stock"), "新 floors.csv 用带 charm_* 和风险监控列的表头")
 	Log.clear()
 	# 没有全局持有上限：已经有符也照常掉，仓库和保险箱都能放多张
 	Lineage.wipe()
@@ -2449,6 +2449,35 @@ func test_recall_charm() -> void:
 	DP.root.visible = true
 	await frames(2)
 	check("1/2" in DP.risk_label.text and "合计 6" in DP.risk_label.text, "F1 回村符分组显示运行中的占比、合计和平均：%s" % DP.risk_label.text)
+	Lineage.charm_carried = 2
+	var kept: Array = []
+	for e in Lineage.vault:
+		if String(e.get("id", "")) != RecallCharm.ITEM_ID:
+			kept.append(e)
+	Lineage.vault = kept
+	Lineage.vault.append({"id": RecallCharm.ITEM_ID, "count": 3})
+	Game.run.add_item(ItemStack.new(Items.get_item(RecallCharm.ITEM_ID), 4, true, "chest"))
+	Game._floor_log_open = false
+	Game.log_floor("death")
+	risk_row = Log.rows("floors")[-1].split(",")
+	check(int(risk_row[risk_hdr.find("charm_stock")]) == 5 and rules.stock() == 5, "死亡结束时库存只算仓库和保险箱，背包里的 4 张丢掉：%s" % risk_row[risk_hdr.find("charm_stock")])
+	await frames(2)
+	check("回村符库存 5" in DP.risk_label.text, "F1 显示当前库存：%s" % DP.risk_label.text)
+	Game._floor_log_open = false
+	Game.run = Run.new()
+	Game.run.id = "stock-end"
+	Game.run.depth = 1
+	Game.run.floor_stats = {"t0": 0.0}
+	Game.run.add_item(ItemStack.new(Items.get_item(RecallCharm.ITEM_ID), 2, false, "chest"))
+	Game.log_floor("extract")
+	risk_row = Log.rows("floors")[-1].split(",")
+	check(int(risk_row[risk_hdr.find("charm_stock")]) == 5, "撤离行先记下入库前的仓库和保险箱")
+	Game.recall.bank_from_run()
+	Game.stamp_charm_stock()
+	risk_row = Log.rows("floors")[-1].split(",")
+	check(int(risk_row[risk_hdr.find("charm_stock")]) == 7 and rules.stock() == 7, "撤离结束时背包里的符入库，charm_stock = 仓库 4 + 保险箱 3")
+	await frames(2)
+	check("回村符库存 7" in DP.risk_label.text, "F1 库存跟着变成 7：%s" % DP.risk_label.text)
 	DP.root.visible = false
 	# 还原可调项，避免污染资源
 	rules.chest_drop_chance = saved.chest

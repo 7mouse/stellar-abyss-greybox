@@ -67,6 +67,7 @@ func _ready() -> void:
 	_section("保险箱", "强化台（局外）", Lineage.meta_rules)
 	_section("线索", "虚拟世界线索 clues.tres", g.clues)
 	_section("回村符", "紧急回村符 recall_charm.tres", g.recall)
+	_btn(_group("回村符"), "发 1 张回村符到身上", give_recall_charm)
 	risk_label = _lbl(_group("回村符"), "", 18)
 	root.visible = false
 
@@ -304,6 +305,17 @@ func jump_floor(n: int) -> void:
 	if Game.run == null:
 		Game.start_run()
 	Game.enter_floor(clampi(n, 1, Game.FINAL_FLOOR))
+
+## 还没下潜时放进仓库，进层再按能带的张数带上。已经在局内就发放，多出来的封印
+func give_recall_charm() -> void:
+	if Game.recall == null:
+		return
+	if Game.run == null:
+		Lineage.charm_carried += 1
+		Lineage.charm_source = "debug"
+		Lineage.save()
+		return
+	Game.recall.grant("debug")
 
 func give_boon(id: String) -> void:
 	if Game.run:

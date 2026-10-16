@@ -2484,6 +2484,29 @@ func test_recall_charm() -> void:
 	await frames(2)
 	check("回村符库存 7" in DP.risk_label.text, "F1 库存跟着变成 7：%s" % DP.risk_label.text)
 	DP.root.visible = false
+	# F1 直接发到身上：出发前不封印，进层仍只带上限那么多；局里第二张封印
+	Lineage.wipe()
+	Game.run = null
+	var give_btn: Button = null
+	for b in DP.find_children("*", "Button", true, false):
+		if b.text == "发 1 张回村符到身上":
+			give_btn = b
+	check(give_btn != null, "F1 回村符分组有「发 1 张回村符到身上」")
+	give_btn.pressed.emit()
+	give_btn.pressed.emit()
+	check(Lineage.charm_carried == 2 and Lineage.charm_source == "debug" and rules.owned() == 2, "出发前连发两张都进仓库，不封印")
+	Game.run = Run.new()
+	Game.run.seed = 21
+	Game.run.depth = 1
+	rules.bring_into_run()
+	check(Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1 and Game.run.sealed_count(RecallCharm.ITEM_ID) == 0 and Lineage.charm_carried == 1, "出发前多出来的符留在仓库，进层仍只带 1 张")
+	give_btn.pressed.emit()
+	check(Game.run.count_of(RecallCharm.ITEM_ID) == 2 and Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1 and Game.run.sealed_count(RecallCharm.ITEM_ID) == 1 and Game.run.charm_source == "debug", "已经在局里时，第二张发到身上会封印")
+	Game.run.suspended = true
+	give_btn.pressed.emit()
+	check(Game.run.count_of(RecallCharm.ITEM_ID) == 3 and Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1 and Game.run.sealed_count(RecallCharm.ITEM_ID) == 2, "回村之后再发，仍然按身上的携带规则封印")
+	Game.run = null
+	Lineage.wipe()
 	# 还原可调项，避免污染资源
 	rules.chest_drop_chance = saved.chest
 	rules.elite_drop_chance = saved.elite

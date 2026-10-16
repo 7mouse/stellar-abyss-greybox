@@ -373,10 +373,21 @@ func _separate() -> void:
 	_prof_separate()
 	Prof.add("separate", _p)
 
+## 性能：敌人列表每个物理帧只取一次（原来每只敌人每帧都 get_nodes_in_group 一次，分配新数组）
+static var _sep_list: Array = []
+static var _sep_frame := -1
 func _prof_separate() -> void:
-	for e in get_tree().get_nodes_in_group("enemies"):
-		if e != self:
-			var d: Vector2 = global_position - e.global_position
+	var pf := Engine.get_physics_frames()
+	if pf != _sep_frame:
+		_sep_frame = pf
+		_sep_list = get_tree().get_nodes_in_group("enemies")
+	var gp := global_position
+	for e in _sep_list:
+		if e != self and is_instance_valid(e):
+			var d: Vector2 = gp - e.global_position
 			var min_d: float = (size.x + e.size.x) * 0.45
-			if d.length() < min_d and d.length() > 0.01:
+			var dl2 := d.length_squared()
+			if dl2 >= min_d * min_d:
+				continue
+			if dl2 > 0.0001:
 				move_and_collide(d.normalized() * (min_d - d.length()) * 0.3)

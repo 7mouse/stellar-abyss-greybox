@@ -58,6 +58,9 @@ func is_revealed(pos: Vector2) -> bool:
 	var c := Vector2i((pos / block_px).floor())
 	return fog_img.get_pixel(clampi(c.x, 0, fog_img.get_width() - 1), clampi(c.y, 0, fog_img.get_height() - 1)).a == 0.0
 
+var _dirty := true
+var _last_pp := Vector2.INF
+
 func is_visited(id: int) -> bool:
 	return floor_node.visited.has(id)
 
@@ -71,7 +74,16 @@ func _prof_process(d: float) -> void:
 	if _t <= 0.0 and floor_node and floor_node.player and is_instance_valid(floor_node.player):
 		_t = 0.25
 		reveal(floor_node.player.global_position)
-	queue_redraw()
+		_dirty = true
+	# 性能：只在主角在小地图上移动 ≥ 0.5 像素或有新探索时重画
+	if floor_node and floor_node.player and is_instance_valid(floor_node.player):
+		var pp := to_map(floor_node.player.global_position)
+		if pp.distance_squared_to(_last_pp) >= 0.25:
+			_last_pp = pp
+			_dirty = true
+	if _dirty:
+		_dirty = false
+		queue_redraw()
 
 func to_map(p: Vector2) -> Vector2:
 	return p * scale_f

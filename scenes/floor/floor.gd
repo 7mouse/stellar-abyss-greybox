@@ -111,17 +111,19 @@ func _ready() -> void:
 # ---------- 构建 ----------
 func _build_map() -> void:
 	var cp: float = layout.chunk_px
-	# 地面与障碍：整张图两张贴图（每地形格 1 像素，线性过滤放大），看不到区块
+	# 地面与障碍：预先合成一张贴图（每地形格 1 像素，线性过滤放大），看不到区块。
+	# 性能：原来地面、障碍两张整图各铺满一次屏幕，网页软件渲染下填充耗时导致掉帧，合成后只画一次
 	var imgs := MapGen.terrain_images(layout)
-	for i in 2:
-		var spr := Sprite2D.new()
-		spr.texture = ImageTexture.create_from_image(imgs[i])
-		spr.centered = false
-		spr.scale = Vector2.ONE * MapGen.TCELL
-		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		spr.z_index = -10 if i == 0 else -4
-		add_child(spr)
-		terrain_sprites.append(spr)
+	var comp: Image = imgs[0]
+	comp.blend_rect(imgs[1], Rect2i(Vector2i.ZERO, comp.get_size()), Vector2i.ZERO)
+	var spr := Sprite2D.new()
+	spr.texture = ImageTexture.create_from_image(comp)
+	spr.centered = false
+	spr.scale = Vector2.ONE * MapGen.TCELL
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	spr.z_index = -10
+	add_child(spr)
+	terrain_sprites.append(spr)
 	for r in layout.border:
 		_solid(r, Color(0.22, 0.19, 0.16))
 	for c in layout.chunks:
@@ -237,9 +239,10 @@ func _solid(r: Rect2, color: Color, wall := true, opaque := true) -> StaticBody2
 	cs.position = r.get_center()
 	sb.add_child(cs)
 	add_child(sb)
-	var vis := UI.rect(self, r.position, r.size, color)
-	vis.z_index = -4
-	sb.set_meta("rect", vis)
+	if color.a > 0.0: ## 透明的障碍体不建 ColorRect（画面由地形贴图负责，省掉上千个空绘制）
+		var vis := UI.rect(self, r.position, r.size, color)
+		vis.z_index = -4
+		sb.set_meta("rect", vis)
 	sb.set_meta("shape", cs)
 	sb.set_meta("r", r)
 	if wall:
@@ -753,7 +756,6 @@ var terrain_sprites: Array = []
 func debug_set_visible(what: String, on: bool) -> void:
 	match what:
 		"terrain": terrain_sprites[0].visible = on
-		"obstacles_tex": terrain_sprites[1].visible = on
 		"minimap": minimap.visible = on
 		"hud": hud.visible = on
 		"world": world.visible = on

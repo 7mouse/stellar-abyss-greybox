@@ -18,6 +18,7 @@ var source: Node
 var source_name := ""
 var active := false
 var destroys_projectiles := false
+var _drawn := false
 var hit := {} ## 已结算目标
 
 func begin(p_dmg: int, p_radius: float, p_arc: float, p_dir: Vector2) -> void:
@@ -39,7 +40,10 @@ func _physics_process(_d: float) -> void:
 func _prof_physics_process(_d: float) -> void:
 	if active:
 		check()
-	queue_redraw()
+	var show := Game.show_boxes and active
+	if show or _drawn: ## 性能：只在需要画或刚画过时重画
+		_drawn = show
+		queue_redraw()
 
 func check() -> void:
 	var other := "enemy" if team == "player" else "player"

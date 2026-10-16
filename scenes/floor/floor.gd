@@ -587,7 +587,7 @@ func _open_chest(key: String, vis: ColorRect = null) -> void:
 	NoiseBus.emit_kind(player.global_position, "chest")
 	if vis:
 		vis.color = Color(0.4, 0.35, 0.2)
-	var got := fd.chest_loot.roll(rng, 1.0 + float(player.mods.get("rare_drop_pct", 0)))
+	var got := fd.chest_loot.roll(rng, 1.0 + float(player.mods.get("rare_drop_pct", 0)), Game.floor_drop_mult())
 	var names: Array = []
 	for st in got:
 		Game.run.add_item(st)
@@ -837,10 +837,12 @@ func _finish_recall() -> void:
 	Game.run.floor_stats["charm_used"] = 1
 	Game.run.floor_stats["charm_floor"] = depth
 	Game.run.floor_stats["charm_source"] = Game.run.charm_source
+	Game.run.charm_recalled = true
 	Game.log_floor("recall")
 	Game.recall_to_village()
 
 func _snapshot_floor() -> void:
+	var prev: Dictionary = Game.run.floor_memory.get(depth, {})
 	var picked: Array = []
 	for k in used:
 		picked.append(k)
@@ -850,6 +852,7 @@ func _snapshot_floor() -> void:
 		"picked": picked,
 		"guard_dead": guard_dead,
 		"corpse_taken": corpse_taken,
+		"returned": bool(prev.get("returned", false)),
 	}
 
 func _apply_floor_memory() -> void:

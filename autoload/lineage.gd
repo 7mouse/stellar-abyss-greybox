@@ -93,8 +93,6 @@ func can_vault(item: ItemData) -> bool:
 	return item != null and vault_rules.allows(item.category)
 
 func vault_put(item, count := 1) -> bool:
-	if Game.recall.storage_locked():
-		return false
 	var it: ItemData = item if item is ItemData else (item.item if item is ItemStack else Items.get_item(String(item)))
 	if item is ItemStack:
 		count = item.count
@@ -109,8 +107,6 @@ func vault_put(item, count := 1) -> bool:
 
 ## 替换：把 i 号格子的东西换出来，放进新的
 func vault_replace(i: int, item) -> Dictionary:
-	if Game.recall.storage_locked():
-		return {}
 	var it: ItemData = item if item is ItemData else Items.get_item(String(item))
 	if it != null and it.id == RecallCharm.ITEM_ID:
 		return {}
@@ -123,8 +119,6 @@ func vault_replace(i: int, item) -> Dictionary:
 	return old
 
 func vault_take(i: int) -> ItemData:
-	if Game.recall.storage_locked():
-		return null
 	if i < 0 or i >= vault.size():
 		return null
 	var e: Dictionary = vault.pop_at(i)

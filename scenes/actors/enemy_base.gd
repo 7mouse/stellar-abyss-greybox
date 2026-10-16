@@ -368,7 +368,7 @@ func _die() -> void:
 func roll_loot(rare_mult := 1.0) -> Array[ItemStack]:
 	if data.loot_table == null:
 		return []
-	return data.loot_table.roll(Game.rng, rare_mult)
+	return data.loot_table.roll(Game.rng, rare_mult, Game.floor_drop_mult())
 
 func xp_value() -> int:
 	return data.xp

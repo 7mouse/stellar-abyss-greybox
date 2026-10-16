@@ -16,6 +16,7 @@ var show_aggro := false ## 显示视野锥和声音圈
 var sleep_all := false ## 全图怪物休眠
 var aggro_label: Label
 var map_label: Label
+var risk_label: Label
 
 func _ready() -> void:
 	layer = 100
@@ -66,6 +67,7 @@ func _ready() -> void:
 	_section("保险箱", "强化台（局外）", Lineage.meta_rules)
 	_section("线索", "虚拟世界线索 clues.tres", g.clues)
 	_section("回村符", "紧急回村符 recall_charm.tres", g.recall)
+	risk_label = _lbl(_group("回村符"), "", 18)
 	root.visible = false
 
 func set_aggro_counts(chasing: int, windup: int, chase_peak: int, windup_peak: int) -> void:
@@ -253,6 +255,9 @@ func _process(_d: float) -> void:
 		var r := Game.run
 		info.text = "个体 %s　局：%s　层 %d　种子 %s\n存档：%s　CSV：%s" % [Lineage.current().name, r.id if r else "—", r.depth if r else 0, str(r.seed) if r else "—",
 			ProjectSettings.globalize_path(Lineage.save_path), ProjectSettings.globalize_path(Log.dir)]
+		if risk_label:
+			var s: Dictionary = Log.risk_summary()
+			risk_label.text = "回村并存物 %d/%d 局（%.0f%%）　未击杀层主带出材料 合计 %d　平均 %.2f" % [int(s.stash_runs), int(s.runs), float(s.share) * 100.0, int(s.unbossed_sum), float(s.unbossed_avg)]
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("debug_toggle"):

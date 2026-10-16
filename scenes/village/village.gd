@@ -26,6 +26,7 @@ func _ready() -> void:
 	_fac("well", "下潜井口", Vector2(1200, 1100), Vector2(160, 160), Color(0.08, 0.08, 0.1), _dive)
 	_fac("board", "布告栏", Vector2(400, 900), Vector2(120, 80), Color(0.5, 0.42, 0.3), func(): play_opening(true))
 	_fac("npc", "老冒险者", Vector2(1550, 800), Vector2(40, 64), Color(0.75, 0.7, 0.55), func(): show_toast("老冒险者：“往下走吧，越深越好。”"))
+	_fac("craft", "制作回村符", Vector2(1880, 980), Vector2(220, 90), Color(0.72, 0.48, 0.22), func(): _open("res://scenes/village/craft_ui.gd"))
 	player = Player.new()
 	player.position = Vector2(1200, 700)
 	add_child(player)
@@ -119,15 +120,9 @@ func _open(script_path: String) -> Panel2:
 	return p
 
 func _vault() -> void:
-	if Game.recall.storage_locked():
-		show_toast("回村期间不能使用保险箱和仓库")
-		return
 	_open("res://scenes/village/vault_ui.gd")
 
 func _bench() -> void:
-	if Game.recall.storage_locked():
-		show_toast("回村期间不能使用保险箱和仓库")
-		return
 	_open("res://scenes/village/bench.gd")
 
 func _dive() -> void:
@@ -140,8 +135,7 @@ func _recall_facilities() -> void:
 	player.hp = mini(Game.run.hp, player.max_hp)
 	_fac("rest", "回复生命", Vector2(860, 1100), Vector2(180, 90), Color(0.3, 0.65, 0.35), _rest)
 	_fac("bag", "整理背包", Vector2(1560, 1100), Vector2(180, 90), Color(0.3, 0.45, 0.7), _bag)
-	if Game.recall.return_enabled:
-		_fac("return", "返回第 %d 层" % Game.run.depth, Vector2(1200, 860), Vector2(240, 90), Color(0.42, 0.32, 0.62), _return_floor)
+	_fac("return", "返回第 %d 层" % Game.run.depth, Vector2(1200, 860), Vector2(240, 90), Color(0.42, 0.32, 0.62), _return_floor)
 	if Game.run.just_recalled:
 		Game.run.just_recalled = false
 		show_toast("已回到起程村。层主没死就不算撤离，身上的东西仍会丢失。")

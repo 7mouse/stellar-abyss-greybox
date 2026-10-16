@@ -9,7 +9,8 @@ const ITEM_ID := "recall_charm"
 @export var chest_drop_chance := 0.03 ## 普通宝箱。已经持有时整次判定跳过
 @export var elite_drop_chance := 0.02 ## 精英（elite_ids）。已经持有时整次判定跳过
 @export var channel_sec := 3.0 ## 楼层内引导秒数，受击打断且不消耗
-@export var return_enabled := true ## 村里「返回第 N 层」入口。默认开，以后好关
+@export var return_drop_mult := 0.5 ## 从村里返回该层之后，剩余宝箱、敌人和层主的掉落概率乘上这个数
+@export var craft_material_count := 2 ## 制作 1 张符要的层主稀有材料（萤苔精，不限哪一层）
 @export var blocked_hint := "此处无法使用回村符"
 @export var trap_rooms_floor_1 := 0
 @export var trap_rooms_floor_2 := 1
@@ -42,9 +43,6 @@ func owned() -> int:
 func carrying() -> bool:
 	return Game.run != null and Game.run.count_of(ITEM_ID) > 0
 
-func storage_locked() -> bool:
-	return Game.run != null and Game.run.suspended
-
 ## 已经持有时宝箱/精英不再掷骰
 func _at_cap() -> bool:
 	return owned() >= maxi(1, max_owned)
@@ -70,7 +68,7 @@ func consume() -> bool:
 
 ## 村里把身上的符放进保险箱（转移，不新增）
 func deposit_carried() -> bool:
-	if storage_locked() or Lineage.charm_carried <= 0:
+	if Lineage.charm_carried <= 0:
 		return false
 	if _vault_index() >= 0 or Lineage.vault.size() >= Lineage.vault_capacity():
 		return false
@@ -116,13 +114,40 @@ func roll_elite(enemy_id: String, key: String) -> bool:
 	return grant("elite")
 
 func _roll(chance: float, key: String) -> bool:
-	if chance <= 0.0:
+	var ch := chance * Game.floor_drop_mult()
+	if ch <= 0.0:
 		return false
 	var rng := RandomNumberGenerator.new()
 	var seed_v := Game.run.seed if Game.run else 0
 	var depth := Game.run.depth if Game.run else 0
 	rng.seed = hash([seed_v, depth, "charm", key])
-	return rng.randf() < chance
+	return rng.randf() < ch
+
+const CRAFT_MATERIAL := "moss_essence"
+
+func craft_material_have() -> int:
+	var n := int(Lineage.mats.get(CRAFT_MATERIAL, 0))
+	if Game.run:
+		n += Game.run.count_of(CRAFT_MATERIAL)
+	return n
+
+## 花仓库和背包里的萤苔精。层主首杀送的符不走这里，也不吃返回掉落倍率
+func craft() -> bool:
+	if _at_cap():
+		return false
+	var cost := maxi(1, craft_material_count)
+	if craft_material_have() < cost:
+		return false
+	var left := cost
+	var from_mats := mini(left, int(Lineage.mats.get(CRAFT_MATERIAL, 0)))
+	Lineage.mats[CRAFT_MATERIAL] = int(Lineage.mats.get(CRAFT_MATERIAL, 0)) - from_mats
+	left -= from_mats
+	if left > 0 and Game.run:
+		Game.run.take_item(CRAFT_MATERIAL, left)
+	if not grant("craft"):
+		return false
+	Lineage.save()
+	return true
 
 ## 每层第一次击杀层主必给 1 个；已经持有就记成待领。本局之后的死亡不清这两份记录
 func on_lord_killed(depth: int) -> void:

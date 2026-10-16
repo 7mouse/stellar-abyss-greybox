@@ -76,6 +76,7 @@ func start_run() -> void:
 	Lineage.loadout.clear() ## 取出后的装备算局内装备
 	Lineage.save()
 	run.hp = max_hp()
+	_floor_log_open = false
 	recall.bring_into_run()
 	enter_floor(1)
 
@@ -107,6 +108,10 @@ func extract() -> void:
 	Lineage.mats.moss += got.moss
 	Lineage.mats.moss_essence += got.moss_essence
 	Lineage.shards_bank += got.shards
+	if int(got.moss) > 0:
+		note_run_store(true, "material", int(got.moss))
+	if int(got.moss_essence) > 0:
+		note_run_store(true, "rare_material", int(got.moss_essence))
 	for st in run.equipped:
 		got.equipment.append(st.item.id)
 	recall.bank_from_run()
@@ -124,14 +129,26 @@ func recall_to_village() -> void:
 		return
 	run.suspended = true
 	run.just_recalled = true
+	run.charm_recalled = true
 	goto(SCN_VILLAGE)
 
-## 从村里回到被中断的那一层（起点）。开关在 recall_charm.tres
+## 从村里回到被中断的那一层的起点。该层之后的掉落乘 return_drop_mult
 func recall_return() -> void:
-	if run == null or not run.suspended or not recall.return_enabled:
+	if run == null or not run.suspended:
 		return
+	var mem: Dictionary = run.floor_memory.get(run.depth, {})
+	mem["returned"] = true
+	run.floor_memory[run.depth] = mem
 	run.suspended = false
 	enter_floor(run.depth)
+
+func floor_drop_mult() -> float:
+	if run == null or recall == null:
+		return 1.0
+	var mem: Dictionary = run.floor_memory.get(run.depth, {})
+	if not bool(mem.get("returned", false)):
+		return 1.0
+	return recall.return_drop_mult
 
 func descend() -> void:
 	run.hp = mini(max_hp(), run.hp + roundi(max_hp() * player_stats.heal_between_floors))
@@ -157,13 +174,78 @@ func finish_legacy(legacy_id: String, replace_i := -1) -> void:
 	goto(SCN_VILLAGE)
 
 func log_floor(result: String) -> void:
+	if run == null:
+		return
+	if _floor_log_open:
+		run.unbossed_open = 0
 	var fs := run.floor_stats
 	var now := Time.get_ticks_msec() / 1000.0
 	Log.write("floors", [run.id, Lineage.current().gen_no, run.depth, result, "%.1f" % (now - float(fs.get("t0", now))), "%.1f" % float(fs.get("combat_sec", 0.0)),
 		"%.1f" % float(fs.get("guard_sec", 0.0)), fs.get("hp_start", run.hp), run.hp, fs.get("dmg_taken", 0), fs.get("kills", 0),
 		"|".join(run.boon_order), fs.get("level_start", 1), level(), run.count_of("moss"), run.shards_carried, "|".join(run.clue_seen),
 		fs.get("chunks_visited", 0), fs.get("encounters", 0), fs.get("chasers_peak", 0), fs.get("camps_cleared", 0), fs.get("nodes_taken", 0),
-		fs.get("charm_used", 0), fs.get("charm_floor", 0), fs.get("charm_interrupted", 0), fs.get("charm_source", "")])
+		fs.get("charm_used", 0), fs.get("charm_floor", 0), fs.get("charm_interrupted", 0), fs.get("charm_source", ""),
+		1 if run.charm_recalled and run.charm_stashed else 0, run.unbossed_open])
+	_floor_log_open = true
+
+var _floor_log_open := false
+
+func _lord_dead_now() -> bool:
+	if run == null:
+		return true
+	var sc := get_tree().current_scene
+	if sc and sc.scene_file_path == SCN_FLOOR and "guard_dead" in sc:
+		return bool(sc.guard_dead)
+	var mem: Dictionary = run.floor_memory.get(run.depth, {})
+	return bool(mem.get("guard_dead", false))
+
+## 把局里的东西放进仓库或保险箱之后记一笔。层主没死时材料计入 unbossed_mat_out
+func note_run_store(from_run: bool, category: String, count: int) -> void:
+	if run == null or count <= 0:
+		return
+	if run.charm_recalled:
+		run.charm_stashed = true
+	if from_run and category in ["material", "rare_material"] and not _lord_dead_now():
+		run.unbossed_open += count
+	if _floor_log_open:
+		Log.patch_last("floors", {"charm_stash_run": 1 if run.charm_recalled and run.charm_stashed else 0, "unbossed_mat_out": run.unbossed_open})
+
+## 背包里的材料进仓库，能进保险箱的进保险箱。一次存一组（材料整组，其余 1 个）
+func store_bag(id: String) -> bool:
+	if run == null or recall == null:
+		return false
+	var n := run.count_of(id)
+	if n <= 0:
+		return false
+	var it := Items.get_item(id)
+	if it == null:
+		return false
+	if it.category in ["material", "rare_material"]:
+		run.take_item(id, n)
+		Lineage.mats[id] = int(Lineage.mats.get(id, 0)) + n
+		Lineage.save()
+		note_run_store(true, it.category, n)
+		return true
+	if id == RecallCharm.ITEM_ID:
+		var src := run.charm_source
+		if not run.take_item(id, 1):
+			return false
+		Lineage.charm_carried = 1
+		Lineage.charm_source = src
+		if not recall.deposit_carried():
+			run.add_item(ItemStack.new(it, 1))
+			run.charm_source = src
+			Lineage.charm_carried = 0
+			return false
+		note_run_store(true, it.category, 1)
+		return true
+	if not Lineage.can_vault(it):
+		return false
+	if not Lineage.vault_put(it, 1):
+		return false
+	run.take_item(id, 1)
+	note_run_store(true, it.category, 1)
+	return true
 
 func hitstop(sec: float) -> void:
 	_hitstop_until = maxi(_hitstop_until, Time.get_ticks_msec() + int(sec * 1000))
@@ -217,7 +299,7 @@ func _setup_web() -> void:
 	var win = JavaScriptBridge.get_interface("window")
 	_js_obj = JavaScriptBridge.create_object("Object")
 	var cb_dl = JavaScriptBridge.create_callback(func(_a): Log.download_all())
-	var cb_row = JavaScriptBridge.create_callback(func(_a): Log.write("floors", ["selftest", 0, 0, "selftest", 0, 0, 0, 0, 0, 0, 0, "", 1, 1, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, ""]))
+	var cb_row = JavaScriptBridge.create_callback(func(_a): Log.write("floors", ["selftest", 0, 0, "selftest", 0, 0, 0, 0, 0, 0, 0, "", 1, 1, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0]))
 	var cb_run = JavaScriptBridge.create_callback(func(_a): start_run())
 	var cb_perf = JavaScriptBridge.create_callback(func(_a):
 		var sc := get_tree().current_scene

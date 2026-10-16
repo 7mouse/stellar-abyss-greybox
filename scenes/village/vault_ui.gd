@@ -25,11 +25,26 @@ func _fill() -> void:
 		btn("放入：" + Game.recall.display_name, _put.bind(RecallCharm.ITEM_ID))
 	if Lineage.mats.moss_essence > 0:
 		btn("放入：萤苔精 ×1（稀有材料）", _put.bind("moss_essence"))
+	if Game.run:
+		text("背包：", 24)
+		var shown := {}
+		for st in Game.run.bag:
+			if shown.has(st.item.id):
+				continue
+			shown[st.item.id] = true
+			if st.item.category in ["material", "rare_material"]:
+				btn("存入仓库：%s ×%d" % [st.item.display_name, Game.run.count_of(st.item.id)], _store_bag.bind(st.item.id))
+			elif Lineage.can_vault(st.item):
+				btn("放入保险箱：" + st.item.display_name, _store_bag.bind(st.item.id))
 	btn("记忆碎片 ×%d（不能放入）" % Lineage.shards_bank, func(): pass, false)
 	btn("局内强化（不能放入）", func(): pass, false)
 
 func _take(i: int) -> void:
 	Lineage.vault_take(i)
+	rebuild()
+
+func _store_bag(id: String) -> void:
+	Game.store_bag(id)
 	rebuild()
 
 func _put(id: String) -> void:

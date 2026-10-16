@@ -21,7 +21,10 @@ var floor_stats := {} ## 本层统计：floor_t0, combat_sec, guard_sec, hp_star
 var charm_source := "" ## 当前这张回村符从哪来：chest / elite / lord / pending
 var suspended := false ## 用回村符回到村里，这局还没结束
 var just_recalled := false
-var floor_memory := {} ## depth -> {seed, killed, picked, guard_dead, corpse_taken}
+var charm_recalled := false ## 这局用过回村符
+var charm_stashed := false ## 用符回村之后往仓库或保险箱存过东西
+var unbossed_open := 0 ## 当前这条楼层日志上，层主没死就存进村里的材料数
+var floor_memory := {} ## depth -> {seed, killed, picked, guard_dead, corpse_taken, returned}
 
 func add_item(st: ItemStack) -> void:
 	if st.item.category == "shard":

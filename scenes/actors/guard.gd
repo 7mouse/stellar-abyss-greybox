@@ -2,7 +2,6 @@ class_name Guard
 extends EnemyBase
 ## 层主 = 敌人模板 × 词缀 × 配色。词缀：狂暴（攻速 +30%）、召唤（每 10 秒 2 只菌菇小鬼）、硬壳（poise +100%，背后受伤 ×1.5）、孢子（重砸后落点留 2 秒孢子云）
 ## 二阶段：HP 降到 phase2_hp_ratio 时 1 秒演出（无敌），之后加 phase2_affix
-
 signal phase2_started
 signal summon_requested(enemy_id: String, count: int)
 
@@ -86,6 +85,7 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		body.color = tint
 		_go(S.RECOVER)
 		phase2_started.emit()
+		HitFeedback.on_boss_phase(self)
 	return ok
 
 ## 孢子词缀：重砸（非射击模板）落点留下孢子云

@@ -54,8 +54,17 @@ func check() -> void:
 			continue
 		if hb.overlaps_sector(global_position, dir, radius, arc_deg):
 			hit[hb.owner_actor] = true
-			var kb: Vector2 = (hb.global_position - global_position).normalized() * knockback
+			var kb_len := knockback
+			var event := ""
+			if team == "player" and source is Player:
+				event = HitFeedback.event_for(self, hb.owner_actor)
+				var feel_kb := HitFeedback.knockback_px(event)
+				if feel_kb >= 0.0:
+					kb_len = feel_kb
+			var kb: Vector2 = (hb.global_position - global_position).normalized() * kb_len
 			if hb.owner_actor.take_hit(damage, self, kb):
+				if event != "":
+					HitFeedback.note_hit(event, hb.owner_actor)
 				hb.hurt.emit(self)
 				hit_landed.emit(hb.owner_actor, damage)
 	if destroys_projectiles:

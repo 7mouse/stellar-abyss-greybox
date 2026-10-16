@@ -36,6 +36,7 @@ var dash_btn: Button
 var skill2_btn: Button
 var pause_dim: ColorRect
 var pause_label: Label
+var pause_box: VBoxContainer
 var _toast_t := 0.0
 var _we_paused := false
 
@@ -96,8 +97,13 @@ func _build_status() -> void:
 	pause_dim.visible = false
 	pause_dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(pause_dim)
-	pause_label = UI.label(self, "暂停\nP / Start 继续", Vector2(820, 480), 40, CREAM)
+	pause_label = UI.label(self, "暂停\nP / Start 继续", Vector2(820, 360), 40, CREAM)
 	pause_label.visible = false
+	pause_box = VBoxContainer.new()
+	pause_box.position = Vector2(720, 520)
+	pause_box.visible = false
+	pause_box.z_index = 2
+	add_child(pause_box)
 	pause_b.z_index = 2
 	pause_label.z_index = 2
 
@@ -169,6 +175,11 @@ func _toggle_pause() -> void:
 		_we_paused = true
 	pause_dim.visible = _we_paused
 	pause_label.visible = _we_paused
+	pause_box.visible = _we_paused
+	if _we_paused:
+		SettingsControls.fill(pause_box)
+		if pause_box.get_child_count() > 0 and pause_box.get_child(0) is Control:
+			(pause_box.get_child(0) as Control).grab_focus()
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("pause"):

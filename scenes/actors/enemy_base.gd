@@ -39,6 +39,8 @@ var telegraph_delay := 0.0
 var invulnerable := false
 var aggro := true
 var _lunge_left := 0.0
+var feel_flash_t := 0.0
+var feel_moss := false
 var _windup_started := 0.0
 var rules: AggroRules ## 仇恨参数（地图怪）；null = 一直追
 var ai: EnemyAI
@@ -132,11 +134,19 @@ func _physics_process(delta: float) -> void:
 func _sync_visual() -> void:
 	if visual == null:
 		return
-	visual.modulate = body.color * body.modulate
+	if feel_flash_t > 0.0:
+		visual.modulate = Color(0.55, 0.9, 0.45) if feel_moss else Color(4, 4, 4)
+	else:
+		visual.modulate = body.color * body.modulate
 	if absf(facing.x) > 0.2:
 		visual.flip_h = facing.x < 0.0
 
+func feel_flash(ms: int, moss := false, _redwhite := false) -> void:
+	feel_flash_t = maxf(feel_flash_t, ms / 1000.0)
+	feel_moss = moss
+
 func _prof_physics_process(delta: float) -> void:
+	feel_flash_t = maxf(0.0, feel_flash_t - delta)
 	if state == S.DEAD:
 		return
 	state_t += delta
@@ -356,12 +366,16 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		if ai:
 			ai.end_attack()
 		_go(S.HURT)
+	elif knockback.length() > 1.0 and is_physics_processing():
+		## 没破韧也按资源击退一截。关掉物理的测试假人停在原地。
+		move_and_collide(knockback)
 	return true
 
 func _die() -> void:
 	if ai:
 		ai.release()
 		NoiseBus.emit_kind(global_position, "death")
+	HitFeedback.on_killed(self)
 	_go(S.DEAD)
 	hitbox.end()
 	remove_from_group("enemies")

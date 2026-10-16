@@ -67,6 +67,7 @@ func _ready() -> void:
 	_section("保险箱", "强化台（局外）", Lineage.meta_rules)
 	_section("线索", "虚拟世界线索 clues.tres", g.clues)
 	_section("回村符", "紧急回村符 recall_charm.tres", g.recall)
+	_section("打击感", "hit_feel.tres", g.hit_feel)
 	_btn(_group("回村符"), "发 1 张回村符到身上", give_recall_charm)
 	risk_label = _lbl(_group("回村符"), "", 18)
 	root.visible = false

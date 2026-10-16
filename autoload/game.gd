@@ -18,6 +18,7 @@ var enemies := {"mushling": preload("res://data/enemies/mushling.tres"), "rootsh
 var floors: Array[FloorData] = [preload("res://data/floors/floor_1.tres"), preload("res://data/floors/floor_2.tres"), preload("res://data/floors/floor_3.tres")]
 var affixes := {"frenzy": preload("res://data/guards/affix_frenzy.tres"), "summon": preload("res://data/guards/affix_summon.tres"), "hardshell": preload("res://data/guards/affix_hardshell.tres"), "spore": preload("res://data/guards/affix_spore.tres")}
 var clues: LoreClues = preload("res://data/lore/clues.tres")
+var hit_feel: HitFeel = preload("res://data/feel/hit_feel.tres")
 var recall: RecallCharm ## load() in _ready; a parse-time preload cycles with this script and breaks the web build
 
 var run: Run
@@ -33,6 +34,7 @@ var auto_pick := -1 ## 测试：≥0 时 3 选 1 自动选第 n 个
 var base_time_scale := 1.0
 var _hitstop_until := 0
 var _slowmo_until := 0
+var _slowmo_scale := 0.3
 var debug_panel: CanvasLayer
 
 func _ready() -> void:
@@ -47,10 +49,10 @@ func _ready() -> void:
 func _process(_d: float) -> void:
 	var now := Time.get_ticks_msec()
 	var s := base_time_scale
-	if now < _hitstop_until:
+	if Settings.hitstop_enabled and now < _hitstop_until:
 		s *= 0.02
 	elif now < _slowmo_until:
-		s *= 0.3
+		s *= _slowmo_scale
 	Engine.time_scale = s
 	_update_web()
 
@@ -249,7 +251,26 @@ func store_charm(sealed: bool, to_vault: bool) -> bool:
 	return true
 
 func hitstop(sec: float) -> void:
-	_hitstop_until = maxi(_hitstop_until, Time.get_ticks_msec() + int(sec * 1000))
+	if not Settings.hitstop_enabled:
+		_hitstop_until = 0
+		return
+	if sec <= 0.0:
+		return
+	_hitstop_until = maxi(_hitstop_until, Time.get_ticks_msec() + int(round(sec * 1000.0)))
+
+func hitstop_left_ms() -> int:
+	if not Settings.hitstop_enabled:
+		return 0
+	return maxi(0, _hitstop_until - Time.get_ticks_msec())
+
+func clear_hitstop() -> void:
+	_hitstop_until = 0
+
+func slowmo(sec: float, scale: float) -> void:
+	if sec <= 0.0:
+		return
+	_slowmo_scale = scale
+	_slowmo_until = maxi(_slowmo_until, Time.get_ticks_msec() + int(round(sec * 1000.0)))
 
 # ---------- 输入 ----------
 func _setup_input() -> void:

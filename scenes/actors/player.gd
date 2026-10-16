@@ -20,7 +20,9 @@ var facing := Vector2.RIGHT
 var hurtbox: Hurtbox
 var hitbox: Hitbox
 var iframe_left := 0.0
+var dash_iframe_left := 0.0
 var flash_t := 0.0
+var hit_flash_t := 0.0
 # 冲刺
 var dash_cd: Array[float] = [] ## 每格充能剩余冷却（0 = 可用）
 var dash_dir := Vector2.ZERO
@@ -241,8 +243,11 @@ func try_dash() -> bool:
 	dash_travelled = 0.0
 	dash_t = 0.0
 	dash_start = global_position
-	iframe_left = maxf(iframe_left, stats.dash_iframes)
+	var dash_ifr := HitFeedback.iframe_sec("dash")
+	iframe_left = maxf(iframe_left, dash_ifr if dash_ifr >= 0.0 else stats.dash_iframes)
+	dash_iframe_left = iframe_left
 	state = S.DASH
+	HitFeedback.play_dash()
 	NoiseBus.emit_kind(global_position, "dash")
 	return true
 
@@ -263,6 +268,8 @@ func _physics_process(delta: float) -> void:
 func _prof_physics_process(delta: float) -> void:
 	hz_slow_left = maxf(0.0, hz_slow_left - delta)
 	iframe_left = maxf(0.0, iframe_left - delta)
+	dash_iframe_left = maxf(0.0, dash_iframe_left - delta)
+	hit_flash_t = maxf(0.0, hit_flash_t - delta)
 	skill_cd_left = maxf(0.0, skill_cd_left - delta)
 	combo_timer = maxf(0.0, combo_timer - delta)
 	for k in dash_cd.size():
@@ -307,6 +314,8 @@ func _prof_physics_process(delta: float) -> void:
 		var tint := Color(0.75, 0.9, 1.2) if state == S.DASH else Color.WHITE
 		if state == S.DEAD:
 			tint = Color(0.4, 0.4, 0.45)
+		if hit_flash_t > 0.0:
+			tint = Color(1, 0.28, 0.28) if int(Time.get_ticks_msec() / 40) % 2 == 0 else Color(4, 4, 4)
 		sprite.modulate = tint
 		sprite.modulate.a = body_rect.modulate.a
 		if absf(facing.x) > 0.2:
@@ -321,6 +330,7 @@ func _tick_attack(delta: float) -> void:
 		hitbox.knockback = atk.knockback
 		hitbox.stagger_sec = atk.stagger_sec
 		hitbox.slow_sec = float(mods.get("skill_slow_sec", 0)) if state == S.SKILL else 0.0
+		HitFeedback.begin_swing()
 		hitbox.begin(attack_damage(atk, seg), atk.attack_range, atk.arc_deg, facing)
 		hitbox.check()
 	if phase == "active" and phase_t >= atk.active:
@@ -339,10 +349,13 @@ func _tick_attack(delta: float) -> void:
 
 func _on_hit_landed(_t: Node, _dmg: int) -> void:
 	NoiseBus.emit_kind(global_position, "combat")
-	Game.hitstop(atk.hitstop_sec if atk else stats.hitstop_sec)
-	var cam := get_viewport().get_camera_2d()
-	if cam and cam.has_method("shake"):
-		cam.shake(stats.shake_px)
+
+func feel_flash(ms: int, _moss := false, redwhite := false) -> void:
+	var sec := ms / 1000.0
+	if sec > hit_flash_t:
+		hit_flash_t = sec
+	if redwhite:
+		set_meta("flash_red", true)
 
 ## 返回 false = 无敌中没受伤
 func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
@@ -362,8 +375,11 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		damaged.emit(real)
 	DamageNumber.spawn(get_parent(), global_position, real, Color(1, 0.4, 0.4))
 	hp_changed.emit(hp, max_hp)
-	iframe_left = stats.hurt_iframes
+	var hurt_ifr := HitFeedback.iframe_sec("player_hurt")
+	iframe_left = hurt_ifr if hurt_ifr >= 0.0 else stats.hurt_iframes
 	hitbox.end()
+	if real > 0:
+		HitFeedback.play_player_hurt(self)
 	if hp <= 0:
 		state = S.DEAD
 		body_rect.color = Color(0.3, 0.3, 0.35)
@@ -372,7 +388,10 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 	state = S.HURT
 	hurt_t = 0.15
 	var dir := knockback.normalized() if knockback.length() > 0.01 else Vector2.ZERO
-	kb_vel = dir * stats.hurt_knockback / 0.15 * 1.4
+	var kb_px := HitFeedback.knockback_px("player_hurt")
+	if kb_px < 0.0:
+		kb_px = stats.hurt_knockback
+	kb_vel = dir * kb_px / 0.15 * 1.4
 	return true
 
 func heal(n: int) -> void:

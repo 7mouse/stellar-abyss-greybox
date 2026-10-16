@@ -705,7 +705,11 @@ func _on_guard_died(_g: EnemyBase) -> void:
 		if is_instance_valid(h):
 			h.queue_free()
 	arena_hazards.clear()
-	await get_tree().create_timer(0.5, false).timeout
+	var exit_wait := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - exit_wait < 500:
+		if not is_inside_tree():
+			return
+		await get_tree().process_frame
 	if not is_inside_tree():
 		return
 	_set_fence(false)

@@ -2701,6 +2701,26 @@ func test_tutorial() -> void:
 	check("篝火" in Tutorial.hint_text() and "坐一会儿" in Tutorial.hint_text(), "篝火 300px 提示休息：%s" % Tutorial.hint_text())
 	Tutorial.reset_progress()
 	Tutorial.hold_world = true
+	InputGlyph.device = "kb"
+	Tutorial.on_thickmoss_broken()
+	check(Tutorial.is_done("thickmoss") and Tutorial.prompts_shown("thickmoss") == 0, "厚苔先被打破则不提示")
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.on_elite_first_seen()
+	check("厚苔" in Tutorial.hint_text() and "[R]" in Tutorial.hint_text() and "skill2" not in Tutorial.hint_text(), "第一次遇见深苔史莱姆提示破甲突刺：%s" % Tutorial.hint_text())
+	check(Tutorial.banner_text() == "", "厚苔提示出现时层主名条还没出来")
+	InputGlyph.device = "pad"
+	Tutorial.debug_advance(0.01)
+	check("[RB]" in Tutorial.hint_text() and "skill2" not in Tutorial.hint_text(), "破甲突刺按当前设备换成 RB：%s" % Tutorial.hint_text())
+	InputGlyph.device = "kb"
+	Tutorial.debug_setup({"boss_zone": true, "on_floor": true, "moved": 200.0})
+	check(Tutorial.banner_text() == "" and "厚苔" in Tutorial.hint_text(), "厚苔没打破时不进入层主教学")
+	Tutorial.on_thickmoss_broken()
+	check(Tutorial.is_done("thickmoss") and "厚苔" not in Tutorial.hint_text() and Tutorial.banner_text() == "苔冠王野猪", "厚苔打破后提示完成，才出现层主名条")
+	Tutorial.on_elite_first_seen()
+	check(Tutorial.prompts_shown("thickmoss") == 1, "厚苔提示只由第一次遇见触发")
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
 	Tutorial.debug_setup({"boss_zone": true, "moved": 200.0, "on_floor": true})
 	check(Tutorial.banner_text() == "苔冠王野猪" and Tutorial.hint_text() == "", "进层主区只出名条，没有底部提示")
 	var line := Line2D.new()

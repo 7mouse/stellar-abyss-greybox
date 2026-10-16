@@ -1,6 +1,8 @@
 extends Node
 ## 新手引导。步骤记在 user://profile.cfg 的 tutorial_done；整局结束后 sealed，下一局不再触发。
 ## 外部事件走 notify(event_id)。T2/T3/T4 用 boss_enter、boss_first_telegraph、elite_first_seen、armor_broken_first。
+## 深苔史莱姆不是新的教学步骤。T3 第一次遇到时调用 on_elite_first_seen()，厚苔打破时调用 on_thickmoss_broken()。
+## 这条提示排在层主名条之前。精英、厚苔和技能 2 都还没做，不会自己触发。
 
 const STEPS: PackedStringArray = ["move", "attack", "dash", "loot", "stealth", "fire", "boss", "extract", "death", "charm"]
 
@@ -40,6 +42,8 @@ var _near_fire := false
 var _hp_full := false
 var _used_fire := false
 var _boss_zone := false
+var _elite_seen := false
+var _moss_broken := false
 var _charge_dodged := false
 var _guard_dead := false
 var _extracted := false
@@ -134,7 +138,13 @@ func notify(event_id: String, arg = null) -> void:
 			_on_village()
 		"run_ended":
 			_on_run_ended()
-		"elite_first_seen", "armor_broken_first":
+		"elite_first_seen":
+			_elite_seen = true
+			hooked[event_id] = int(hooked.get(event_id, 0)) + 1
+		"thickmoss_broken":
+			_moss_broken = true
+			hooked[event_id] = int(hooked.get(event_id, 0)) + 1
+		"armor_broken_first":
 			hooked[event_id] = int(hooked.get(event_id, 0)) + 1
 		_:
 			hooked[event_id] = int(hooked.get(event_id, 0)) + 1
@@ -186,6 +196,14 @@ func take_epitaph_flash() -> bool:
 
 func telegraph_played() -> bool:
 	return done.has("boss_telegraph")
+
+## T3：玩家第一次遇见深苔史莱姆。精英还没做，现在没有调用点。
+func on_elite_first_seen() -> void:
+	notify("elite_first_seen")
+
+## T3：厚苔被打破。破甲还没做，现在没有调用点。提示会立刻完成。
+func on_thickmoss_broken() -> void:
+	notify("thickmoss_broken")
 
 func debug_setup(s: Dictionary) -> void:
 	hold_world = true
@@ -295,6 +313,7 @@ func _evaluate() -> void:
 	_step_loot()
 	_step_stealth()
 	_step_fire()
+	_step_thickmoss()
 	_step_boss()
 	_step_extract()
 	_step_charm()
@@ -367,7 +386,19 @@ func _step_fire() -> void:
 		else:
 			_show("fire")
 
+## 不是十步之一。只在钩子到来时占底部提示，并且排在层主教学前面。
+func _step_thickmoss() -> void:
+	if done.has("thickmoss"):
+		return
+	if _moss_broken:
+		_finish("thickmoss", false)
+		return
+	if _elite_seen:
+		_show("thickmoss")
+
 func _step_boss() -> void:
+	if _elite_seen and not done.has("thickmoss"):
+		return
 	if _boss_zone and not done.has("boss_banner"):
 		done["boss_banner"] = true
 		banner = rules.boss_name
@@ -435,6 +466,8 @@ func _line(id: String) -> String:
 			return rules.stealth_text
 		"fire":
 			return rules.fire_full_text if _hp_full else rules.fire_text
+		"thickmoss":
+			return rules.thickmoss_text % InputGlyph.skill2()
 		"extract":
 			return rules.extract_text
 		"charm":
@@ -556,6 +589,8 @@ func _clear_run_flags() -> void:
 	_hp_full = false
 	_used_fire = false
 	_boss_zone = false
+	_elite_seen = false
+	_moss_broken = false
 	_charge_dodged = false
 	_guard_dead = false
 	_extracted = false

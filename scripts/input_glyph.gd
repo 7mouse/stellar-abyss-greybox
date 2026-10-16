@@ -29,3 +29,7 @@ static func interact() -> String:
 
 static func skill() -> String:
 	return "Y" if device == "pad" else "K"
+
+## T2 会把技能 2「破甲突刺」绑到这组键。现在还没有这个动作，提示先按这里显示。
+static func skill2() -> String:
+	return "RB" if device == "pad" else "R"

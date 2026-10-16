@@ -23,6 +23,7 @@ extends Resource
 @export var stealth_text := "它还没看清你。躲到树后面，或者离开它面前。"
 @export var fire_text := "篝火。坐一会儿，前面就是这层的主人。"
 @export var fire_full_text := "……前面就是这层的主人。"
+@export var thickmoss_text := "它的厚苔挡伤害，用破甲突刺（[%s]）打破"
 @export var extract_text := "出口开了。走出去才算活下来。"
 @export var death_text := "林 #07 的记录到此为止。"
 @export var charm_text := "紧急回村符。引导 3 秒，挨打会断。层主身边用不了。"

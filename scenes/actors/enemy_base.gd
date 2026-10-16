@@ -1,11 +1,13 @@
 class_name EnemyBase
 extends CharacterBody2D
-## 普通敌人基类：IDLE / CHASE / WINDUP / ATTACK / RECOVER / HURT / DEAD
+## 普通敌人基类：IDLE / CHASE / WINDUP / ATTACK / RECOVER / HURT / DEAD / RETURN
+## 开放地图 M1 临时仇恨（rules 不为空时）：主角进入 chase_radius 才追；离出生点超过 leash_px 就走回出生点（RETURN，途中不理主角）。
+## rules 为空（层守、召唤物、调试刷怪、测试场）= 旧行为，一直追。追击/回归走 NavigationAgent2D（use_nav，楼层烘焙完导航后打开）。
 ## 攻击前摇有明显预兆（变色 + “!” 图标），时长 = windup；poise 打满才硬直（普通怪 poise 0 = 每下都硬直）
 
 signal died(enemy: EnemyBase)
 
-enum S { IDLE, CHASE, WINDUP, ATTACK, RECOVER, HURT, DEAD }
+enum S { IDLE, CHASE, WINDUP, ATTACK, RECOVER, HURT, DEAD, RETURN }
 
 var data: EnemyData
 var depth := 1
@@ -31,13 +33,19 @@ var warn: Label
 var aim_line: Line2D
 var size := Vector2(40, 48)
 var tint := Color.WHITE
-var walls: Array = [] ## 给弹道用
 var last_windup_sec := -1.0 ## 测试：上一次前摇实际时长
 var telegraph_delay := 0.0
 var invulnerable := false
 var aggro := true
 var _lunge_left := 0.0
 var _windup_started := 0.0
+var rules: AggroRules ## M1 临时仇恨规则；null = 一直追
+var home_pos := Vector2.INF ## 出生点
+var no_go := Rect2() ## 主角在这个矩形里（层守区）时普通怪不追、正在追的回归
+var use_nav := false
+var nav: NavigationAgent2D
+var _repath_t := 0.0
+var _nav_goal := Vector2.INF
 
 func setup(p_data: EnemyData, p_depth: int, fd: FloorData = null) -> void:
 	data = p_data
@@ -90,6 +98,14 @@ func _ready() -> void:
 	hitbox.source = self
 	hitbox.source_name = data.display_name
 	add_child(hitbox)
+	nav = NavigationAgent2D.new()
+	nav.path_desired_distance = 16.0
+	nav.target_desired_distance = data.attack_range * 0.8
+	nav.radius = size.x * 0.4
+	add_child(nav)
+	_repath_t = randf() * 0.25 ## 分帧错开寻路请求
+	if home_pos == Vector2.INF:
+		home_pos = global_position
 	add_to_group("enemies")
 	telegraph_delay = float(Game.mods().get("telegraph_delay", 0.0))
 	cooldown = 0.6 + randf() * 0.6
@@ -107,8 +123,10 @@ func _physics_process(delta: float) -> void:
 	match state:
 		S.IDLE:
 			velocity = Vector2.ZERO
-			if aggro and target:
+			if aggro and target and wants_chase():
 				_go(S.CHASE)
+		S.RETURN:
+			_return_home(delta)
 		S.CHASE:
 			_chase(delta)
 		S.WINDUP:
@@ -135,7 +153,8 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			if state_t >= _hurt_len:
 				_go(S.CHASE)
-	_separate()
+	if state != S.IDLE:
+		_separate()
 
 var _hurt_len := 0.3
 
@@ -146,16 +165,58 @@ func _go(s: int) -> void:
 func speed() -> float:
 	return data.move_speed * (0.5 if slow_left > 0.0 else 1.0)
 
-func _chase(_delta: float) -> void:
+## 临时仇恨：主角在 chase_radius 内、不在层守区里
+func wants_chase() -> bool:
+	if rules == null:
+		return true
+	if target == null or no_go.has_point(target.global_position):
+		return false
+	return global_position.distance_to(target.global_position) <= rules.chase_radius
+
+func should_return() -> bool:
+	if rules == null:
+		return false
+	return global_position.distance_to(home_pos) > rules.leash_px or (target != null and no_go.has_point(target.global_position))
+
+## 朝 goal 走的方向：有导航时每 0.25 秒更新一次 target_position（goal 跳变 > 80px 立即更新），取下一个路径点
+func nav_dir(goal: Vector2, delta: float) -> Vector2:
+	var direct := (goal - global_position).normalized()
+	if not use_nav or nav == null:
+		return direct
+	_repath_t -= delta
+	if _repath_t <= 0.0 or _nav_goal == Vector2.INF or _nav_goal.distance_to(goal) > 80.0:
+		_repath_t = 0.25
+		_nav_goal = goal
+		nav.target_position = goal
+	var nxt := nav.get_next_path_position()
+	if nxt.distance_to(global_position) < 1.0:
+		return direct
+	return (nxt - global_position).normalized()
+
+func _return_home(delta: float) -> void:
+	var to := home_pos - global_position
+	if to.length() <= (rules.home_arrive_px if rules else 24.0):
+		velocity = Vector2.ZERO
+		_go(S.IDLE)
+		return
+	var dir := nav_dir(home_pos, delta)
+	facing = dir if dir != Vector2.ZERO else facing
+	velocity = dir * speed()
+	move_and_slide()
+
+func _chase(delta: float) -> void:
 	if target == null:
+		return
+	if should_return():
+		_go(S.RETURN)
 		return
 	var to: Vector2 = target.global_position - global_position
 	var dist := to.length()
 	facing = to.normalized() if dist > 1 else facing
-	var dir := to.normalized()
+	var dir := nav_dir(target.global_position, delta)
 	if data.id == "rootshot":
 		if dist < data.keep_distance:
-			dir = -dir
+			dir = nav_dir(global_position - to.normalized() * 160.0, delta) ## 后退目标点同样走导航
 		elif dist <= data.attack_range:
 			dir = Vector2.ZERO
 	elif dist <= data.attack_range * 0.8:
@@ -186,7 +247,6 @@ func _shoot(dir: Vector2) -> void:
 	p.damage = damage
 	p.velocity = dir * data.projectile_speed
 	p.source_name = data.display_name
-	p.walls = walls
 	p.position = global_position + dir * 20
 	get_parent().add_child(p)
 

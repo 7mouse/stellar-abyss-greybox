@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/resources/floor_data.gd" id="s"]
 [ext_resource type="Resource" path="res://data/guards/guard_3.tres" id="r0"]
 [ext_resource type="Resource" path="res://data/loot_tables/chest.tres" id="r1"]
+[ext_resource type="Resource" path="res://data/loot_tables/node.tres" id="r2"]
 
 [resource]
 script = ExtResource("s")
@@ -11,3 +12,9 @@ wave_size_min = 4
 waves = 3
 guard = ExtResource("r0")
 chest_loot = ExtResource("r1")
+grid_w = 7
+min_start_guard_dist = 6
+patrol_chance = 0.7
+camp_size_min = 5
+camp_size_max = 7
+node_loot = ExtResource("r2")

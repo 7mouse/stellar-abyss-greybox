@@ -35,3 +35,24 @@ func hp_scale() -> float:
 
 func dmg_scale() -> float:
 	return enemy_dmg_mult * pow(floor_dmg_scale, depth - 1)
+
+@export_group("开放地图")
+## 以上 combat_rooms_* / side_rooms_* / waves / wave_* / boon_rooms / side_boon_chance 为房间制旧字段：保留但开放地图不再读取
+@export var chunk_px := 1024.0 ## 区块边长
+@export var grid_w := 6
+@export var grid_h := 5
+@export var map_border_px := 160.0 ## 外圈实心墙厚度
+@export var loop_chance := 0.35 ## 生成树之外相邻区块额外打通的概率
+@export var gap_px := 480.0 ## 区块之间开口宽度
+@export var min_start_guard_dist := 5 ## 起点 → 层守区最短区块路
+@export var camps := 2
+@export var shrines := 1
+@export var chests := 3
+@export var resource_nodes := 6
+@export var patrol_chance := 0.65 ## 每个普通区块出现巡逻组的概率
+@export var patrol_size_min := 2
+@export var patrol_size_max := 4
+@export var camp_size_min := 4
+@export var camp_size_max := 6
+@export var node_loot: LootTable ## 资源点（萤苔丛）掉落
+@export var aggro_override: AggroRules ## 本层仇恨参数覆盖（M1 只留字段）

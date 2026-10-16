@@ -352,6 +352,11 @@ func _die() -> void:
 		var rm := 1.0 + float(Game.mods().get("rare_drop_pct", 0))
 		for st in roll_loot(rm):
 			Game.run.add_item(st)
+		if not (self is Guard):
+			var ckey := str(get_meta("rid", ""))
+			if ckey == "":
+				ckey = "%s@%d,%d" % [data.id, int(global_position.x), int(global_position.y)]
+			Game.recall.roll_elite(data.id, ckey)
 		Game.gain_xp(xp_value())
 		var kh := int(Game.mods().get("kill_heal", 0))
 		if kh > 0:

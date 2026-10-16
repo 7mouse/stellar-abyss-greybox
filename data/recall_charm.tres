@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RecallCharm" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/recall_charm.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+display_name = "紧急回村符"
+max_owned = 1
+chest_drop_chance = 0.03
+elite_drop_chance = 0.02
+channel_sec = 3.0
+return_enabled = true
+blocked_hint = "此处无法使用回村符"
+trap_rooms_floor_1 = 0
+trap_rooms_floor_2 = 1
+trap_rooms_floor_3 = 1
+elite_ids = "shellbug"
+use_hint = "R / 手柄 RB 使用回村符"

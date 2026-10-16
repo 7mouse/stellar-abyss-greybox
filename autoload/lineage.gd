@@ -19,6 +19,10 @@ var mats := {"moss": 0, "moss_essence": 0}
 var shards_bank := 0
 var upgrades := {"vit": 0, "swift": 0}
 var flags := {}
+var charm_carried := 0 ## 不在局内时拿在身上的回村符（0 或 1）
+var charm_source := ""
+var charm_lord_seen := {} ## "层数" -> true，每层第一次击杀层主。死亡不清除
+var charm_pending: Array = [] ## 首杀时已经持有符，回村后可领的层数。死亡不清除
 var rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
@@ -89,9 +93,13 @@ func can_vault(item: ItemData) -> bool:
 	return item != null and vault_rules.allows(item.category)
 
 func vault_put(item, count := 1) -> bool:
+	if Game.recall.storage_locked():
+		return false
 	var it: ItemData = item if item is ItemData else (item.item if item is ItemStack else Items.get_item(String(item)))
 	if item is ItemStack:
 		count = item.count
+	if it != null and it.id == RecallCharm.ITEM_ID:
+		return Game.recall.deposit_carried()
 	if not can_vault(it) or vault.size() >= vault_capacity():
 		return false
 	vault.append({"id": it.id, "count": count})
@@ -101,7 +109,11 @@ func vault_put(item, count := 1) -> bool:
 
 ## 替换：把 i 号格子的东西换出来，放进新的
 func vault_replace(i: int, item) -> Dictionary:
+	if Game.recall.storage_locked():
+		return {}
 	var it: ItemData = item if item is ItemData else Items.get_item(String(item))
+	if it != null and it.id == RecallCharm.ITEM_ID:
+		return {}
 	if not can_vault(it) or i < 0 or i >= vault.size():
 		return {}
 	var old: Dictionary = vault[i]
@@ -111,11 +123,15 @@ func vault_replace(i: int, item) -> Dictionary:
 	return old
 
 func vault_take(i: int) -> ItemData:
+	if Game.recall.storage_locked():
+		return null
 	if i < 0 or i >= vault.size():
 		return null
 	var e: Dictionary = vault.pop_at(i)
 	var it := Items.get_item(e.id)
-	if it.category == "equipment":
+	if it != null and it.id == RecallCharm.ITEM_ID:
+		Game.recall.receive_from_vault(e)
+	elif it.category == "equipment":
 		loadout.append(it.id)
 	else:
 		mats[it.id] = int(mats.get(it.id, 0)) + int(e.count)
@@ -150,7 +166,8 @@ func buy_upgrade(kind: String) -> bool:
 # ---------- 存档 ----------
 func to_dict() -> Dictionary:
 	return {"v": 1, "gen_counter": gen_counter, "individuals": individuals, "epitaphs": epitaphs, "corpse": corpse, "vault": vault,
-		"vault_level": vault_level, "loadout": loadout, "mats": mats, "shards_bank": shards_bank, "upgrades": upgrades, "flags": flags}
+		"vault_level": vault_level, "loadout": loadout, "mats": mats, "shards_bank": shards_bank, "upgrades": upgrades, "flags": flags,
+		"charm_carried": charm_carried, "charm_source": charm_source, "charm_lord_seen": charm_lord_seen, "charm_pending": charm_pending}
 
 func save() -> void:
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
@@ -190,6 +207,14 @@ func load_save() -> void:
 	for k in d.get("upgrades", {}):
 		upgrades[k] = int(d.upgrades[k])
 	flags = d.get("flags", {})
+	charm_carried = int(d.get("charm_carried", 0))
+	charm_source = String(d.get("charm_source", ""))
+	charm_lord_seen = {}
+	for k in d.get("charm_lord_seen", {}):
+		charm_lord_seen[str(k)] = bool(d.charm_lord_seen[k])
+	charm_pending = []
+	for x in d.get("charm_pending", []):
+		charm_pending.append(int(x))
 
 func reset_memory() -> void:
 	gen_counter = 0
@@ -203,6 +228,10 @@ func reset_memory() -> void:
 	shards_bank = 0
 	upgrades = {"vit": 0, "swift": 0}
 	flags = {}
+	charm_carried = 0
+	charm_source = ""
+	charm_lord_seen = {}
+	charm_pending = []
 
 func wipe() -> void:
 	reset_memory()

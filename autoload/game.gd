@@ -18,6 +18,7 @@ var enemies := {"mushling": preload("res://data/enemies/mushling.tres"), "rootsh
 var floors: Array[FloorData] = [preload("res://data/floors/floor_1.tres"), preload("res://data/floors/floor_2.tres"), preload("res://data/floors/floor_3.tres")]
 var affixes := {"frenzy": preload("res://data/guards/affix_frenzy.tres"), "summon": preload("res://data/guards/affix_summon.tres"), "hardshell": preload("res://data/guards/affix_hardshell.tres"), "spore": preload("res://data/guards/affix_spore.tres")}
 var clues: LoreClues = preload("res://data/lore/clues.tres")
+var recall: RecallCharm ## load() in _ready; a parse-time preload cycles with this script and breaks the web build
 
 var run: Run
 var last_extract := {} ## 结算界面用
@@ -35,6 +36,7 @@ var _slowmo_until := 0
 var debug_panel: CanvasLayer
 
 func _ready() -> void:
+	recall = load("res://data/recall_charm.tres")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	rng.randomize()
 	_setup_input()
@@ -74,6 +76,7 @@ func start_run() -> void:
 	Lineage.loadout.clear() ## 取出后的装备算局内装备
 	Lineage.save()
 	run.hp = max_hp()
+	recall.bring_into_run()
 	enter_floor(1)
 
 func enter_floor(n: int) -> void:
@@ -106,6 +109,7 @@ func extract() -> void:
 	Lineage.shards_bank += got.shards
 	for st in run.equipped:
 		got.equipment.append(st.item.id)
+	recall.bank_from_run()
 	var ind := Lineage.current()
 	ind.level = level()
 	ind.xp = run.xp
@@ -113,6 +117,21 @@ func extract() -> void:
 	Lineage.save()
 	run_ended.emit(true)
 	goto(SCN_EXTRACT)
+
+## 回村符成功：这局中断，人在村里，楼层状态留在 run.floor_memory
+func recall_to_village() -> void:
+	if run == null:
+		return
+	run.suspended = true
+	run.just_recalled = true
+	goto(SCN_VILLAGE)
+
+## 从村里回到被中断的那一层（起点）。开关在 recall_charm.tres
+func recall_return() -> void:
+	if run == null or not run.suspended or not recall.return_enabled:
+		return
+	run.suspended = false
+	enter_floor(run.depth)
 
 func descend() -> void:
 	run.hp = mini(max_hp(), run.hp + roundi(max_hp() * player_stats.heal_between_floors))
@@ -143,7 +162,8 @@ func log_floor(result: String) -> void:
 	Log.write("floors", [run.id, Lineage.current().gen_no, run.depth, result, "%.1f" % (now - float(fs.get("t0", now))), "%.1f" % float(fs.get("combat_sec", 0.0)),
 		"%.1f" % float(fs.get("guard_sec", 0.0)), fs.get("hp_start", run.hp), run.hp, fs.get("dmg_taken", 0), fs.get("kills", 0),
 		"|".join(run.boon_order), fs.get("level_start", 1), level(), run.count_of("moss"), run.shards_carried, "|".join(run.clue_seen),
-		fs.get("chunks_visited", 0), fs.get("encounters", 0), fs.get("chasers_peak", 0), fs.get("camps_cleared", 0), fs.get("nodes_taken", 0)])
+		fs.get("chunks_visited", 0), fs.get("encounters", 0), fs.get("chasers_peak", 0), fs.get("camps_cleared", 0), fs.get("nodes_taken", 0),
+		fs.get("charm_used", 0), fs.get("charm_floor", 0), fs.get("charm_interrupted", 0), fs.get("charm_source", "")])
 
 func hitstop(sec: float) -> void:
 	_hitstop_until = maxi(_hitstop_until, Time.get_ticks_msec() + int(sec * 1000))
@@ -164,6 +184,7 @@ func _setup_input() -> void:
 	_action("dash", [KEY_SPACE, KEY_SHIFT], [JOY_BUTTON_A])
 	_action("skill", [KEY_K, KEY_Q], [JOY_BUTTON_Y], -1, 0.0, MOUSE_BUTTON_RIGHT)
 	_action("interact", [KEY_E, KEY_F], [JOY_BUTTON_B])
+	_action("recall", [KEY_R], [JOY_BUTTON_RIGHT_SHOULDER])
 	_action("debug_toggle", [KEY_F1, KEY_QUOTELEFT], [JOY_BUTTON_BACK])
 
 func _action(name: String, keys: Array, buttons: Array, axis := -1, axis_val := 0.0, mouse := -1) -> void:
@@ -196,7 +217,7 @@ func _setup_web() -> void:
 	var win = JavaScriptBridge.get_interface("window")
 	_js_obj = JavaScriptBridge.create_object("Object")
 	var cb_dl = JavaScriptBridge.create_callback(func(_a): Log.download_all())
-	var cb_row = JavaScriptBridge.create_callback(func(_a): Log.write("floors", ["selftest", 0, 0, "selftest", 0, 0, 0, 0, 0, 0, 0, "", 1, 1, 0, 0, ""]))
+	var cb_row = JavaScriptBridge.create_callback(func(_a): Log.write("floors", ["selftest", 0, 0, "selftest", 0, 0, 0, 0, 0, 0, 0, "", 1, 1, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, ""]))
 	var cb_run = JavaScriptBridge.create_callback(func(_a): start_run())
 	var cb_perf = JavaScriptBridge.create_callback(func(_a):
 		var sc := get_tree().current_scene

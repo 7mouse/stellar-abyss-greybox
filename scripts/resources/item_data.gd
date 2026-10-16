@@ -1,6 +1,6 @@
 class_name ItemData
 extends Resource
-## 物品定义（data/items/*.tres）。category: material / rare_material / shard / equipment / key_item / lift_fuel / consumable / boon
+## 物品定义（data/items/*.tres）。category: material / rare_material / shard / equipment / key_item / consumable / boon
 
 @export var id := ""
 @export var display_name := ""

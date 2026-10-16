@@ -65,6 +65,7 @@ func _ready() -> void:
 	_section("保险箱", "保险箱规则", Lineage.vault_rules)
 	_section("保险箱", "强化台（局外）", Lineage.meta_rules)
 	_section("线索", "虚拟世界线索 clues.tres", g.clues)
+	_section("回村符", "紧急回村符 recall_charm.tres", g.recall)
 	root.visible = false
 
 func set_aggro_counts(chasing: int, windup: int, chase_peak: int, windup_peak: int) -> void:
@@ -372,7 +373,7 @@ func export_res(res: Resource) -> String:
 
 func export_all() -> Array:
 	var out := []
-	var list: Array = [load("res://data/aggro_rules.tres"), Game.player_stats, Game.skill, Game.clues, Lineage.legacy_rules, Lineage.vault_rules, Lineage.meta_rules]
+	var list: Array = [load("res://data/aggro_rules.tres"), Game.player_stats, Game.skill, Game.clues, Lineage.legacy_rules, Lineage.vault_rules, Lineage.meta_rules, Game.recall]
 	list += Game.attacks
 	list += Game.enemies.values()
 	list += Game.floors

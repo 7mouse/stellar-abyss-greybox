@@ -7,7 +7,7 @@ func _init() -> void:
 	title = "保险箱"
 
 func _fill() -> void:
-	text("容量 %d / %d（升级在强化台）　能放：装备、稀有材料、钥匙道具、升降梯燃料" % [Lineage.vault.size(), Lineage.vault_capacity()], 24)
+	text("容量 %d / %d（升级在强化台）　能放：装备、稀有材料、钥匙道具" % [Lineage.vault.size(), Lineage.vault_capacity()], 24)
 	if replacing != "":
 		text("选择要换出的格子（换出的东西回到身上）：", 24, Color(1, 0.9, 0.5))
 		for i in Lineage.vault.size():
@@ -21,6 +21,8 @@ func _fill() -> void:
 	text("身上：", 24)
 	for id in Lineage.loadout:
 		btn("放入：" + Items.get_item(id).display_name, _put.bind(id))
+	if Lineage.charm_carried > 0:
+		btn("放入：" + Game.recall.display_name, _put.bind(RecallCharm.ITEM_ID))
 	if Lineage.mats.moss_essence > 0:
 		btn("放入：萤苔精 ×1（稀有材料）", _put.bind("moss_essence"))
 	btn("记忆碎片 ×%d（不能放入）" % Lineage.shards_bank, func(): pass, false)

@@ -18,6 +18,10 @@ var xp := 0
 var level_start := 1
 var clue_seen: Array[String] = []
 var floor_stats := {} ## 本层统计：floor_t0, combat_sec, guard_sec, hp_start, dmg_taken, kills, level_start
+var charm_source := "" ## 当前这张回村符从哪来：chest / elite / lord / pending
+var suspended := false ## 用回村符回到村里，这局还没结束
+var just_recalled := false
+var floor_memory := {} ## depth -> {seed, killed, picked, guard_dead, corpse_taken}
 
 func add_item(st: ItemStack) -> void:
 	if st.item.category == "shard":
@@ -32,6 +36,29 @@ func add_item(st: ItemStack) -> void:
 			b.count += st.count
 			return
 	bag.append(ItemStack.new(st.item, st.count))
+
+func take_item(id: String, n := 1) -> bool:
+	for i in bag.size():
+		if bag[i].item.id != id:
+			continue
+		if bag[i].count < n:
+			return false
+		bag[i].count -= n
+		if bag[i].count <= 0:
+			bag.remove_at(i)
+			for j in range(equipped.size() - 1, -1, -1):
+				if equipped[j].item.id == id:
+					equipped.remove_at(j)
+					break
+		return true
+	return false
+
+func swap_bag(i: int, j: int) -> void:
+	if i < 0 or j < 0 or i >= bag.size() or j >= bag.size() or i == j:
+		return
+	var tmp: ItemStack = bag[i]
+	bag[i] = bag[j]
+	bag[j] = tmp
 
 func count_of(id: String) -> int:
 	if id == "shard":

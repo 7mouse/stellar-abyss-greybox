@@ -1,6 +1,6 @@
 class_name RootSnare
 extends Hazard
-## 缠根地块：主角踩上后 0.8 秒预兆，预兆结束时还在地块上就被缠住 1.5 秒（移速 −40%）。之后 rearm_sec 秒重新就绪
+## 缠根地块：主角踩上后 0.8 秒预兆，预兆结束时还在地块上就被缠住 1.5 秒（移速 −40%；冲刺可以提前挣脱）。之后 rearm_sec 秒重新就绪
 
 var caught := false ## 最近一次是否缠住了主角
 
@@ -14,7 +14,7 @@ func _tick(delta: float) -> void:
 	if t >= hd.warn_sec:
 		caught = false
 		if p and p.global_position.distance_to(global_position) <= hd.radius:
-			p.apply_hazard_slow(hd.slow_pct, hd.effect_sec)
+			p.apply_hazard_slow(hd.slow_pct, hd.effect_sec, "root_snare")
 			caught = true
 		_rearm()
 

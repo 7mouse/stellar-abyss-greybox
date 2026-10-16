@@ -330,6 +330,82 @@ static func all_solids(layout: Dictionary) -> Array[Rect2]:
 			out.append(r)
 	return out
 
+## 起点 → 层主区入口外篝火的“最窄通道”宽度（px）：所有可走路线里最宽那条的瓶颈。
+## 做法：cell px 栅格 → 到最近障碍的距离（chamfer 3-4）→ 按距离从大到小加入并查集，起终点连通时的距离 × 2
+static func passage_width(L: Dictionary, cell := 16.0, info := {}) -> float:
+	var b: Rect2 = L.bounds
+	var nx := int(ceil(b.size.x / cell))
+	var ny := int(ceil(b.size.y / cell))
+	var INF := 1e9
+	var d := PackedFloat32Array(); d.resize(nx * ny); d.fill(INF)
+	for r in all_solids(L):
+		var x0 := maxi(0, int((r.position.x - b.position.x) / cell)); var x1 := mini(nx - 1, int((r.end.x - b.position.x - 0.01) / cell))
+		var y0 := maxi(0, int((r.position.y - b.position.y) / cell)); var y1 := mini(ny - 1, int((r.end.y - b.position.y - 0.01) / cell))
+		for y in range(y0, y1 + 1):
+			for x in range(x0, x1 + 1):
+				d[y * nx + x] = 0.0
+	var dg := cell * 1.4142
+	for y in ny:
+		for x in nx:
+			var i := y * nx + x
+			var v := d[i]
+			if v == 0.0: continue
+			if x > 0: v = minf(v, d[i - 1] + cell)
+			else: v = minf(v, cell)
+			if y > 0:
+				v = minf(v, d[i - nx] + cell)
+				if x > 0: v = minf(v, d[i - nx - 1] + dg)
+				if x < nx - 1: v = minf(v, d[i - nx + 1] + dg)
+			else: v = minf(v, cell)
+			d[i] = v
+	for y in range(ny - 1, -1, -1):
+		for x in range(nx - 1, -1, -1):
+			var i := y * nx + x
+			var v := d[i]
+			if v == 0.0: continue
+			if x < nx - 1: v = minf(v, d[i + 1] + cell)
+			else: v = minf(v, cell)
+			if y < ny - 1:
+				v = minf(v, d[i + nx] + cell)
+				if x < nx - 1: v = minf(v, d[i + nx + 1] + dg)
+				if x > 0: v = minf(v, d[i + nx - 1] + dg)
+			else: v = minf(v, cell)
+			d[i] = v
+	var q := 4.0
+	var dmax := 0.0
+	for v in d: dmax = maxf(dmax, v)
+	var nb := int(dmax / q) + 1
+	var buckets: Array = []; buckets.resize(nb)
+	for k in nb: buckets[k] = PackedInt32Array()
+	for i in nx * ny:
+		if d[i] > 0.0:
+			buckets[int(d[i] / q)].append(i)
+	var par: Array = []; par.resize(nx * ny); par.fill(-1) ## Array（lambda 里按引用）
+	var find := func(f: Callable, i: int) -> int:
+		var r := i
+		while par[r] != r: r = par[r]
+		while par[i] != r:
+			var n: int = par[i]; par[i] = r; i = n
+		return r
+	var cidx := func(p: Vector2) -> int:
+		return clampi(int((p.y - b.position.y) / cell), 0, ny - 1) * nx + clampi(int((p.x - b.position.x) / cell), 0, nx - 1)
+	var s0: int = cidx.call(L.start_pos)
+	var g0: int = cidx.call(L.campfire_pos)
+	for k in range(nb - 1, -1, -1):
+		for i in buckets[k]:
+			par[i] = i
+			var x: int = i % nx
+			for j in [i - 1 if x > 0 else -1, i + 1 if x < nx - 1 else -1, i - nx, i + nx]:
+				if j >= 0 and j < nx * ny and par[j] != -1:
+					var ra: int = find.call(find, i); var rb: int = find.call(find, j)
+					if ra != rb: par[ra] = rb
+		if par[s0] != -1 and par[g0] != -1 and find.call(find, s0) == find.call(find, g0):
+			if not buckets[k].is_empty():
+				var bi: int = buckets[k][-1]
+				info["at"] = b.position + Vector2((bi % nx + 0.5) * cell, (bi / nx + 0.5) * cell)
+			return k * q * 2.0 - cell ## 格心距离偏大半格（两侧共一格），扣掉让结果保守
+	return 0.0
+
 ## 区块级最短路（chunk id 列表，含起点和层主区）
 static func shortest_path(layout: Dictionary) -> Array:
 	var W: int = layout.grid_w
@@ -548,7 +624,7 @@ static func _terrain(rng: RandomNumberGenerator, L: Dictionary, fd: FloorData) -
 				if not touches_guard and grc.grow(220.0).has_point(q):
 					q = p0.lerp(p1, t) ## 不让别的小路拐进层主区围墙
 
-				var w := 125.0 + 45.0 * n_wid.get_noise_2d(q.x, q.y)
+				var w := maxf(fd.path_min_r, 125.0 + 45.0 * n_wid.get_noise_2d(q.x, q.y)) ## 半径下限：64px 地形格量化后通道仍 ≥ 目标宽度
 				carve.call(q, w)
 	# 层主区入口外侧：篝火所在的空地
 	var gch: Dictionary = L.chunks[L.guard_chunk]

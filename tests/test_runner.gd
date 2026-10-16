@@ -83,6 +83,7 @@ func _run() -> void:
 	await test_aggro()
 	await test_ecology()
 	await test_m3_panel()
+	await test_m4_designer()
 	await test_nav_chase()
 	await test_walk_floor1()
 	await test_village()
@@ -2019,6 +2020,66 @@ func test_m3_panel() -> void:
 	DP.debug_guard()
 	await frames(2)
 	check("区块" in tx and "巡逻组" in tx and f.player.global_position.distance_to(f.layout.campfire_pos) < 1.0, "OM10 地图统计有数字、“传送到层主区”可用")
+
+# ---------------- M4 设计补充（a~e） ----------------
+func test_m4_designer() -> void:
+	print("== M4 设计补充：孢子囊 / 缠根 / 落石 / 染色 / 第 2 层通道 ==")
+	DP.jump_floor(1)
+	await frames(1)
+	await wait_scene(Game.SCN_FLOOR)
+	var f := scene()
+	Game.god_mode = true
+	await clear_enemies()
+	for h in get_tree().get_nodes_in_group("hazards"): h.queue_free()
+	await frames(2)
+	var p: Player = f.player
+	var E := p.global_position
+	# (a) 敌人踩上孢子囊：触发，并且敌人自己被减速
+	var pod: SporePod = f._spawn_hazard(load("res://data/hazards/spore_pod.tres"), E + Vector2(400, 0), false)
+	var e: EnemyBase = f._map_enemy("mushling", E + Vector2(400, 0), "t")
+	await frames(4)
+	check(pod.spent and get_tree().get_nodes_in_group("spore_clouds").size() == 1 and is_equal_approx(e.hazard_speed_mult(), 0.7) and p.global_position.distance_to(pod.global_position) > 300.0,
+		"(a) 敌人踩孢子囊（主角在 %.0f px 外）：触发爆开，敌人移速 ×%.2f" % [p.global_position.distance_to(pod.global_position), e.hazard_speed_mult()])
+	await clear_enemies()
+	# (b) 冲刺挣脱缠根
+	var sn: RootSnare = f._spawn_hazard(load("res://data/hazards/root_snare.tres"), p.global_position, false)
+	await until(func(): return sn.fire_count > 0, 4.0)
+	var held := p.hazard_speed_mult()
+	p.dash_cd.fill(0.0)
+	var dashed := p.try_dash()
+	await frames(1)
+	check(sn.caught and is_equal_approx(held, 0.6) and dashed and p.hazard_speed_mult() >= 1.0 and p.snare_breaks == 1, "(b) 缠住时移速 ×%.2f，冲刺后立即挣脱（×%.2f）" % [held, p.hazard_speed_mult()])
+	sn.queue_free()
+	# (c) 落石预兆 ≥ 0.8 秒且画落点圈
+	await secs(0.5)
+	var rk: FallingRock = f._spawn_hazard(load("res://data/hazards/falling_rock.tres"), p.global_position + Vector2(150, 0), false)
+	await until(func(): return rk.t >= 0.3, 3.0)
+	await frames(2)
+	check(rk.hd.warn_sec >= 0.8 and rk.visible and rk.landing_drawn and rk.is_visible_in_tree(), "(c) 落石预兆 %.1f 秒（≥ 0.8），预兆中落点圈已绘制、可见" % rk.hd.warn_sec)
+	rk.queue_free()
+	Game.god_mode = false
+	# (d) 生态染色强度可调
+	var eco: EcologyData = Game.floors[0].ecology
+	var L := MapGen.generate(424242, 1, Game.floors[0])
+	var c0: Color = MapGen.terrain_images(L)[0].get_pixel(10, 10)
+	var k0 := eco.palette_strength
+	eco.palette_strength = 0.0
+	var L2 := MapGen.generate(424242, 1, Game.floors[0])
+	var c1: Color = MapGen.terrain_images(L2)[0].get_pixel(10, 10)
+	eco.palette_strength = k0
+	check(is_equal_approx(k0, 0.25) and DP.find_editor(eco, "palette_strength") != null and not c0.is_equal_approx(c1) and _col_close(c1, MapGen.ground_color(L2.terrain.biome[10 * L2.terrain.nx + 10])),
+		"(d) EcologyData.palette_strength = %.2f 在 F1 可调；改成 0 后地面回到纯群系色" % k0)
+	# (e) 第 2 层最窄通道 ≥ 160px（50 个种子）
+	var fd2: FloorData = Game.floors[1]
+	var mn := 1e9
+	var worst := 0
+	for i in 50:
+		var sd := 424242 + i * 7919
+		var w := MapGen.passage_width(MapGen.generate(sd, 2, fd2))
+		if w < mn:
+			mn = w
+			worst = sd
+	check(mn >= 160.0, "(e) 第 2 层 50 个种子：起点 → 层主区篝火最窄通道 %.0f px（种子 %d，≥ 160；cliff_th %.2f，path_min_r %.0f）" % [mn, worst, fd2.ecology.cliff_th, fd2.path_min_r])
 
 func _col_close(a: Color, b: Color) -> bool:
 	return absf(a.r - b.r) < 0.01 and absf(a.g - b.g) < 0.01 and absf(a.b - b.b) < 0.01

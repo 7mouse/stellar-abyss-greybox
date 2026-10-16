@@ -84,4 +84,5 @@ func dmg_scale() -> float:
 @export var camp_size_min := 4
 @export var camp_size_max := 6
 @export var node_loot: LootTable ## 资源点（萤苔丛）掉落
+@export var path_min_r := 0.0 ## 小路挖空半径下限（px）；0 = 不限（噪声 80~170）。第 2 层 = 最窄通道 ≥ 160px
 @export var aggro_override: AggroRules ## 本层仇恨参数覆盖（M1 只留字段）

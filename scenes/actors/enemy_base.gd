@@ -179,9 +179,11 @@ func _go(s: int) -> void:
 ## 环境机关减速（孢子云 −30%、缠根 −40%）：取持续中最强的一个
 var hz_slow_left := 0.0
 var hz_slow_pct := 0.0
-func apply_hazard_slow(pct: float, sec: float) -> void:
+var hz_slow_tag := "" ## 当前减速来源（root_snare = 缠根，可被冲刺挣脱）
+func apply_hazard_slow(pct: float, sec: float, tag := "") -> void:
 	if hz_slow_left <= 0.0 or pct >= hz_slow_pct:
 		hz_slow_pct = pct
+		hz_slow_tag = tag
 	hz_slow_left = maxf(hz_slow_left, sec)
 func hazard_speed_mult() -> float:
 	return 1.0 - hz_slow_pct if hz_slow_left > 0.0 else 1.0

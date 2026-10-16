@@ -104,9 +104,12 @@ func dash_distance() -> float:
 ## 环境机关减速（孢子云 −30%、缠根 −40%）：取持续中最强的一个
 var hz_slow_left := 0.0
 var hz_slow_pct := 0.0
-func apply_hazard_slow(pct: float, sec: float) -> void:
+var snare_breaks := 0
+var hz_slow_tag := "" ## 当前减速来源（root_snare = 缠根，可被冲刺挣脱）
+func apply_hazard_slow(pct: float, sec: float, tag := "") -> void:
 	if hz_slow_left <= 0.0 or pct >= hz_slow_pct:
 		hz_slow_pct = pct
+		hz_slow_tag = tag
 	hz_slow_left = maxf(hz_slow_left, sec)
 func hazard_speed_mult() -> float:
 	return 1.0 - hz_slow_pct if hz_slow_left > 0.0 else 1.0
@@ -214,6 +217,10 @@ func try_dash() -> bool:
 		return false
 	if i >= 0 and not Game.inf_dash:
 		dash_cd[i] = dash_recharge()
+	if hz_slow_left > 0.0 and hz_slow_tag == "root_snare": ## 冲刺挣脱缠根
+		hz_slow_left = 0.0
+		hz_slow_tag = ""
+		snare_breaks += 1
 	if state == S.ATTACK or state == S.SKILL:
 		hitbox.end() ## 取消普攻（含后摇）
 	var mv := move_input()

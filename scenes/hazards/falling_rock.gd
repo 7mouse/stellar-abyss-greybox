@@ -26,9 +26,13 @@ func smash() -> void:
 	NoiseBus.emit(global_position, 300.0, "rock")
 	_rearm()
 
+var landing_drawn := false ## 预兆期间画过落点圈（测试用）
+
 func _draw() -> void:
+	landing_drawn = t >= 0.0
 	if t >= 0.0:
 		var k := t / hd.warn_sec
+		draw_arc(Vector2.ZERO, hd.effect_radius, 0, TAU, 40, Color(1, 0.85, 0.6, 0.9), 4.0) ## 落点圈
 		draw_circle(Vector2.ZERO, hd.effect_radius, Color(0.9, 0.3, 0.2, 0.15 + 0.35 * k))
 		for i in 5:
 			var a := i * TAU / 5.0 + 0.3

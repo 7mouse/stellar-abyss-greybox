@@ -20,3 +20,4 @@ camp_size_max = 6
 node_loot = ExtResource("r2")
 aggro_override = ExtResource("r3")
 ecology = ExtResource("eco")
+path_min_r = 112.0

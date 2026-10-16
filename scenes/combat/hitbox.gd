@@ -32,6 +32,11 @@ func end() -> void:
 	active = false
 
 func _physics_process(_d: float) -> void:
+	var _p := Prof.t0()
+	_prof_physics_process(_d)
+	Prof.add("hitbox", _p)
+
+func _prof_physics_process(_d: float) -> void:
 	if active:
 		check()
 	queue_redraw()

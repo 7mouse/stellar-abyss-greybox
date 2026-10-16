@@ -50,6 +50,11 @@ func show_toast(t: String) -> void:
 	_toast_t = 2.5
 
 func _process(delta: float) -> void:
+	var _p := Prof.t0()
+	_prof_process(delta)
+	Prof.add("hud", _p)
+
+func _prof_process(delta: float) -> void:
 	_toast_t -= delta
 	toast.visible = _toast_t > 0.0
 	if player == null or not is_instance_valid(player):

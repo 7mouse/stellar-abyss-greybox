@@ -16,6 +16,11 @@ func _ready() -> void:
 	add_to_group("projectiles")
 
 func _physics_process(delta: float) -> void:
+	var _p := Prof.t0()
+	_prof_physics_process(delta)
+	Prof.add("projectile", _p)
+
+func _prof_physics_process(delta: float) -> void:
 	var prev := global_position
 	position += velocity * delta
 	life -= delta

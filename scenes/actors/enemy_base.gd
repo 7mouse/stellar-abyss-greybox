@@ -112,6 +112,11 @@ func _ready() -> void:
 	cooldown = 0.6 + randf() * 0.6
 
 func _physics_process(delta: float) -> void:
+	var _p := Prof.t0()
+	_prof_physics_process(delta)
+	Prof.add("enemy", _p)
+
+func _prof_physics_process(delta: float) -> void:
 	if state == S.DEAD:
 		return
 	state_t += delta
@@ -196,6 +201,12 @@ func should_return() -> bool:
 
 ## 朝 goal 走的方向：有导航时每 0.25 秒更新一次 target_position（goal 跳变 > 80px 立即更新），取下一个路径点
 func nav_dir(goal: Vector2, delta: float) -> Vector2:
+	var _p := Prof.t0()
+	var _r := _prof_nav_dir(goal, delta)
+	Prof.add("nav", _p)
+	return _r
+
+func _prof_nav_dir(goal: Vector2, delta: float) -> Vector2:
 	var direct := (goal - global_position).normalized()
 	if not use_nav or nav == null:
 		return direct
@@ -358,6 +369,11 @@ func xp_value() -> int:
 	return data.xp
 
 func _separate() -> void:
+	var _p := Prof.t0()
+	_prof_separate()
+	Prof.add("separate", _p)
+
+func _prof_separate() -> void:
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if e != self:
 			var d: Vector2 = global_position - e.global_position

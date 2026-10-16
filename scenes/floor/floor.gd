@@ -121,6 +121,7 @@ func _build_map() -> void:
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		spr.z_index = -10 if i == 0 else -4
 		add_child(spr)
+		terrain_sprites.append(spr)
 	for r in layout.border:
 		_solid(r, Color(0.22, 0.19, 0.16))
 	for c in layout.chunks:
@@ -406,6 +407,11 @@ func guard_zone_enemies() -> Array:
 
 # ---------- 每帧 ----------
 func _physics_process(delta: float) -> void:
+	var _p := Prof.t0()
+	_prof_physics_process(delta)
+	Prof.add("floor", _p)
+
+func _prof_physics_process(delta: float) -> void:
 	if player == null or not is_instance_valid(player):
 		return
 	var fighting := false
@@ -742,6 +748,19 @@ func _draw_aggro_overlay() -> void:
 		aggro_overlay.draw_arc(n[0], n[1], 0, TAU, 64, Color(0.4, 0.8, 1, clampf(n[2], 0, 1)), 4)
 
 ## 网页性能检查：主角周围刷 n 只地图怪并开打（greybox.perfRing()）
+## 性能实验：按名字隐藏一类画面（terrain / obstacles_tex / minimap / hud / world / solids）
+var terrain_sprites: Array = []
+func debug_set_visible(what: String, on: bool) -> void:
+	match what:
+		"terrain": terrain_sprites[0].visible = on
+		"obstacles_tex": terrain_sprites[1].visible = on
+		"minimap": minimap.visible = on
+		"hud": hud.visible = on
+		"world": world.visible = on
+		"solids":
+			for c in get_children():
+				if c is StaticBody2D: c.visible = on
+
 func debug_perf_ring(n: int) -> void:
 	var c := player.global_position
 	var ring: Array = []

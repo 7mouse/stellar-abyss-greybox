@@ -40,4 +40,9 @@ func _draw() -> void:
 		draw_polyline(pts, Color(0.6, 0.6, 0.6) if invulnerable else Color(0.2, 1, 0.3), 2.0)
 
 func _process(_d: float) -> void:
+	var _p := Prof.t0()
+	_prof_process(_d)
+	Prof.add("hurtbox", _p)
+
+func _prof_process(_d: float) -> void:
 	queue_redraw()

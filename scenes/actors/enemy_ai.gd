@@ -72,6 +72,12 @@ func _player_in_no_go() -> bool:
 
 ## 视野：近身 sense_radius 一律察觉；否则要在 sight_range、视野角内，并且墙体层射线不被挡
 func can_see_player(use_cone := true) -> bool:
+	var _p := Prof.t0()
+	var _r = _prof_can_see_player(use_cone)
+	Prof.add("sight", _p)
+	return _r
+
+func _prof_can_see_player(use_cone := true) -> bool:
 	var p := target_pos()
 	if p == Vector2.INF or _player_in_no_go():
 		return false

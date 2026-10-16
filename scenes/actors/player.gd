@@ -244,6 +244,11 @@ func _update_facing() -> void:
 		facing = a
 
 func _physics_process(delta: float) -> void:
+	var _p := Prof.t0()
+	_prof_physics_process(delta)
+	Prof.add("player", _p)
+
+func _prof_physics_process(delta: float) -> void:
 	hz_slow_left = maxf(0.0, hz_slow_left - delta)
 	iframe_left = maxf(0.0, iframe_left - delta)
 	skill_cd_left = maxf(0.0, skill_cd_left - delta)

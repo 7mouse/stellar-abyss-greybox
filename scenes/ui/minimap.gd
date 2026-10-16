@@ -62,6 +62,11 @@ func is_visited(id: int) -> bool:
 	return floor_node.visited.has(id)
 
 func _process(d: float) -> void:
+	var _p := Prof.t0()
+	_prof_process(d)
+	Prof.add("minimap_proc", _p)
+
+func _prof_process(d: float) -> void:
 	_t -= d
 	if _t <= 0.0 and floor_node and floor_node.player and is_instance_valid(floor_node.player):
 		_t = 0.25
@@ -72,6 +77,11 @@ func to_map(p: Vector2) -> Vector2:
 	return p * scale_f
 
 func _draw() -> void:
+	var _p := Prof.t0()
+	_prof_draw()
+	Prof.add("minimap_draw", _p)
+
+func _prof_draw() -> void:
 	if floor_node == null:
 		return
 	draw_rect(Rect2(Vector2(-4, -4), size + Vector2(8, 8)), Color(0, 0, 0, 0.6))

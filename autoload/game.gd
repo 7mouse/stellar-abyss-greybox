@@ -203,7 +203,23 @@ func _setup_web() -> void:
 		if sc and sc.has_method("debug_perf_ring"):
 			god_mode = true
 			sc.debug_perf_ring(12))
-	_js_refs = [cb_dl, cb_row, cb_run, cb_perf]
+	var cb_prof_on = JavaScriptBridge.create_callback(func(a):
+		Prof.on = bool(a[0]) if a.size() > 0 else true
+		Prof.frames.clear())
+	var cb_prof_dump = JavaScriptBridge.create_callback(func(_a):
+		_js_obj.prof = JSON.stringify(Prof.frames))
+	var cb_clear = JavaScriptBridge.create_callback(func(_a):
+		for e in get_tree().get_nodes_in_group("enemies"):
+			e.queue_free())
+	var cb_vis = JavaScriptBridge.create_callback(func(a):
+		var sc := get_tree().current_scene
+		if sc and sc.has_method("debug_set_visible"):
+			sc.debug_set_visible(String(a[0]), bool(a[1])))
+	_js_refs = [cb_dl, cb_row, cb_run, cb_perf, cb_prof_on, cb_prof_dump, cb_clear, cb_vis]
+	_js_obj.vis = cb_vis
+	_js_obj.profOn = cb_prof_on
+	_js_obj.profDump = cb_prof_dump
+	_js_obj.clearEnemies = cb_clear
 	_js_obj.perfRing = cb_perf
 	_js_obj.downloadCsv = cb_dl
 	_js_obj.selftestRow = cb_row
@@ -211,7 +227,13 @@ func _setup_web() -> void:
 	win.greybox = _js_obj
 
 var _logic_ms := 0.0 ## 逻辑帧时间（process + physics）指数平均，网页检查读 greybox.logicMs
+var _phys_last := 0
 func _update_web() -> void:
+	if Prof.on:
+		var pf := Engine.get_physics_frames()
+		Prof.end_frame({"proc": Performance.get_monitor(Performance.TIME_PROCESS) * 1e6, "phys": Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1e6,
+			"steps": pf - _phys_last, "t": Time.get_ticks_usec(), "objs": Performance.get_monitor(Performance.OBJECT_COUNT), "draw": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)})
+		_phys_last = pf
 	if _js_obj:
 		var ms := (Performance.get_monitor(Performance.TIME_PROCESS) + Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0
 		_logic_ms = lerpf(_logic_ms, ms, 0.05)

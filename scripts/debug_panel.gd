@@ -11,6 +11,8 @@ var floor_spin: SpinBox
 var boon_pick: OptionButton
 var seed_spin: SpinBox
 var groups := {} ## 名称 -> VBoxContainer
+var show_chunks := false ## 显示区块网格（楼层每帧读取）
+var map_label: Label
 
 func _ready() -> void:
 	layer = 100
@@ -45,7 +47,8 @@ func _ready() -> void:
 		_section("层守", "词缀：" + g.affixes[id].display_name, g.affixes[id])
 	for fd in g.floors:
 		_section("楼层", "第 %d 层" % fd.depth, fd)
-	for id in ["enemy_common", "guard_1", "guard_2", "guard_3", "chest"]:
+	_section("仇恨", "M1 临时仇恨规则（aggro_rules.tres：进入 chase_radius 就追，离出生点超过 leash_px 就回去）", load("res://data/aggro_rules.tres"))
+	for id in ["enemy_common", "guard_1", "guard_2", "guard_3", "chest", "node"]:
 		_loot_section(load("res://data/loot_tables/%s.tres" % id))
 	_section("遗志", "继承规则（legacy_power = 遗志生效比例）", Lineage.legacy_rules)
 	_section("保险箱", "保险箱规则", Lineage.vault_rules)
@@ -101,7 +104,11 @@ func _build_tools() -> void:
 	spawn_count.value = 1
 	r2.add_child(spawn_count)
 	_btn(r2, "刷出", func(): spawn_enemies(Game.enemies.keys()[spawn_kind.selected], int(spawn_count.value)))
-	_btn(r2, "直接打出层守", debug_guard)
+	_btn(r2, "传送到层守区（入口外侧）", debug_guard)
+	var rm := _row(tools)
+	_check(rm, "显示区块网格", show_chunks, func(v): show_chunks = v)
+	_btn(rm, "地图统计", func(): map_label.text = map_stats_text())
+	map_label = _lbl(tools, "")
 	var r3 := _row(tools)
 	floor_spin = SpinBox.new()
 	floor_spin.min_value = 1
@@ -255,13 +262,17 @@ func spawn_enemies(id: String, n: int) -> Array:
 		return []
 	var out := []
 	for i in n:
-		out.append(f.spawn_enemy(id, f.player.global_position + Vector2(260, 0).rotated(TAU * i / maxf(1, n)), f.current_room))
+		out.append(f.spawn_enemy(id, f.player.global_position + Vector2(260, 0).rotated(TAU * i / maxf(1, n))))
 	return out
 
 func debug_guard() -> void:
 	var f := _floor()
 	if f:
 		f.debug_guard()
+
+func map_stats_text() -> String:
+	var f := _floor()
+	return f.map_stats_text() if f else "不在楼层里"
 
 func jump_floor(n: int) -> void:
 	if Game.run == null:
@@ -304,7 +315,7 @@ func drop_stats(n: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 12345
 	var out := {}
-	for id in ["enemy_common", "guard_1", "guard_2", "guard_3", "chest"]:
+	for id in ["enemy_common", "guard_1", "guard_2", "guard_3", "chest", "node"]:
 		var lt: LootTable = load("res://data/loot_tables/%s.tres" % id)
 		var hits := {}
 		for i in n:
@@ -342,7 +353,7 @@ func export_res(res: Resource) -> String:
 
 func export_all() -> Array:
 	var out := []
-	var list: Array = [Game.player_stats, Game.skill, Game.clues, Lineage.legacy_rules, Lineage.vault_rules, Lineage.meta_rules]
+	var list: Array = [load("res://data/aggro_rules.tres"), Game.player_stats, Game.skill, Game.clues, Lineage.legacy_rules, Lineage.vault_rules, Lineage.meta_rules]
 	list += Game.attacks
 	list += Game.enemies.values()
 	list += Game.floors

@@ -1,13 +1,13 @@
 class_name EnemyBase
 extends CharacterBody2D
-## 普通敌人基类：IDLE / CHASE / WINDUP / ATTACK / RECOVER / HURT / DEAD / RETURN
-## 开放地图 M1 临时仇恨（rules 不为空时）：主角进入 chase_radius 才追；离出生点超过 leash_px 就走回出生点（RETURN，途中不理主角）。
-## rules 为空（层守、召唤物、调试刷怪、测试场）= 旧行为，一直追。追击/回归走 NavigationAgent2D（use_nav，楼层烘焙完导航后打开）。
+## 普通敌人基类：IDLE / CHASE / WINDUP / ATTACK / RECOVER / HURT / DEAD / RETURN / PATROL / ALERT
+## 地图怪（ai 不为空，见 EnemyAI）：PATROL 巡逻 → ALERT 警觉 → CHASE 追击 → RETURN 回归；前摇要先拿攻击令牌，追击名额满了就包围待机。
+## ai 为空（层守、召唤物、调试刷怪、测试场）= 旧行为，IDLE 立即开追、一直追。追击/回归走 NavigationAgent2D（use_nav，楼层烘焙完导航后打开）。
 ## 攻击前摇有明显预兆（变色 + “!” 图标），时长 = windup；poise 打满才硬直（普通怪 poise 0 = 每下都硬直）
 
 signal died(enemy: EnemyBase)
 
-enum S { IDLE, CHASE, WINDUP, ATTACK, RECOVER, HURT, DEAD, RETURN }
+enum S { IDLE, CHASE, WINDUP, ATTACK, RECOVER, HURT, DEAD, RETURN, PATROL, ALERT }
 
 var data: EnemyData
 var depth := 1
@@ -39,7 +39,8 @@ var invulnerable := false
 var aggro := true
 var _lunge_left := 0.0
 var _windup_started := 0.0
-var rules: AggroRules ## M1 临时仇恨规则；null = 一直追
+var rules: AggroRules ## 仇恨参数（地图怪）；null = 一直追
+var ai: EnemyAI
 var home_pos := Vector2.INF ## 出生点
 var no_go := Rect2() ## 主角在这个矩形里（层守区）时普通怪不追、正在追的回归
 var use_nav := false
@@ -119,14 +120,23 @@ func _physics_process(delta: float) -> void:
 	if target == null or not is_instance_valid(target):
 		var ps := get_tree().get_nodes_in_group("player")
 		target = ps[0] if not ps.is_empty() else null
+	if ai and ai.pre_tick(delta):
+		return
 	_tick_extra(delta)
 	match state:
 		S.IDLE:
 			velocity = Vector2.ZERO
-			if aggro and target and wants_chase():
+			if aggro and target:
 				_go(S.CHASE)
+		S.PATROL:
+			ai.tick_patrol(delta)
+		S.ALERT:
+			ai.tick_alert(delta)
 		S.RETURN:
-			_return_home(delta)
+			if ai:
+				ai.tick_return(delta)
+			else:
+				_return_home(delta)
 		S.CHASE:
 			_chase(delta)
 		S.WINDUP:
@@ -148,12 +158,14 @@ func _physics_process(delta: float) -> void:
 			velocity = Vector2.ZERO
 			if state_t >= data.recover_sec:
 				_go(S.CHASE)
+			if ai:
+				ai.end_attack()
 		S.HURT:
 			velocity = velocity.move_toward(Vector2.ZERO, 2000 * delta)
 			move_and_slide()
 			if state_t >= _hurt_len:
 				_go(S.CHASE)
-	if state != S.IDLE:
+	if state != S.IDLE and state != S.PATROL:
 		_separate()
 
 var _hurt_len := 0.3
@@ -165,18 +177,8 @@ func _go(s: int) -> void:
 func speed() -> float:
 	return data.move_speed * (0.5 if slow_left > 0.0 else 1.0)
 
-## 临时仇恨：主角在 chase_radius 内、不在层守区里
-func wants_chase() -> bool:
-	if rules == null:
-		return true
-	if target == null or no_go.has_point(target.global_position):
-		return false
-	return global_position.distance_to(target.global_position) <= rules.chase_radius
-
 func should_return() -> bool:
-	if rules == null:
-		return false
-	return global_position.distance_to(home_pos) > rules.leash_px or (target != null and no_go.has_point(target.global_position))
+	return false
 
 ## 朝 goal 走的方向：有导航时每 0.25 秒更新一次 target_position（goal 跳变 > 80px 立即更新），取下一个路径点
 func nav_dir(goal: Vector2, delta: float) -> Vector2:
@@ -207,8 +209,7 @@ func _return_home(delta: float) -> void:
 func _chase(delta: float) -> void:
 	if target == null:
 		return
-	if should_return():
-		_go(S.RETURN)
+	if ai and (ai.chase_check(delta) or ai.chase_wait(delta)):
 		return
 	var to: Vector2 = target.global_position - global_position
 	var dist := to.length()
@@ -223,7 +224,7 @@ func _chase(delta: float) -> void:
 		dir = Vector2.ZERO
 	velocity = dir * speed()
 	move_and_slide()
-	if dist <= data.attack_range and cooldown <= 0.0:
+	if dist <= data.attack_range and cooldown <= 0.0 and (ai == null or ai.request_attack()):
 		attack_dir = to.normalized()
 		_go(S.WINDUP)
 
@@ -289,6 +290,8 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 	hp = maxi(0, hp - real)
 	DamageNumber.spawn(get_parent(), global_position, real, Color(1, 0.95, 0.5) if real > dmg else Color.WHITE)
 	Log.write("hits", [Game.run.id if Game.run else "", depth, "主角", data.display_name, real, false])
+	if ai:
+		ai.on_hit()
 	var stagger := float(src.get("stagger_sec")) if src and src.get("stagger_sec") != null else 0.0
 	var slow := float(src.get("slow_sec")) if src and src.get("slow_sec") != null else 0.0
 	if slow > 0.0:
@@ -305,10 +308,15 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		body.color = tint
 		_hurt_len = maxf(data.hurt_sec, stagger)
 		velocity = knockback / 0.2
+		if ai:
+			ai.end_attack()
 		_go(S.HURT)
 	return true
 
 func _die() -> void:
+	if ai:
+		ai.release()
+		NoiseBus.emit_kind(global_position, "death")
 	_go(S.DEAD)
 	hitbox.end()
 	remove_from_group("enemies")

@@ -407,6 +407,25 @@ static var debug_nofill := false
 const TCELL := 64.0
 enum { T_OPEN, T_THICKET, T_ROCK, T_CLIFF, T_WATER, T_RUIN }
 const KIND_NAMES := ["空地", "灌木", "岩石", "断崖", "水", "残垣"]
+const OPAQUE_LAYER := 16 ## 挡视线、挡子弹的物理层（残垣、灌木、岩石、外圈边界、层主区围墙）
+
+static func blocks_sight(kind: int) -> bool:
+	return kind != T_WATER and kind != T_CLIFF
+
+## 点 p 离灌木格 ≤ px（树丛潜行：敌人视野 ×0.7）
+static func near_thicket(L: Dictionary, p: Vector2, px := 64.0) -> bool:
+	var T: Dictionary = L.terrain
+	var cs: float = T.cell
+	var x0 := int((p.x - px) / cs); var x1 := int((p.x + px) / cs)
+	var y0 := int((p.y - px) / cs); var y1 := int((p.y + px) / cs)
+	for y in range(maxi(0, y0), mini(T.ny - 1, y1) + 1):
+		for x in range(maxi(0, x0), mini(T.nx - 1, x1) + 1):
+			if T.cells[y * T.nx + x] == T_THICKET:
+				var r := Rect2(x * cs, y * cs, cs, cs)
+				var q := p.clamp(r.position, r.end)
+				if q.distance_to(p) <= px:
+					return true
+	return false
 
 static func _noise(rng: RandomNumberGenerator, freq: float, oct := 3) -> FastNoiseLite:
 	var n := FastNoiseLite.new()
@@ -459,7 +478,7 @@ static func _terrain(rng: RandomNumberGenerator, L: Dictionary, fd: FloorData) -
 		if biome[y * nx + x] <= 0.18:
 			continue
 		var horiz := rng.randf() < 0.5
-		var seg_n := rng.randi_range(3, 6)
+		var seg_n := rng.randi_range(2, 3) ## 直线墙段 ≤ 3 格（规格 1.5-4）
 		for k in seg_n:
 			var xx := x + (k if horiz else 0)
 			var yy := y + (0 if horiz else k)

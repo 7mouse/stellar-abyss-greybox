@@ -12,6 +12,9 @@ var boon_pick: OptionButton
 var seed_spin: SpinBox
 var groups := {} ## 名称 -> VBoxContainer
 var show_chunks := false ## 显示区块网格（楼层每帧读取）
+var show_aggro := false ## 显示视野锥和声音圈
+var sleep_all := false ## 全图怪物休眠
+var aggro_label: Label
 var map_label: Label
 
 func _ready() -> void:
@@ -47,7 +50,10 @@ func _ready() -> void:
 		_section("层守", "词缀：" + g.affixes[id].display_name, g.affixes[id])
 	for fd in g.floors:
 		_section("楼层", "第 %d 层" % fd.depth, fd)
-	_section("仇恨", "M1 临时仇恨规则（aggro_rules.tres：进入 chase_radius 就追，离出生点超过 leash_px 就回去）", load("res://data/aggro_rules.tres"))
+	_section("仇恨", "全局仇恨参数 aggro_rules.tres（= 第 3 层）", load("res://data/aggro_rules.tres"))
+	for fd in g.floors:
+		if fd.aggro_override:
+			_section("仇恨", "第 %d 层覆盖（只有和默认值不同的字段生效）" % fd.depth, fd.aggro_override)
 	for id in ["enemy_common", "guard_1", "guard_2", "guard_3", "chest", "node"]:
 		_loot_section(load("res://data/loot_tables/%s.tres" % id))
 	_section("遗志", "继承规则（legacy_power = 遗志生效比例）", Lineage.legacy_rules)
@@ -55,6 +61,11 @@ func _ready() -> void:
 	_section("保险箱", "强化台（局外）", Lineage.meta_rules)
 	_section("线索", "虚拟世界线索 clues.tres", g.clues)
 	root.visible = false
+
+func set_aggro_counts(chasing: int, windup: int, chase_peak: int, windup_peak: int) -> void:
+	if aggro_label and root.visible:
+		var R: AggroRules = load("res://data/aggro_rules.tres")
+		aggro_label.text = "追击 %d / %d，前摇 %d / %d（本层峰值 %d / %d）" % [chasing, R.max_chasers, windup, R.max_attackers, chase_peak, windup_peak]
 
 func _lbl(parent: Node, t: String, size := 20) -> Label:
 	var l := Label.new()
@@ -107,8 +118,11 @@ func _build_tools() -> void:
 	_btn(r2, "传送到层守区（入口外侧）", debug_guard)
 	var rm := _row(tools)
 	_check(rm, "显示区块网格", show_chunks, func(v): show_chunks = v)
+	_check(rm, "显示视野锥和声音圈", show_aggro, func(v): show_aggro = v)
+	_check(rm, "全图怪物休眠", sleep_all, func(v): sleep_all = v)
 	_btn(rm, "地图统计", func(): map_label.text = map_stats_text())
 	map_label = _lbl(tools, "")
+	aggro_label = _lbl(tools, "追击 0 / 6，前摇 0 / 3")
 	var r3 := _row(tools)
 	floor_spin = SpinBox.new()
 	floor_spin.min_value = 1

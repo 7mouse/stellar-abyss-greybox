@@ -1,6 +1,6 @@
 extends Node2D
-## 一层开放地图（M1）：MapGen 区块拼成一整张打通的平层地图，没有房间和门。
-## 主角从起点区块出发，路上遇到巡逻组和营地（临时仇恨：进入 chase_radius 就追，离出生点超过 leash_px 就回去）；
+## 一层开放地图：MapGen 生成一整张有机地形的平层地图，没有房间和门。
+## 主角从起点出发，路上遇到巡逻组和营地（EnemyAI：视野锥、声音、联动、回归；AggroDirector：追击 ≤6、前摇 ≤3）；
 ## 走进层守区入口线 → 开口升起能量栅栏、层守出现；层守死后栅栏撤掉、撤离点亮起（撤离或下潜，进入下一层后无法返回）。
 
 signal guard_killed
@@ -45,6 +45,14 @@ var gen_ms := 0.0
 var bake_ms := 0.0
 var nav_ready := false
 var chunk_overlay: Node2D
+var director: AggroDirector
+var aggro_overlay: Node2D ## 调试：视野锥和声音圈
+var noises: Array = [] ## [pos, radius, t]
+var visited := {} ## 探索过的区块 id
+var minimap: Minimap
+var _aggro_sync_t := 0.0
+var player_in_thicket := false ## 树丛潜行（敌人视野 ×0.7），每 0.1 秒更新
+var _thicket_t := 0.0
 
 func _ready() -> void:
 	if Game.run == null:
@@ -53,6 +61,13 @@ func _ready() -> void:
 	depth = Game.run.depth
 	fd = Game.floor_data(depth)
 	aggro = AGGRO_DEFAULT.effective(fd.aggro_override)
+	NoiseBus.rules = aggro
+	NoiseBus.reset()
+	director = AggroDirector.new()
+	director.rules = aggro
+	director.rng.seed = hash([Game.run.seed, depth, "aggro"])
+	add_child(director)
+	NoiseBus.noise.connect(_on_noise)
 	var t0 := Time.get_ticks_usec()
 	layout = MapGen.generate(Game.run.seed, depth, fd)
 	gen_ms = (Time.get_ticks_usec() - t0) / 1000.0
@@ -74,6 +89,7 @@ func _ready() -> void:
 	player.dashed.connect(_on_dashed)
 	_spawn_patrols()
 	_spawn_camps()
+	_build_aggro_overlay()
 	cam = FollowCam.new()
 	cam.target = player
 	cam.smooth_sec = Game.player_stats.cam_smooth_sec
@@ -83,6 +99,9 @@ func _ready() -> void:
 	hud = Hud.new()
 	hud.player = player
 	add_child(hud)
+	minimap = Minimap.new()
+	minimap.setup(self)
+	hud.add_child(minimap)
 	Game.run.floor_stats = {"t0": Time.get_ticks_msec() / 1000.0, "combat_sec": 0.0, "guard_sec": 0.0, "hp_start": player.hp, "dmg_taken": 0, "kills": 0, "level_start": Game.level()}
 	hud.show_toast("第 %d 层 · 苔根林窟" % depth)
 
@@ -104,10 +123,11 @@ func _build_map() -> void:
 	for c in layout.chunks:
 		for r in MapGen.chunk_walls(c):
 			_solid(r, MapGen.KIND_COLORS[MapGen.T_RUIN])
-		for r in MapGen.chunk_obstacles(c):
-			_solid(r, Color(0, 0, 0, 0))
+		for i in c.obstacles.size():
+			_solid(c.obstacles[i], Color(0, 0, 0, 0), true, MapGen.blocks_sight(c.obstacle_kinds[i]))
 	# 层守区：入口栅栏 + 入口线触发器
 	guard_rect = MapGen.chunk_rect(layout.chunks[layout.guard_chunk], cp)
+	NoiseBus.wall_rect = guard_rect
 	for e in layout.guard_entrances:
 		fence_bodies.append(_solid(e.gap, Color(0.4, 0.85, 1.0), false))
 	_set_fence(false)
@@ -167,9 +187,10 @@ func _build_map() -> void:
 		_add_interact(p, "采集萤苔丛", _take_node.bind(k, r), func(): return not used.has(k), "node", k, 1.0)
 	_build_overlay()
 
-func _solid(r: Rect2, color: Color, wall := true) -> StaticBody2D:
+## opaque = 挡视线和子弹（物理层 1 + OPAQUE_LAYER）；水、断崖只在层 1（只挡移动）
+func _solid(r: Rect2, color: Color, wall := true, opaque := true) -> StaticBody2D:
 	var sb := StaticBody2D.new()
-	sb.collision_layer = 1
+	sb.collision_layer = 1 | (MapGen.OPAQUE_LAYER if opaque else 0)
 	sb.collision_mask = 0
 	var cs := CollisionShape2D.new()
 	var sh := RectangleShape2D.new()
@@ -282,10 +303,18 @@ func spawn_enemy(eid: String, pos: Vector2, group := "") -> EnemyBase:
 	world.add_child(e)
 	return e
 
-func _map_enemy(eid: String, pos: Vector2, group: String) -> EnemyBase:
+## 地图怪：挂 EnemyAI。style = walk（巡逻）/ post（射手驻守）/ camp（营地待机）；route = 巡逻路线（含队形偏移）
+func _map_enemy(eid: String, pos: Vector2, group: String, style := "", route: Array = []) -> EnemyBase:
 	var e := spawn_enemy(eid, pos, group)
 	e.rules = aggro
 	e.no_go = guard_rect
+	if style == "":
+		style = "post" if eid == "rootshot" else "walk"
+	var ai := EnemyAI.new()
+	ai.setup(e, aggro, director, self, style, route)
+	e.ai = ai
+	e.add_child(ai)
+	e.state = EnemyBase.S.PATROL
 	return e
 
 func _spawn_patrols() -> void:
@@ -293,14 +322,17 @@ func _spawn_patrols() -> void:
 	for p in layout.spawn_points.patrol:
 		var c: Vector2 = p.points[0]
 		for i in p.size:
-			_map_enemy(_pick_enemy(), c + Vector2(45, 0).rotated(TAU * i / p.size), "p%d" % gi)
+			var off := Vector2(45, 0).rotated(TAU * i / p.size)
+			var eid := _pick_enemy()
+			var route: Array = p.points.map(func(q): return q + off)
+			_map_enemy(eid, c + off, "p%d" % gi, "", route)
 		gi += 1
 
 func _spawn_camps() -> void:
 	for cs in layout.spawn_points.camp:
 		var st: Dictionary = camps_state[cs.chunk]
 		for i in cs.size:
-			var e := _map_enemy(_pick_enemy(), cs.center + Vector2(150, 0).rotated(TAU * i / cs.size), "c%d" % cs.chunk)
+			var e := _map_enemy(_pick_enemy(), cs.center + Vector2(150, 0).rotated(TAU * i / cs.size), "c%d" % cs.chunk, "camp")
 			e.set_meta("camp", cs.chunk)
 			e.died.connect(_on_camp_member_died.bind(cs.chunk))
 		st.alive = cs.size
@@ -327,7 +359,7 @@ func _physics_process(delta: float) -> void:
 		return
 	var fighting := false
 	for e in get_tree().get_nodes_in_group("enemies"):
-		if e.state != EnemyBase.S.IDLE and e.state != EnemyBase.S.RETURN:
+		if e.state != EnemyBase.S.IDLE and e.state != EnemyBase.S.RETURN and e.state != EnemyBase.S.PATROL and e.state != EnemyBase.S.ALERT:
 			fighting = true
 			break
 	if fighting and Game.run.floor_stats.has("combat_sec"):
@@ -350,6 +382,20 @@ func _physics_process(delta: float) -> void:
 		exit_rect.color = Color(0.4, 1, 0.6) if exit_active else Color(0.3, 0.3, 0.35)
 	if chunk_overlay and Game.debug_panel and "show_chunks" in Game.debug_panel:
 		chunk_overlay.visible = Game.debug_panel.show_chunks
+	_thicket_t -= delta
+	if _thicket_t <= 0.0:
+		_thicket_t = 0.1
+		player_in_thicket = MapGen.near_thicket(layout, player.global_position, aggro.thicket_edge_px)
+	var k := MapGen.chunk_at(layout, player.global_position)
+	if k >= 0 and not visited.has(k):
+		visited[k] = true
+		Game.run.floor_stats["chunks_visited"] = visited.size()
+	Game.run.floor_stats["chasers_peak"] = director.chasers_peak
+	_aggro_sync_t -= delta
+	if _aggro_sync_t <= 0.0:
+		_aggro_sync_t = 0.5
+		AGGRO_DEFAULT.effective(fd.aggro_override, aggro) ## F1 面板改动同步到本层生效的参数（同一个对象，所有敌人立即读到）
+	_tick_aggro_overlay(delta)
 
 func _tick_hold(it: Dictionary, delta: float) -> void:
 	if it.is_empty() or it.hold <= 0.0 or popup_open or get_tree().paused or not Input.is_action_pressed("interact"):
@@ -429,6 +475,7 @@ func _use_campfire(key: String) -> void:
 
 func _open_chest(key: String, vis: ColorRect = null) -> void:
 	used[key] = true
+	NoiseBus.emit_kind(player.global_position, "chest")
 	if vis:
 		vis.color = Color(0.4, 0.35, 0.2)
 	var got := fd.chest_loot.roll(rng, 1.0 + float(player.mods.get("rare_drop_pct", 0)))
@@ -581,3 +628,57 @@ func _on_player_died(cause: String) -> void:
 	Game.run.hp = 0
 	Game.log_floor("death")
 	Game.on_player_died(cause)
+
+# ---------- 调试：视野锥和声音圈、追击计数 ----------
+func _on_noise(pos: Vector2, radius: float, _kind: String) -> void:
+	noises.append([pos, radius, 0.8])
+
+func _build_aggro_overlay() -> void:
+	aggro_overlay = Node2D.new()
+	aggro_overlay.z_index = 40
+	aggro_overlay.visible = false
+	aggro_overlay.draw.connect(_draw_aggro_overlay)
+	add_child(aggro_overlay)
+
+func show_aggro_debug() -> bool:
+	return Game.debug_panel != null and Game.debug_panel.get("show_aggro") == true
+
+func _tick_aggro_overlay(delta: float) -> void:
+	for n in noises:
+		n[2] -= delta
+	noises = noises.filter(func(n): return n[2] > 0.0)
+	aggro_overlay.visible = show_aggro_debug()
+	if aggro_overlay.visible:
+		aggro_overlay.queue_redraw()
+	if Game.debug_panel and Game.debug_panel.has_method("set_aggro_counts"):
+		Game.debug_panel.set_aggro_counts(director.chasing_count(), director.windup_count(), director.chasers_peak, director.attackers_peak)
+
+const STATE_COLORS := {EnemyBase.S.PATROL: Color(0.4, 1, 0.5, 0.18), EnemyBase.S.ALERT: Color(1, 0.9, 0.3, 0.25), EnemyBase.S.RETURN: Color(0.5, 0.6, 1, 0.15)}
+
+func _draw_aggro_overlay() -> void:
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if e.ai == null or e.ai.sleeping:
+			continue
+		var col: Color = STATE_COLORS.get(e.state, Color(1, 0.3, 0.3, 0.22))
+		var r: float = e.ai.sight_range()
+		var ang: float = deg_to_rad(e.ai.sight_angle())
+		var pts := PackedVector2Array([e.global_position])
+		var base: float = e.facing.angle()
+		for i in 17:
+			pts.append(e.global_position + Vector2.from_angle(base - ang / 2 + ang * i / 16.0) * r)
+		if ang >= TAU - 0.01:
+			pts.remove_at(0)
+		aggro_overlay.draw_colored_polygon(pts, col)
+		aggro_overlay.draw_arc(e.global_position, e.rules.sense_radius, 0, TAU, 32, Color(1, 1, 1, 0.3), 2)
+	for n in noises:
+		aggro_overlay.draw_arc(n[0], n[1], 0, TAU, 64, Color(0.4, 0.8, 1, clampf(n[2], 0, 1)), 4)
+
+## 网页性能检查：主角周围刷 n 只地图怪并开打（greybox.perfRing()）
+func debug_perf_ring(n: int) -> void:
+	var c := player.global_position
+	var ring: Array = []
+	for i in n:
+		ring.append(_map_enemy(["mushling", "rootshot", "shellbug"][i % 3], c + Vector2(260, 0).rotated(TAU * i / n), "perf"))
+	await get_tree().physics_frame
+	if is_instance_valid(ring[0]):
+		ring[0].ai.enter_chase("perf")

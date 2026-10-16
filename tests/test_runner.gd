@@ -80,7 +80,7 @@ func _run() -> void:
 	await test_guards_and_exit()
 	await test_boons()
 	await test_open_map()
-	await test_temp_aggro()
+	await test_aggro()
 	await test_nav_chase()
 	await test_walk_floor1()
 	await test_village()
@@ -171,7 +171,58 @@ func test_generation() -> void:
 	var b := MapGen.generate(42, 1, fd1)
 	check(var_to_str(a.chunks) == var_to_str(b.chunks) and var_to_str(a.spawn_points) == var_to_str(b.spawn_points), "OM1-2 同种子同层生成两次，chunks 和 spawn_points 完全一致")
 	check(var_to_str(a.chunks) != var_to_str(MapGen.generate(42, 2, Game.floors[1]).chunks) and var_to_str(a.chunks) != var_to_str(MapGen.generate(43, 1, fd1).chunks), "种子 / 层号不同 → 布局不同")
-	check(tmax <= 100.0, "OM1-3 单次生成最长 %.1f ms（≤ 100 ms，桌面）" % tmax)
+	check(tmax <= 200.0, "1.5-3 单次生成最长 %.1f ms（生成 + 烘焙 ≤ 300 ms，烘焙见 OM3-2；这里生成单独 ≤ 200 ms）" % tmax)
+	# ---- §10 / §3.3 摆放规则 ----
+	var two := 0
+	var cand2 := 0
+	var gap_ok := true
+	var camp_guard_ok := true
+	var path4_ok := true
+	var fire_ok := true
+	var enemies_avg := []
+	for depth in [1, 2, 3]:
+		var fdd := Game.floor_data(depth)
+		var tot := 0.0
+		for sd in 50:
+			var L := MapGen.generate(sd * 11 + 5, depth, fdd)
+			var ch: Array = L.chunks
+			var gc: Vector2i = ch[L.guard_chunk].cell
+			var nb := 0
+			for d in MapGen.DIRS:
+				var n: Vector2i = gc + d
+				if n.x >= 0 and n.y >= 0 and n.x < fdd.grid_w and n.y < fdd.grid_h:
+					nb += 1
+			if nb >= 2:
+				cand2 += 1
+				two += int(L.guard_entrances.size() == 2)
+			for en in L.guard_entrances:
+				var g: Rect2 = en.gap
+				gap_ok = gap_ok and is_equal_approx(maxf(g.size.x, g.size.y), fdd.gap_px) and is_equal_approx(fdd.gap_px, 480.0)
+			camp_guard_ok = camp_guard_ok and L.camps.all(func(k): return MapGen.cheb(ch[k].cell, gc) >= 2)
+			# 最短路按打通边 4 邻接：路径上相邻两格曼哈顿距离 = 1，且边是打通的
+			var path: Array = L.path
+			for i in range(1, path.size()):
+				var ca: Vector2i = ch[path[i - 1]].cell
+				var cb: Vector2i = ch[path[i]].cell
+				path4_ok = path4_ok and absi(ca.x - cb.x) + absi(ca.y - cb.y) == 1 and L.open.has(MapGen._ekey(ca, cb))
+			path4_ok = path4_ok and path.size() - 1 >= fdd.min_start_guard_dist
+			# 篝火空地：篝火在入口外侧、可达、离障碍 ≥ 60px
+			var fire: Vector2 = L.campfire_pos
+			fire_ok = fire_ok and not MapGen.chunk_rect(ch[L.guard_chunk], L.chunk_px).has_point(fire) and MapGen.is_free(fire, MapGen.all_solids(L), 60.0) and MapGen.point_reachable(MapGen.reach_grid(L), fire)
+			var st := MapGen.stats(L)
+			tot += st.patrol_enemies + st.camp_enemies
+		enemies_avg.append(tot / 50.0)
+	var p2 := float(two) / cand2
+	check(absf(p2 - 0.35) <= 0.1, "3.3 层主区固定 1 个入口，第 2 个按 0.35 开：150 张图里有 2 个以上相邻区块的 %d 张，开了 2 个入口的占 %.0f%%" % [cand2, p2 * 100])
+	check(gap_ok, "3.3 层主区入口宽 480px（gap_px）")
+	check(camp_guard_ok, "3.3 / §10-5 营地不在层主区周围 8 格（切比雪夫 ≤ 1 一个都没有），150 张图")
+	check(path4_ok, "§10-2 起点到层主区最短路按打通边 4 邻接 BFS 计步，且 ≥ min_start_guard_dist")
+	check(fire_ok, "3.3 篝火在入口外侧的空地上：离障碍 ≥ 60px、可达，150 张图")
+	var exp_n := [56.0, 54.0, 72.0]
+	var en_ok := true
+	for i in 3:
+		en_ok = en_ok and absf(enemies_avg[i] - exp_n[i]) / exp_n[i] <= 0.1
+	check(en_ok, "3.1 全层敌人总数 50 种子均值：第 1 层 %.1f（约 56）、第 2 层 %.1f（约 54）、第 3 层 %.1f（约 72），误差 ≤ 10%%" % enemies_avg)
 	check(count_ok, "OM4-1 营地、宝箱、资源点、神龛数量和设定精确相符（2 / 3 / 6 / 1），巡逻组 2~4 人、营地人数在区间内")
 	check(patrol_ok, "OM4-1 巡逻组数 50 种子均值和期望（普通区块 × patrol_chance）误差 ≤ 15%%：%s" % "，".join(patrol_report))
 	check(empty_ok, "OM4-2 起点区块和层守区内没有巡逻点 / 营地；巡逻路线点离障碍 ≥ 60px；宝箱/资源点离路线点 ≥ 150px")
@@ -915,7 +966,7 @@ func test_open_map() -> void:
 	var st: Dictionary = f.map_stats()
 	var on_map := get_tree().get_nodes_in_group("enemies")
 	check(on_map.size() == st.patrol_enemies + st.camp_enemies and on_map.all(func(e): var k := MapGen.chunk_at(L, e.global_position); return k != L.start_chunk and k != L.guard_chunk), "OM4-2 开局刷出巡逻 %d + 营地 %d 只，起点区块和层守区里没有普通怪" % [st.patrol_enemies, st.camp_enemies])
-	check(on_map.all(func(e): return e.rules != null and e.state == EnemyBase.S.IDLE), "开局所有普通怪原地待机（离起点都超过 600px）")
+	check(on_map.all(func(e): return e.ai != null and (e.state == EnemyBase.S.PATROL or e.state == EnemyBase.S.ALERT)), "开局所有普通怪在巡逻 / 待机，没有人在追（离起点都超过 720px）")
 	# 篝火
 	f.player.hp = 40
 	f.player.global_position = L.campfire_pos + Vector2(0, 30)
@@ -998,58 +1049,423 @@ func clear_enemies() -> void:
 		e.queue_free()
 	await frames(2)
 
-func test_temp_aggro() -> void:
-	print("== M1 临时仇恨：600px 开追 / 离出生点 1100px 回去 ==")
+## 在 E 附近找一个方向 dir：E + dir*front 和 E - dir*back 都是空地，且与 E 之间没有墙
+func open_line(f: Node, E: Vector2, front: float, back: float) -> Vector2:
+	var solids := MapGen.all_solids(f.layout)
+	var space: PhysicsDirectSpaceState2D = f.get_world_2d().direct_space_state
+	for i in 16:
+		var d := Vector2.from_angle(TAU * i / 16.0)
+		var a := E + d * front
+		var b := E - d * back
+		if not MapGen.is_free(a, solids, 40.0) or not MapGen.is_free(b, solids, 40.0):
+			continue
+		if space.intersect_ray(PhysicsRayQueryParameters2D.create(E, a, 1)).is_empty() and space.intersect_ray(PhysicsRayQueryParameters2D.create(E, b, 1)).is_empty():
+			return d
+	return Vector2.ZERO
+
+## 一块开阔的空地（巡逻点是离障碍 ≥ 90px 的空地）
+func open_spots(f: Node) -> Array:
+	var out: Array = [f.layout.start_pos]
+	for p in f.layout.spawn_points.patrol:
+		out += p.points
+	return out
+
+## 切换本层是否用按层覆盖（false = 全局参数），并立刻同步到本层生效的 rules
+func _sync_rules(f: Node, use_override: bool) -> void:
+	if not f.fd.has_meta("_ov"):
+		f.fd.set_meta("_ov", f.fd.aggro_override)
+	f.fd.aggro_override = f.fd.get_meta("_ov") if use_override else null
+	(load("res://data/aggro_rules.tres") as AggroRules).effective(f.fd.aggro_override, f.aggro)
+
+func test_aggro() -> void:
+	print("== M2 仇恨：视野锥 / 声音 / 联动 / 回归 / 追击上限 / 小地图 / 休眠 ==")
 	var f := scene()
 	Game.god_mode = true
 	await clear_enemies()
 	var R: AggroRules = f.aggro
-	check(is_equal_approx(R.chase_radius, 600.0) and is_equal_approx(R.leash_px, 1100.0) and DP.find_editor(R, "chase_radius") != null and DP.find_editor(R, "leash_px") != null, "aggro_rules.tres：chase_radius 600、leash_px 1100，都在 F1“仇恨”分组可调")
+	var base: AggroRules = load("res://data/aggro_rules.tres")
+	check(f.depth == 1 and is_equal_approx(R.link_chance, 0.2) and is_equal_approx(R.sight_confirm_sec, 0.7) and is_equal_approx(base.link_chance, 0.5) and is_equal_approx(base.sight_confirm_sec, 0.4)
+		and is_equal_approx(Game.floors[1].aggro_override.link_chance, 0.35) and Game.floors[2].aggro_override == null,
+		"2.7 按层覆盖：第 1 层联动 %.2f / 确认 %.1f s，第 2 层联动 %.2f，第 3 层用全局 %.2f / %.1f s" % [R.link_chance, R.sight_confirm_sec, Game.floors[1].aggro_override.link_chance, base.link_chance, base.sight_confirm_sec])
+	check(DP.find_editor(base, "sight_range") != null and DP.find_editor(base, "max_chasers") != null and DP.find_editor(Game.floors[0].aggro_override, "link_chance") != null, "仇恨参数（全局 + 第 1/2 层覆盖）都在 F1“仇恨”分组可调")
+	# ---- 2.8-1 视野锥 ----
 	var E: Vector2 = f.layout.start_pos
-	f.player.global_position = E + Vector2(700, 0)
+	var dir := open_line(f, E, 330.0, 220.0)
+	for conf in [[true, R.sight_confirm_sec], [false, 0.4]]:
+		_sync_rules(f, conf[0])
+		var want: float = conf[1]
+		var e: EnemyBase = f._map_enemy("mushling", E, "t")
+		await frames(2)
+		e.facing = dir
+		f.player.global_position = E - dir * 200.0
+		var noticed := false
+		var t := 0.0
+		while t < 3.0:
+			await frames(1)
+			t += Engine.time_scale / Engine.physics_ticks_per_second
+			e.facing = dir
+			noticed = noticed or e.state != EnemyBase.S.PATROL
+		check(not noticed, "2.8-1 主角在背后 200px（视野锥外）：3 秒内没察觉（%s）" % ("第 1 层参数" if conf[0] else "全局参数"))
+		f.player.global_position = E + dir * 300.0
+		t = 0.0
+		var t_alert := -1.0
+		while t < 2.0 and e.state != EnemyBase.S.CHASE:
+			await frames(1)
+			t += Engine.time_scale / Engine.physics_ticks_per_second
+			if t_alert < 0.0 and e.state == EnemyBase.S.ALERT:
+				t_alert = t
+		check(e.state == EnemyBase.S.CHASE and t >= want - 0.02 and t <= want + 0.15 and t_alert >= 0.0 and t_alert < 0.15, "2.8-1 正面 300px 进入视野锥：%.2f s 警觉，%.2f s 进入追击（确认时间 %.1f s，检测间隔 0.1 s）" % [t_alert, t, want])
+		e.queue_free()
+		await frames(2)
+	# 墙后看不到：找一个障碍矩形，敌人和主角分在两侧
+	_sync_rules(f, true)
+	var solids := MapGen.all_solids(f.layout)
+	var space: PhysicsDirectSpaceState2D = f.get_world_2d().direct_space_state
+	var wall_pair := []
+	for c in f.layout.chunks:
+		if wall_pair.size() > 0 or c.type == "guard":
+			continue
+		for o in c.obstacles:
+			var ep: Vector2 = o.get_center() - Vector2(o.size.x / 2 + 90, 0)
+			var pp: Vector2 = o.get_center() + Vector2(o.size.x / 2 + 90, 0)
+			if o.size.x >= 128 and MapGen.is_free(ep, solids, 40) and MapGen.is_free(pp, solids, 40) and not space.intersect_ray(PhysicsRayQueryParameters2D.create(ep, pp, 1)).is_empty() and not f.guard_rect.grow(300).has_point(ep):
+				wall_pair = [ep, pp]
+				break
+	var e3: EnemyBase = f._map_enemy("mushling", wall_pair[0], "t")
+	await frames(2)
+	e3.facing = Vector2.RIGHT
+	f.player.global_position = wall_pair[1]
+	var seen := false
+	for i in 90:
+		await frames(1)
+		e3.facing = Vector2.RIGHT
+		seen = seen or e3.state != EnemyBase.S.PATROL
+	check(not seen and e3.global_position.distance_to(wall_pair[1]) > e3.rules.sense_radius, "2.2 墙后看不到：正对主角、%.0f px，但射线被障碍挡住 → 1.5 秒没察觉" % e3.global_position.distance_to(wall_pair[1]))
+	e3.queue_free()
+	await frames(2)
+	# ---- 2.9 有机地形下的视线：水、断崖不挡；灌木、岩石挡；树丛边缘视野 ×0.7 ----
+	var pairs := {}
+	for c in f.layout.chunks:
+		if c.type == "guard":
+			continue
+		for i in c.obstacles.size():
+			var kind: int = c.obstacle_kinds[i]
+			if pairs.has(kind):
+				continue
+			var o: Rect2 = c.obstacles[i]
+			for ax in [Vector2(1, 0), Vector2(0, 1)]:
+				var half: float = (o.size.x if ax.x > 0 else o.size.y) / 2.0
+				if half * 2.0 > 300.0:
+					continue
+				var ep: Vector2 = o.get_center() - ax * (half + 100)
+				var pp: Vector2 = o.get_center() + ax * (half + 100)
+				if not MapGen.is_free(ep, solids, 40) or not MapGen.is_free(pp, solids, 40) or f.guard_rect.grow(300).has_point(ep) or ep.distance_to(pp) > 480.0:
+					continue
+				if space.intersect_ray(PhysicsRayQueryParameters2D.create(ep, pp, 1)).is_empty():
+					continue ## 要求两点之间确实有障碍挡着移动
+				var opaque_hit := not space.intersect_ray(PhysicsRayQueryParameters2D.create(ep, pp, MapGen.OPAQUE_LAYER)).is_empty()
+				if opaque_hit != MapGen.blocks_sight(kind):
+					continue ## 射线上还有别的种类的障碍，换一个
+				if MapGen.near_thicket(f.layout, pp) or MapGen.near_thicket(f.layout, ep):
+					continue
+				pairs[kind] = [ep, pp]
+				break
+	for kind in [MapGen.T_WATER, MapGen.T_CLIFF, MapGen.T_THICKET, MapGen.T_ROCK]:
+		if not pairs.has(kind):
+			check(false, "2.9 第 1 层找不到合适的%s样本" % MapGen.KIND_NAMES[kind])
+			continue
+		var ep2: Vector2 = pairs[kind][0]
+		var pp2: Vector2 = pairs[kind][1]
+		f.player.global_position = pp2
+		var ek: EnemyBase = f._map_enemy("mushling", ep2, "t")
+		ek.facing = (pp2 - ep2).normalized()
+		var got := false
+		for i in 90:
+			await frames(1)
+			ek.facing = (pp2 - ep2).normalized()
+			got = got or ek.state != EnemyBase.S.PATROL
+		var want_see := not MapGen.blocks_sight(kind)
+		check(got == want_see, "2.9 隔着%s（%.0f px）：%s" % [MapGen.KIND_NAMES[kind], ep2.distance_to(pp2), "能被看见" if want_see else "看不见"])
+		ek.queue_free()
+		await frames(2)
+	# 树丛边缘：找一个灌木旁 64px 内的点
+	var bush := Vector2.INF
+	for c in f.layout.chunks:
+		if bush != Vector2.INF or c.type == "guard":
+			continue
+		for i in c.obstacles.size():
+			if c.obstacle_kinds[i] != MapGen.T_THICKET:
+				continue
+			var o: Rect2 = c.obstacles[i]
+			for q in [Vector2(o.end.x + 40, o.get_center().y), Vector2(o.position.x - 40, o.get_center().y), Vector2(o.get_center().x, o.end.y + 40), Vector2(o.get_center().x, o.position.y - 40)]:
+				if MapGen.is_free(q, solids, 30) and MapGen.near_thicket(f.layout, q):
+					bush = q
+					break
+			if bush != Vector2.INF:
+				break
+	f.player.global_position = bush
+	await secs(0.15)
+	var ex: EnemyBase = f._map_enemy("mushling", bush + Vector2(2000, 0), "t")
+	await frames(2)
+	var r_in: float = ex.ai.sight_range()
+	f.player.global_position = E
+	await secs(0.15)
+	var r_out: float = ex.ai.sight_range()
+	check(f.player_in_thicket == false and absf(r_in - R.sight_range * 0.7) < 0.5 and absf(r_out - R.sight_range) < 0.5, "2.9 树丛潜行：主角在灌木边缘 64px 内时敌人视野 %.0f px（×0.7），离开后 %.0f px" % [r_in, r_out])
+	ex.queue_free()
+	await frames(2)
+	# 声音不穿层主区围墙
+	var gin0: Vector2 = f.guard_entry_pos(true)
+	var eg: EnemyBase = f._map_enemy("mushling", f.guard_rect.get_center() + Vector2(0, 0), "t")
+	await frames(2)
+	var heard_in := false
+	NoiseBus.emit(f.guard_rect.get_center() + (f.guard_rect.get_center() - gin0).normalized() * -700.0, 900.0, "test")
+	heard_in = eg.state != EnemyBase.S.PATROL
+	check(not heard_in, "2.9 声音不穿层主区围墙：墙外 700px 的 900px 声音，墙里的怪听不到")
+	eg.queue_free()
+	await frames(2)
+	# ---- 2.8-2 冲刺声音 ----
 	var e: EnemyBase = f._map_enemy("mushling", E, "t")
-	await secs(0.5)
-	check(e.state == EnemyBase.S.IDLE, "主角在 700px：敌人原地待机")
-	R.chase_radius = 800.0
+	await frames(2)
+	e.facing = dir
+	f.player.global_position = E - dir * 300.0
 	await frames(3)
-	check(e.state != EnemyBase.S.IDLE, "面板把 chase_radius 改成 800 → 700px 立即开追")
-	R.chase_radius = 600.0
+	f.player.try_dash()
+	await frames(2)
+	var turned := e.facing.dot(-dir) > 0.9
+	check(e.state == EnemyBase.S.ALERT and turned and e.ai.investigate_goal.distance_to(E) <= R.investigate_px + 1.0, "2.8-2 背后 300px 冲刺（声音 %.0f px）：巡逻怪转身警觉，朝声源走 %.0f px" % [R.noise_dash, e.ai.investigate_goal.distance_to(E)])
 	e.queue_free()
 	await frames(2)
+	f.player.global_position = E - dir * 160.0
 	e = f._map_enemy("mushling", E, "t")
-	await secs(0.3)
-	f.player.global_position = E + Vector2(500, 0)
-	await secs(0.2)
-	check(e.state != EnemyBase.S.IDLE, "主角进入 500px（< 600）：敌人开追")
-	# 拖出 1100px → 回出生点
-	Game.base_time_scale = 4.0
-	var far := E + Vector2(1150, 0)
-	e.global_position = far
-	f.player.global_position = far + Vector2(0, 80)
+	e.facing = dir
+	await frames(2)
+	e.facing = dir
 	await frames(3)
-	var went_return: bool = e.state == EnemyBase.S.RETURN
-	var chased_back := false
-	var t0 := Time.get_ticks_msec()
-	while e.state == EnemyBase.S.RETURN and Time.get_ticks_msec() - t0 < 6000:
-		await frames(1)
-	chased_back = e.state != EnemyBase.S.IDLE
-	await secs(1.0)
-	Game.base_time_scale = 1.0
-	check(went_return and not chased_back and e.state == EnemyBase.S.IDLE and e.global_position.distance_to(E) <= R.home_arrive_px + 2.0, "离出生点 > 1100px：转回归，途中不理主角，走回出生点后待机（离出生点 %.0f px）" % e.global_position.distance_to(E))
+	f.player.try_dash()
+	await frames(2)
+	check(e.state == EnemyBase.S.CHASE, "声源在 0.5 倍半径（180 px）以内：直接追击")
 	e.queue_free()
-	# 层守区：主角在里面时普通怪不追
+	await frames(2)
+	f.player.global_position = E - dir * 420.0
+	e = f._map_enemy("mushling", E, "t")
+	await frames(2)
+	e.facing = dir
+	await frames(3)
+	f.player.try_dash()
+	await frames(2)
+	check(e.state == EnemyBase.S.PATROL, "360px 外冲刺（%.0f px）：听不到（状态 %d，声源 %s，主角 %s，敌人 %s 朝向 %s）" % [e.global_position.distance_to(E - dir * 420.0), e.state, e.ai.alert_src, f.player.global_position, e.global_position, e.facing])
+	e.queue_free()
+	await clear_enemies()
+	# ---- 2.8-3 同组联动 + 跨组联动（50 次）----
+	_sync_rules(f, false) ## 全局 link_chance 0.5
+	var spots := open_spots(f)
+	var group_ok := 0
+	var linked := 0
+	var trials := 0
+	var far_none := true
+	for i in 50:
+		var c: Vector2 = spots[i % spots.size()] + Vector2(i * 3, 0)
+		var a: Array = []
+		for k in 3:
+			a.append(f._map_enemy("mushling", c + Vector2(0, 50 * k), "ga%d" % i))
+		var b: EnemyBase = f._map_enemy("mushling", c + Vector2(300, 0), "gb%d" % i)
+		var far: EnemyBase = f._map_enemy("mushling", c + Vector2(-500, 0), "gc%d" % i)
+		f.player.global_position = c + Vector2(0, 900) if c.y < 2500 else c - Vector2(0, 900) ## 视野外、拴绳内
+		await frames(2)
+		a[0].take_hit(1, f.player, Vector2.ZERO)
+		await frames(1)
+		trials += 1
+		if a.all(func(x): return x.ai.in_combat()):
+			group_ok += 1
+		if b.ai.in_combat():
+			linked += 1
+		far_none = far_none and not far.ai.in_combat()
+		for x in a + [b, far]:
+			x.queue_free()
+		await frames(2)
+	check(group_ok == 50, "2.8-3 打一只，同组 3 只全部进入追击（%d / 50）" % group_ok)
+	var rate := float(linked) / trials
+	check(rate >= 0.3 and rate <= 0.7 and far_none, "2.8-3 380px 内别组巡逻怪被拉进来 %d / %d = %.0f%%（link_chance %.2f，“约一半”按 30%%~70%% 判）；500px 外的从不被拉" % [linked, trials, rate * 100, base.link_chance])
+	_sync_rules(f, true)
+	var lk := 0
+	for i in 50:
+		var c: Vector2 = spots[i % spots.size()] + Vector2(i * 3, 0)
+		var a0: EnemyBase = f._map_enemy("mushling", c, "ha%d" % i)
+		var b0: EnemyBase = f._map_enemy("mushling", c + Vector2(300, 0), "hb%d" % i)
+		f.player.global_position = c + Vector2(0, 900) if c.y < 2500 else c - Vector2(0, 900)
+		await frames(2)
+		a0.take_hit(1, f.player, Vector2.ZERO)
+		await frames(1)
+		lk += int(b0.ai.in_combat())
+		a0.queue_free()
+		b0.queue_free()
+		await frames(2)
+	check(lk >= 3 and lk <= 18, "第 1 层覆盖 link_chance 0.20：跨组联动 %d / 50 = %.0f%%" % [lk, lk * 2.0])
+	await clear_enemies()
+	# ---- 2.8-4 回归：跑出 1100px ----
+	Game.base_time_scale = 4.0
+	var H: Vector2 = spots[1]
+	e = f._map_enemy("mushling", H, "t")
+	await frames(2)
+	var away: Vector2 = f.layout.start_pos if H.distance_to(f.layout.start_pos) > 1300 else spots[spots.size() - 1]
+	f.player.global_position = H + (away - H).normalized() * 500.0
+	e.ai.enter_chase("test")
+	await secs(0.6) ## 先追出去一段（time_scale 4）
+	e.hp = e.max_hp / 2
+	var left_home := e.global_position.distance_to(H)
+	f.player.global_position = H + (away - H).normalized() * 1200.0
+	await frames(3)
+	var went: bool = e.state == EnemyBase.S.RETURN and e.ai.last_reason == "leash"
+	var hp_mid := 0
+	var t0 := 0.0
+	while e.state == EnemyBase.S.RETURN and t0 < 15.0:
+		await frames(1)
+		t0 += Engine.time_scale / Engine.physics_ticks_per_second
+		if hp_mid == 0 and t0 >= 0.5:
+			hp_mid = e.hp
+	var home_d := e.global_position.distance_to(H)
+	check(went and left_home > 100.0 and e.state == EnemyBase.S.PATROL and home_d <= R.home_arrive_px + 2.0 and t0 < 10.0, "2.8-4 敌人追出 %.0f px 后，主角离出生点 %.0f px（> 1100）：转回归，%.1f s 回到出生点（差 %.0f px），恢复巡逻" % [left_home, f.player.global_position.distance_to(H), t0, home_d])
+	check(e.hp > e.max_hp / 2 and (hp_mid == 0 or hp_mid > e.max_hp / 2), "回归路上回血：%d → %d / %d（每秒 %.0f%%）" % [e.max_hp / 2, e.hp, e.max_hp, R.return_regen * 100])
+	f.player.global_position = H + Vector2(60, 0)
+	await frames(10)
+	var cd_ok: bool = e.state == EnemyBase.S.PATROL
+	var t_re := 0.0
+	while e.state == EnemyBase.S.PATROL and t_re < 4.0:
+		await frames(1)
+		t_re += Engine.time_scale / Engine.physics_ticks_per_second
+	var t_total := t_re + 10.0 * Engine.time_scale / Engine.physics_ticks_per_second
+	check(cd_ok and e.state != EnemyBase.S.PATROL and t_total >= R.reaggro_cd - 0.1 and t_total <= R.reaggro_cd + 0.4, "主角贴脸（60px）：回到出生点后 %.2f s 才重新察觉（reaggro_cd %.1f s）" % [t_total, R.reaggro_cd])
+	e.queue_free()
+	await frames(2)
+	# 躲到墙后 4 秒：敌人定在原地（临时把移速设 0），主角在障碍另一侧
+	var md: EnemyData = Game.enemies["mushling"]
+	var sp0 := md.move_speed
+	e = f._map_enemy("mushling", wall_pair[0], "t")
+	await frames(2)
+	e.ai.enter_chase("test")
+	md.move_speed = 0.0
+	f.player.global_position = wall_pair[1]
+	var tl := 0.0
+	while e.state == EnemyBase.S.CHASE and tl < 8.0:
+		await frames(1)
+		tl += Engine.time_scale / Engine.physics_ticks_per_second
+	md.move_speed = sp0
+	check(e.state == EnemyBase.S.RETURN and e.ai.last_reason == "lost_sight" and absf(tl - R.lose_sight_sec) <= 0.25, "2.8-4 躲到墙后：%.2f s 后失去视野转回归（lose_sight_sec %.1f）" % [tl, R.lose_sight_sec])
+	e.queue_free()
+	await frames(2)
+	# 敌人自己离出生点 > 1100（M1 规则保留）、> 1600 硬上限
+	var Hs: Vector2 = spots[1]
+	var dir2: Vector2 = ((spots[0] - Hs).normalized() if spots[0].distance_to(Hs) > 10 else Vector2.RIGHT)
+	for case in [["leash_self", 1150.0, 1100.0], ["leash_hard", 1650.0, 5000.0]]:
+		base.enemy_leash_px = case[2]
+		(base as AggroRules).effective(f.fd.aggro_override, f.aggro)
+		var el: EnemyBase = f._map_enemy("mushling", Hs, "t")
+		await frames(2)
+		el.ai.enter_chase("test")
+		el.global_position = Hs + dir2 * case[1]
+		f.player.global_position = Hs + dir2 * 1050.0 ## 主角离出生点 1050 < 1100
+		await frames(3)
+		check(el.ai.last_reason == case[0], "2.5 主角离出生点 1050px（未超 1100），敌人被拉到 %.0f px：回归，原因 %s（enemy_leash %.0f / 硬上限 %.0f）" % [case[1], el.ai.last_reason, case[2], R.leash_hard_px])
+		el.queue_free()
+		await frames(2)
+	base.enemy_leash_px = 1100.0
+	(base as AggroRules).effective(f.fd.aggro_override, f.aggro)
+	# 层守区：主角在里面时普通怪不追；追击中主角进入层守区 → 回归
 	var gin: Vector2 = f.guard_entry_pos(true)
+	var gout: Vector2 = f.guard_entry_pos(false)
 	f.player.global_position = gin
-	var e2: EnemyBase = f._map_enemy("mushling", f.guard_entry_pos(false), "t")
+	var e2: EnemyBase = f._map_enemy("mushling", gout, "t")
 	await secs(0.5)
-	check(e2.state == EnemyBase.S.IDLE and gin.distance_to(e2.global_position) < 600.0, "主角在层守区里：入口外 %.0f px 的普通怪不追" % gin.distance_to(e2.global_position))
-	f.player.global_position = f.guard_entry_pos(false) + Vector2(f.layout.guard_entrances[0].dir) * 250.0 ## 沿入口方向再往外，离敌人 250px（攻击距离外）
-	await secs(0.2)
-	var chasing: bool = e2.state != EnemyBase.S.IDLE
+	check(e2.state == EnemyBase.S.PATROL, "3.4-3 主角在层守区里：入口外 %.0f px 的普通怪不追" % gin.distance_to(e2.global_position))
+	f.player.global_position = gout + Vector2(f.layout.guard_entrances[0].dir) * 250.0
+	e2.ai.enter_chase("test")
+	await frames(3)
+	var chasing: bool = e2.state == EnemyBase.S.CHASE
 	f.player.global_position = gin
 	await frames(3)
-	check(chasing and e2.state == EnemyBase.S.RETURN, "追击中主角进入层守区 → 普通怪回归")
+	check(chasing and (e2.state == EnemyBase.S.RETURN or e2.state == EnemyBase.S.PATROL) and e2.ai.last_reason == "guard_zone", "3.4-3 追击中主角进入层守区 → 普通怪回归")
 	f.guard_trigger.monitoring = false ## 上面进出层守区不算开战
+	await clear_enemies()
+	# ---- 2.8-5 追击上限 6、前摇令牌 3 ----
+	var C: Vector2 = spots[2]
+	f.player.global_position = C
+	var crowd: Array = []
+	for i in 12:
+		crowd.append(f._map_enemy("mushling", C + Vector2(230, 0).rotated(TAU * i / 12.0), "crowd"))
+	await frames(2)
+	crowd[0].take_hit(1, f.player, Vector2.ZERO)
+	var max_ch := 0
+	var max_wu := 0
+	var max_combat := 0
+	var waiting_d: Array = []
+	for i in 600:
+		await frames(1)
+		f.player.global_position = C
+		var ch: int = f.director.chasing_count()
+		var wu := crowd.filter(func(x): return is_instance_valid(x) and x.state == EnemyBase.S.WINDUP).size()
+		var near := crowd.filter(func(x): return is_instance_valid(x) and x.ai.has_slot).size()
+		max_ch = maxi(max_ch, maxi(ch, near))
+		max_wu = maxi(max_wu, wu)
+		max_combat = maxi(max_combat, crowd.filter(func(x): return is_instance_valid(x) and x.ai.in_combat()).size())
+		if i == 599:
+			for x in crowd:
+				if is_instance_valid(x) and not x.ai.has_slot:
+					waiting_d.append(x.global_position.distance_to(C))
+	var avg_wait := 0.0
+	for d in waiting_d:
+		avg_wait += d / maxf(1, waiting_d.size())
+	check(max_combat == 12 and max_ch <= 6 and max_ch >= 5 and max_wu <= 3 and max_wu >= 1, "2.8-5 12 只同时进入战斗：持有追击名额最多 %d（≤ 6），同时前摇最多 %d（≤ 3）" % [max_ch, max_wu])
+	check(waiting_d.size() >= 5 and avg_wait > 200.0 and avg_wait < 420.0, "没拿到名额的 %d 只在外圈包围待机，平均距离 %.0f px（orbit 300）" % [waiting_d.size(), avg_wait])
+	DP.root.visible = true
+	await frames(2)
+	check(DP.aggro_label.text.begins_with("追击 ") and DP.aggro_label.text.contains("/ 6") and DP.aggro_label.text.contains("/ 3"), "2.8-5 F1 面板显示计数：%s" % DP.aggro_label.text)
+	# ---- 2.8-6 视野锥和声音圈 ----
+	DP.show_aggro = true
+	f.player.try_dash()
+	await frames(3)
+	check(f.aggro_overlay.visible and f.noises.size() >= 1, "2.8-6 F1“显示视野锥和声音圈”：调试层可见，冲刺后有 %d 个声音圈" % f.noises.size())
+	DP.show_aggro = false
+	DP.root.visible = false
+	await clear_enemies()
+	Game.base_time_scale = 1.0
+	# ---- OM8 小地图 ----
+	var mm: Minimap = f.minimap
+	var before: int = mm.revealed
+	var other := Vector2.INF
+	for c in f.layout.chunks:
+		var cc := MapGen.chunk_rect(c, f.layout.chunk_px).get_center()
+		if other == Vector2.INF and not mm.is_revealed(cc) and c.type != "guard":
+			other = cc
+	var was_dark := other != Vector2.INF and not mm.is_revealed(other)
+	f.player.global_position = other
+	await secs(0.4)
+	check(mm != null and mm.is_visible_in_tree() and mm.get_rect().position.x > 1500 and was_dark and mm.is_revealed(other) and mm.revealed > before and f.visited.has(MapGen.chunk_at(f.layout, other)),
+		"3.4-4 小地图在右上角，按 4×4 地形格一个像素块画（%d×%d 块，不画区块网格）；走到新地方后点亮（%d → %d 块）；层主区和方向箭头从开局就画" % [mm.fog_img.get_width(), mm.fog_img.get_height(), before, mm.revealed])
+	# ---- OM9 休眠 + 帧时间 ----
+	var sl: EnemyBase = f._map_enemy("mushling", spots[0], "t")
+	f.player.global_position = spots[0] + Vector2(1900, 0) if spots[0].x < 3000 else spots[0] - Vector2(1900, 0)
+	await secs(0.7)
+	var slept: bool = sl.ai.sleeping
+	f.player.global_position = spots[0] + Vector2(600, 0) if spots[0].x < 3000 else spots[0] - Vector2(600, 0)
+	await secs(0.7)
+	check(slept and not sl.ai.sleeping, "OM9 离主角 > 1800px 的巡逻怪休眠，靠近后醒来")
+	await clear_enemies()
+	f.player.global_position = C
+	var ring: Array = []
+	for i in 12:
+		ring.append(f._map_enemy(["mushling", "rootshot", "shellbug"][i % 3], C + Vector2(260, 0).rotated(TAU * i / 12.0), "perf"))
+	await frames(2)
+	ring[0].take_hit(1, f.player, Vector2.ZERO)
+	await frames(30)
+	var tot := 0.0
+	var mx := 0.0
+	for i in 120:
+		await get_tree().process_frame
+		var ms := (Performance.get_monitor(Performance.TIME_PROCESS) + Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0
+		tot += ms
+		mx = maxf(mx, ms)
+	check(tot / 120.0 <= 16.0, "OM9 同屏 12 只敌人战斗中：逻辑帧时间平均 %.2f ms，最大 %.2f ms（≤ 16 ms，桌面无头；网页版见 web check）" % [tot / 120.0, mx])
 	await clear_enemies()
 	f.player.global_position = f.layout.start_pos
 	await frames(2)

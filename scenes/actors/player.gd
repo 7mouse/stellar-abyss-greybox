@@ -183,6 +183,7 @@ func try_skill() -> bool:
 		hitbox.end()
 	_update_facing()
 	atk = Game.skill
+	NoiseBus.emit_kind(global_position, "combat")
 	state = S.SKILL
 	phase = "windup"
 	phase_t = 0.0
@@ -212,6 +213,7 @@ func try_dash() -> bool:
 	dash_start = global_position
 	iframe_left = maxf(iframe_left, stats.dash_iframes)
 	state = S.DASH
+	NoiseBus.emit_kind(global_position, "dash")
 	return true
 
 func _update_facing() -> void:
@@ -292,6 +294,7 @@ func _tick_attack(delta: float) -> void:
 			_start_attack()
 
 func _on_hit_landed(_t: Node, _dmg: int) -> void:
+	NoiseBus.emit_kind(global_position, "combat")
 	Game.hitstop(atk.hitstop_sec if atk else stats.hitstop_sec)
 	var cam := get_viewport().get_camera_2d()
 	if cam and cam.has_method("shake"):

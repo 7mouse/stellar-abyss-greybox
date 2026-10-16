@@ -9,7 +9,7 @@ var radius := 10.0
 var life := 4.0
 var source_name := ""
 var source: Node
-const WALL_MASK := 1
+const WALL_MASK := 16 ## 挡子弹的物理层（楼层里水、断崖不在这一层，见 MapGen.OPAQUE_LAYER）
 var hit_wall := false ## 测试：因撞墙消失
 
 func _ready() -> void:

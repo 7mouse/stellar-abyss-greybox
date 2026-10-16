@@ -33,7 +33,7 @@ func _ready() -> void:
 	boss_back = UI.rect(self, Vector2(560, 60), Vector2(800, 24), Color(0.2, 0.1, 0.1))
 	boss_bar = UI.rect(self, Vector2(560, 60), Vector2(800, 24), Color(0.9, 0.3, 0.2))
 	boss_name = UI.label(self, "", Vector2(560, 90), 26)
-	boons_label = UI.label(self, "", Vector2(1500, 40), 22, Color(0.85, 0.85, 1))
+	boons_label = UI.label(self, "", Vector2(1500, 300), 22, Color(0.85, 0.85, 1))
 	show_boss(null)
 
 func show_boss(g: Node) -> void:

@@ -197,12 +197,24 @@ func _setup_web() -> void:
 	var cb_dl = JavaScriptBridge.create_callback(func(_a): Log.download_all())
 	var cb_row = JavaScriptBridge.create_callback(func(_a): Log.write("floors", ["selftest", 0, 0, "selftest", 0, 0, 0, 0, 0, 0, 0, "", 1, 1, 0, 0, ""]))
 	var cb_run = JavaScriptBridge.create_callback(func(_a): start_run())
-	_js_refs = [cb_dl, cb_row, cb_run]
+	var cb_perf = JavaScriptBridge.create_callback(func(_a):
+		var sc := get_tree().current_scene
+		if sc and sc.has_method("debug_perf_ring"):
+			god_mode = true
+			sc.debug_perf_ring(12))
+	_js_refs = [cb_dl, cb_row, cb_run, cb_perf]
+	_js_obj.perfRing = cb_perf
 	_js_obj.downloadCsv = cb_dl
 	_js_obj.selftestRow = cb_row
 	_js_obj.startRun = cb_run
 	win.greybox = _js_obj
 
+var _logic_ms := 0.0 ## 逻辑帧时间（process + physics）指数平均，网页检查读 greybox.logicMs
 func _update_web() -> void:
+	if _js_obj:
+		var ms := (Performance.get_monitor(Performance.TIME_PROCESS) + Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0
+		_logic_ms = lerpf(_logic_ms, ms, 0.05)
+		_js_obj.logicMs = _logic_ms
+		_js_obj.enemies = get_tree().get_nodes_in_group("enemies").size()
 	if _js_obj and get_tree().current_scene:
 		_js_obj.currentScene = get_tree().current_scene.scene_file_path

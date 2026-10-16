@@ -8,8 +8,8 @@ const CRAFT_MATERIAL := "moss_essence"
 @export var display_name := "紧急回村符"
 @export var chest_drop_chance := 0.005 ## 普通宝箱。顶稀有，已经持有也照常掷
 @export var elite_drop_chance := 0.003 ## 精英（elite_ids）。已经持有也照常掷
-@export var lord_drop_chance := 0.02 ## 每次击杀层主
-@export var zone_length := 3 ## 每个区域有几层。区域最后一层的层主，第一次击杀必给 1 张
+@export var lord_drop_chance := 0.02 ## 每次击杀层主。灰盒没有必给
+@export var first_clear_floor := 100 ## 整局第一次通关的层。接口留给以后，灰盒不会调用
 @export var channel_sec := 3.0 ## 楼层内引导秒数，受击打断且不消耗
 @export var craft_material_count := 3 ## 制作 1 张符要的层主稀有材料（萤苔精，不限哪一层）
 @export var carry_per_floor := 1 ## 进入一层时，背包里最多几张没封印的符
@@ -37,9 +37,6 @@ func is_elite(id: String) -> bool:
 		if part.strip_edges() == id:
 			return true
 	return false
-
-func is_zone_end(depth: int) -> bool:
-	return zone_length > 0 and depth > 0 and depth % zone_length == 0
 
 ## 仓库 + 保险箱里的回村符。背包里的不算，死亡会丢，撤离入库之后才算进库存
 func stock() -> int:
@@ -192,18 +189,20 @@ func craft() -> bool:
 	Lineage.save()
 	return true
 
-## 每次击杀层主按 lord_drop_chance 掷。区域最后一层的第一次击杀改为必给 1 张，不重复给
+## 每次击杀层主只按 lord_drop_chance 掷。整局首通的必给不走这里
 func on_lord_killed(depth: int) -> void:
-	var key := str(depth)
-	var first := not bool(Lineage.charm_lord_seen.get(key, false))
-	if is_zone_end(depth) and first:
-		Lineage.charm_lord_seen[key] = true
-		grant("lord")
-		Lineage.save()
-		return
 	_lord_roll_n += 1
-	if _roll(lord_drop_chance, "lord:%s:%d" % [key, _lord_roll_n]):
+	if _roll(lord_drop_chance, "lord:%s:%d" % [str(depth), _lord_roll_n]):
 		grant("lord")
+
+## 整局第一次通关（第 100 层）必给 1 张。灰盒没有这一层，所以现在没有人调用
+func on_game_first_clear() -> bool:
+	if Lineage.game_first_clear:
+		return false
+	Lineage.game_first_clear = true
+	var ok := grant("clear")
+	Lineage.save()
+	return ok
 
 ## 撤离时把背包里的符（含封印）存进仓库。封印解开。死亡不调用
 func bank_from_run() -> void:

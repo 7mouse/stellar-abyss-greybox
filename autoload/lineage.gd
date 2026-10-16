@@ -21,7 +21,7 @@ var upgrades := {"vit": 0, "swift": 0}
 var flags := {}
 var charm_carried := 0 ## 仓库里的回村符张数（没在保险箱、也没在背包里）
 var charm_source := ""
-var charm_lord_seen := {} ## "层数" -> true，区域最后一层的层主第一次击杀。死亡不清除
+var game_first_clear := false ## 整局第一次通关已经发过回村符。死亡不清除。灰盒不会把它设成 true
 var rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
@@ -160,7 +160,7 @@ func buy_upgrade(kind: String) -> bool:
 func to_dict() -> Dictionary:
 	return {"v": 1, "gen_counter": gen_counter, "individuals": individuals, "epitaphs": epitaphs, "corpse": corpse, "vault": vault,
 		"vault_level": vault_level, "loadout": loadout, "mats": mats, "shards_bank": shards_bank, "upgrades": upgrades, "flags": flags,
-		"charm_carried": charm_carried, "charm_source": charm_source, "charm_lord_seen": charm_lord_seen}
+		"charm_carried": charm_carried, "charm_source": charm_source, "game_first_clear": game_first_clear}
 
 func save() -> void:
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
@@ -202,9 +202,7 @@ func load_save() -> void:
 	flags = d.get("flags", {})
 	charm_carried = int(d.get("charm_carried", 0))
 	charm_source = String(d.get("charm_source", ""))
-	charm_lord_seen = {}
-	for k in d.get("charm_lord_seen", {}):
-		charm_lord_seen[str(k)] = bool(d.charm_lord_seen[k])
+	game_first_clear = bool(d.get("game_first_clear", false))
 
 func reset_memory() -> void:
 	gen_counter = 0
@@ -220,7 +218,7 @@ func reset_memory() -> void:
 	flags = {}
 	charm_carried = 0
 	charm_source = ""
-	charm_lord_seen = {}
+	game_first_clear = false
 
 func wipe() -> void:
 	reset_memory()

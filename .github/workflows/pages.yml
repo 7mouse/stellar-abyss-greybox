@@ -1,4 +1,8 @@
 # 网页版（HTML5，单线程）构建并部署到 GitHub Pages
+# 一次部署包含两版：main → 站点根路径；open-map-m1 → /open-map/（预览）
+# 本工作流始终以 main 为 ref 运行（Pages 环境只允许 main 部署）。
+# open-map-m1 分支上的 .github/workflows/preview-trigger.yml 在该分支 push 时
+# 通过 workflow_dispatch 触发本工作流（ref=main）。
 # 需要：仓库 Settings → Pages → Source 选 “GitHub Actions”
 name: 网页版部署
 
@@ -14,17 +18,25 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   GODOT_VERSION: 4.7.2
   GODOT_TAG: 4.7.2-stable
+  PREVIEW_BRANCH: open-map-m1
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PREVIEW_BRANCH }}
+          path: preview
 
       - name: 安装 Godot 与网页导出模板
         run: |
@@ -35,21 +47,26 @@ jobs:
           mkdir -p "$T"
           unzip -q -j tpl.tpz templates/web_nothreads_release.zip templates/web_nothreads_debug.zip templates/version.txt -d "$T"
           rm tpl.tpz
-
-      - name: 自动验收（无头）
-        run: |
           pip install fonttools
-          tests/run_tests.sh
 
-      - name: 导出网页版
+      - name: 自动验收（无头）main
+        working-directory: main
+        run: tests/run_tests.sh
+
+      - name: 自动验收（无头）open-map-m1
+        working-directory: preview
+        run: tests/run_tests.sh
+
+      - name: 导出网页版（根路径 + /open-map/）
         run: |
-          mkdir -p build/web
-          godot --headless --export-release "Web" build/web/index.html
-          touch build/web/.nojekyll
+          mkdir -p site/open-map
+          (cd main && godot --headless --export-release "Web" ../site/index.html)
+          (cd preview && godot --headless --export-release "Web" ../site/open-map/index.html)
+          touch site/.nojekyll
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: build/web
+          path: site
 
   deploy:
     needs: build

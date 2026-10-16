@@ -82,6 +82,7 @@ func _run() -> void:
 	await test_open_map()
 	await test_aggro()
 	await test_ecology()
+	await test_m3_panel()
 	await test_nav_chase()
 	await test_walk_floor1()
 	await test_village()
@@ -914,6 +915,25 @@ func test_csv() -> void:
 	var e: EnemyBase = f.spawn_enemy("mushling", f.player.global_position + Vector2(60, 0))
 	e.cooldown = 0.0
 	await secs(1.5)
+	# OM11：第 2 次交战（脱战 > encounter_gap_sec 后再打）、清 1 个营地、采 1 个资源点、走过多个区块
+	Game.god_mode = true
+	var sc := Src.new()
+	f.add_child(sc)
+	if is_instance_valid(e): e.take_hit(999, sc, Vector2.ZERO)
+	await secs(f.aggro.encounter_gap_sec / Engine.time_scale + 0.5)
+	var e2: EnemyBase = f._map_enemy("mushling", f.player.global_position + Vector2(60, 0), "csv")
+	await until(func(): return f.director.chasers_peak >= 1, 4.0)
+	if is_instance_valid(e2): e2.take_hit(999, sc, Vector2.ZERO)
+	await frames(2)
+	var cid: int = f.layout.spawn_points.camp[0].chunk
+	for m in get_tree().get_nodes_in_group("enemies"):
+		if m.get_meta("camp", -1) == cid:
+			m.take_hit(9999, sc, Vector2.ZERO)
+	f._take_node("node_0")
+	await clear_enemies()
+	f.player.global_position = f.layout.campfire_pos
+	await secs(0.3)
+	Game.god_mode = false
 	f.debug_enter_guard_zone()
 	await secs(0.5)
 	await kill_guard(f)
@@ -926,6 +946,13 @@ func test_csv() -> void:
 	var hits := Log.rows("hits")
 	check(fl.size() == 2 and fl[0] == Log.HEADERS.floors, "floors.csv 表头 + 1 行：%s" % (fl[1] if fl.size() > 1 else ""))
 	var cols: PackedStringArray = fl[1].split(",")
+	var hdr: PackedStringArray = Log.HEADERS.floors.split(",")
+	var newc := {}
+	for c in ["chunks_visited", "encounters", "chasers_peak", "camps_cleared", "nodes_taken"]:
+		var ix := hdr.find(c)
+		newc[c] = cols[ix] if ix >= 0 and ix < cols.size() else ""
+	check(newc.values().all(func(v): return v != "" and v.is_valid_int()) and int(newc.chunks_visited) >= 2 and int(newc.encounters) == 2 and int(newc.chasers_peak) >= 1 and int(newc.camps_cleared) == 1 and int(newc.nodes_taken) == 1,
+		"OM11 floors.csv 新列都有值：%s（走过 2+ 区块、交战 2 次、追击峰值 ≥1、清 1 营地、采 1 资源点）" % str(newc))
 	check(cols[4] == "extract" and absf(float(cols[5]) - real) < 1.0, "floor_sec %s 秒，和计时器 %.1f 秒误差 < 1 秒" % [cols[5], real])
 	check(float(cols[7]) > 0.0 and cols.size() == Log.HEADERS.floors.split(",").size(), "guard_sec 有值，列数和表头一致")
 	check(hits.size() > 2, "hits.csv 有 %d 行" % (hits.size() - 1))
@@ -1949,3 +1976,49 @@ func _test_rock(f: Node, src: Node) -> void:
 	var opts_ok: bool = Game.FINAL_FLOOR == 3
 	f.choose_exit(true)
 	check(opts_ok and await wait_scene(Game.SCN_EXTRACT), "方案 A：第 3 层击杀后只能撤离（选下潜也进结算）")
+
+# ---------------- M3 OM10 F1 面板 / OM12 ----------------
+func test_m3_panel() -> void:
+	print("== M3 F1 面板 / 测试 ==")
+	DP.jump_floor(1)
+	await frames(1)
+	await wait_scene(Game.SCN_FLOOR)
+	var f := scene()
+	var base: AggroRules = load("res://data/aggro_rules.tres")
+	var fd: FloorData = Game.floors[0]
+	var eds := ["chunk_px", "grid_w", "loop_chance", "gap_px", "patrol_chance", "camps", "path_min_r"].filter(func(k): return DP.find_editor(fd, k) == null)
+	var aeds := ["sight_range", "sight_angle_deg", "noise_dash", "link_chance", "leash_px", "max_chasers", "max_attackers", "sleep_radius", "encounter_gap_sec"].filter(func(k): return DP.find_editor(base, k) == null)
+	check(eds.is_empty() and aeds.is_empty(), "OM10 F1：FloorData 开放地图字段和 AggroRules 都有编辑器（缺：%s %s）" % [str(eds), str(aeds)])
+	# 参数即时生效：改全局 sight_range（第 1 层没覆盖这个字段）→ 0.5 秒内本层生效对象同步
+	var old := base.sight_range
+	var ed: Control = DP.find_editor(base, "sight_range")
+	ed.value = 333.0
+	await secs(0.7 / Engine.time_scale + 0.1)
+	var live: float = f.aggro.sight_range
+	ed.value = old
+	await secs(0.7 / Engine.time_scale + 0.1)
+	check(is_equal_approx(live, 333.0) and is_equal_approx(f.aggro.sight_range, old), "OM10 面板改 sight_range %.0f → 333：本层生效参数 %.0f，改回后 %.0f（新进入追击的敌人读同一个对象）" % [old, live, f.aggro.sight_range])
+	DP.show_chunks = true
+	await frames(2)
+	var grid_on: bool = f.chunk_overlay.visible
+	DP.show_chunks = false
+	await frames(2)
+	DP.show_aggro = true
+	await frames(2)
+	var aggro_on: bool = f.show_aggro_debug()
+	DP.show_aggro = false
+	DP.sleep_all = true
+	await secs(1.2)
+	var awake_ids: Array = get_tree().get_nodes_in_group("enemies").filter(func(e): return e.ai and e.state == EnemyBase.S.PATROL and not e.ai.sleeping).map(func(e): return [e.ai._sleep_t, Game.debug_panel == DP])
+	if not awake_ids.is_empty(): print("    awake: ", awake_ids)
+	var awake := get_tree().get_nodes_in_group("enemies").filter(func(e): return e.ai and e.state == EnemyBase.S.PATROL and not e.ai.sleeping).size()
+	DP.sleep_all = false
+	await secs(0.4)
+	check(grid_on and not f.chunk_overlay.visible and aggro_on and awake == 0, "OM10 区块网格开关 / 视野锥声音圈开关 / 全图休眠（打开后巡逻中醒着的 %d 只）都生效" % awake)
+	var tx: String = f.map_stats_text()
+	DP.debug_guard()
+	await frames(2)
+	check("区块" in tx and "巡逻组" in tx and f.player.global_position.distance_to(f.layout.campfire_pos) < 1.0, "OM10 地图统计有数字、“传送到层主区”可用")
+
+func _col_close(a: Color, b: Color) -> bool:
+	return absf(a.r - b.r) < 0.01 and absf(a.g - b.g) < 0.01 and absf(a.b - b.b) < 0.01

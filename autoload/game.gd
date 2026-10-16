@@ -142,7 +142,8 @@ func log_floor(result: String) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
 	Log.write("floors", [run.id, Lineage.current().gen_no, run.depth, result, "%.1f" % (now - float(fs.get("t0", now))), "%.1f" % float(fs.get("combat_sec", 0.0)),
 		"%.1f" % float(fs.get("guard_sec", 0.0)), fs.get("hp_start", run.hp), run.hp, fs.get("dmg_taken", 0), fs.get("kills", 0),
-		"|".join(run.boon_order), fs.get("level_start", 1), level(), run.count_of("moss"), run.shards_carried, "|".join(run.clue_seen)])
+		"|".join(run.boon_order), fs.get("level_start", 1), level(), run.count_of("moss"), run.shards_carried, "|".join(run.clue_seen),
+		fs.get("chunks_visited", 0), fs.get("encounters", 0), fs.get("chasers_peak", 0), fs.get("camps_cleared", 0), fs.get("nodes_taken", 0)])
 
 func hitstop(sec: float) -> void:
 	_hitstop_until = maxi(_hitstop_until, Time.get_ticks_msec() + int(sec * 1000))

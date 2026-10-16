@@ -54,3 +54,4 @@ func effective(override: AggroRules, into: AggroRules = null) -> AggroRules:
 			v = override.get(n)
 		out.set(n, v)
 	return out
+@export var encounter_gap_sec := 3.0 ## CSV encounters：脱战这么久后再打算新的一次交战

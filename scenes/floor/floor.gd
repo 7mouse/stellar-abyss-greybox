@@ -30,6 +30,7 @@ var guard_rect := Rect2()
 var guard_trigger: Area2D
 var fence_bodies: Array = []
 var arena_hazards: Array = []
+var _calm_t := 1e9 ## 距离上次战斗的秒数
 var exit_active := false
 var exit_pos := Vector2.ZERO
 var exit_rect: ColorRect
@@ -103,7 +104,8 @@ func _ready() -> void:
 	minimap = Minimap.new()
 	minimap.setup(self)
 	hud.add_child(minimap)
-	Game.run.floor_stats = {"t0": Time.get_ticks_msec() / 1000.0, "combat_sec": 0.0, "guard_sec": 0.0, "hp_start": player.hp, "dmg_taken": 0, "kills": 0, "level_start": Game.level()}
+	Game.run.floor_stats = {"t0": Time.get_ticks_msec() / 1000.0, "combat_sec": 0.0, "guard_sec": 0.0, "hp_start": player.hp, "dmg_taken": 0, "kills": 0, "level_start": Game.level(),
+		"chunks_visited": 0, "encounters": 0, "chasers_peak": 0, "camps_cleared": 0, "nodes_taken": 0}
 	hud.show_toast("第 %d 层 · 苔根林窟 · %s" % [depth, fd.ecology.display_name] if fd.ecology else "第 %d 层 · 苔根林窟" % depth)
 
 # ---------- 构建 ----------
@@ -413,6 +415,13 @@ func _physics_process(delta: float) -> void:
 			break
 	if fighting and Game.run.floor_stats.has("combat_sec"):
 		Game.run.floor_stats.combat_sec += delta
+	# 交战次数（CSV encounters）：脱战超过 encounter_gap_sec 后再进入战斗算新的一次
+	if fighting:
+		if _calm_t >= aggro.encounter_gap_sec:
+			Game.run.floor_stats["encounters"] = int(Game.run.floor_stats.get("encounters", 0)) + 1
+		_calm_t = 0.0
+	else:
+		_calm_t += delta
 	if guard_t0 >= 0.0 and not guard_dead and Game.run.floor_stats.has("guard_sec"):
 		Game.run.floor_stats.guard_sec += delta
 	if guard and is_instance_valid(guard):

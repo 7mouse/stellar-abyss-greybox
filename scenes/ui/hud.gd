@@ -1,6 +1,6 @@
 class_name Hud
 extends CanvasLayer
-## 局内 HUD：HP、等级/XP、冲刺充能、技能冷却、层数、背包计数、强化、互动提示、层守血条
+## 局内 HUD：HP、等级/XP、冲刺充能、技能冷却、层数、背包计数、强化、互动提示、层主血条
 
 var player: Player
 var hp_bar: ColorRect

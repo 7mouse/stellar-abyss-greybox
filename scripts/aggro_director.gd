@@ -1,7 +1,7 @@
 class_name AggroDirector
 extends Node
 ## 追击数上限和攻击令牌（规格 2.6）：同时追击 ≤ max_chasers（多出来的在外圈包围待机），同时前摇 ≤ max_attackers。
-## 只管带 EnemyAI 的地图怪；层守和召唤物不占名额。
+## 只管带 EnemyAI 的地图怪；层主和召唤物不占名额。
 
 var rules: AggroRules
 var chasers: Array = []

@@ -100,8 +100,19 @@ func dash_recharge() -> float:
 func dash_distance() -> float:
 	return stats.dash_distance * (1.0 + float(mods.get("dash_dist_pct", 0)))
 
+
+## 环境机关减速（孢子云 −30%、缠根 −40%）：取持续中最强的一个
+var hz_slow_left := 0.0
+var hz_slow_pct := 0.0
+func apply_hazard_slow(pct: float, sec: float) -> void:
+	if hz_slow_left <= 0.0 or pct >= hz_slow_pct:
+		hz_slow_pct = pct
+	hz_slow_left = maxf(hz_slow_left, sec)
+func hazard_speed_mult() -> float:
+	return 1.0 - hz_slow_pct if hz_slow_left > 0.0 else 1.0
+
 func move_speed() -> float:
-	return stats.move_speed * (1.0 + float(mods.get("move_pct", 0)))
+	return stats.move_speed * (1.0 + float(mods.get("move_pct", 0))) * hazard_speed_mult()
 
 func skill_cooldown() -> float:
 	return Game.skill.cooldown * maxf(0.1, 1.0 + float(mods.get("skill_cd_pct", 0)))
@@ -226,6 +237,7 @@ func _update_facing() -> void:
 		facing = a
 
 func _physics_process(delta: float) -> void:
+	hz_slow_left = maxf(0.0, hz_slow_left - delta)
 	iframe_left = maxf(0.0, iframe_left - delta)
 	skill_cd_left = maxf(0.0, skill_cd_left - delta)
 	combo_timer = maxf(0.0, combo_timer - delta)

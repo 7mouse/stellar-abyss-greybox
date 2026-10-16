@@ -1,12 +1,12 @@
 class_name MapGen
 extends RefCounted
 ## 开放地图生成（取代房间制 FloorGen）：grid_w × grid_h 个区块拼成一整张打通的平层地图。
-## 1. 随机 DFS 生成树保证全连通，再按 loop_chance 给相邻区块额外打通（环路）；层守区只开 1~2 个口。
-## 2. 区块只是生成/摆放的内部单位，区块之间没有墙。只有层守区有残垣围墙，入口宽 gap_px；外圈 map_border_px 实心墙。
+## 1. 随机 DFS 生成树保证全连通，再按 loop_chance 给相邻区块额外打通（环路）；层主区只开 1~2 个口。
+## 2. 区块只是生成/摆放的内部单位，区块之间没有墙。只有层主区有残垣围墙，入口宽 gap_px；外圈 map_border_px 实心墙。
 ## 3. 地形：64px 地形格，噪声定初始密度 → 元胞自动机平滑成团块（灌木/岩石/断崖/水/残垣），
 ##    沿区块图的打通边挖蜿蜒小路（宽度随噪声变化 → 隘口），区块中心挖空地；走不到的小洞填实。
 ##    地面群系（林地/野地/废墟）由低频噪声连续混合，普通区块的类型取区块中心的群系。
-## 4. 摆放约束：起点在第 0 列、层守区在最后一列；营地距起点 ≥2、两两 ≥2、至少 1 个在最短路径 ±1 区块内；神龛不贴起点。
+## 4. 摆放约束：起点在第 0 列、层主区在最后一列；营地距起点 ≥2、两两 ≥2、至少 1 个在最短路径 ±1 区块内；神龛不贴起点。
 ## 5. 40px 栅格 BFS 走通检查，不满足就换子种子重生（最多重试 5 次）。区块间距离一律按切比雪夫距离（含斜向）算。
 
 const WALL := 40.0
@@ -47,7 +47,7 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 	var open := {} ## edge key -> 开口中心沿边的偏移（px，从边起点量）
 	var open_edge := func(a: Vector2i, b: Vector2i) -> void:
 		open[_ekey(a, b)] = cp * 0.5 + rng.randf_range(-0.25, 0.25) * cp
-	# 1. 生成树（不含层守区），随机 DFS
+	# 1. 生成树（不含层主区），随机 DFS
 	var seen := {start: true}
 	var stack: Array = [start]
 	while not stack.is_empty():
@@ -72,7 +72,7 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 				var b: Vector2i = a + d
 				if inside.call(b) and a != gcell and b != gcell and not open.has(_ekey(a, b)) and rng.randf() < fd.loop_chance:
 					open_edge.call(a, b)
-	# 层守区：1~2 个入口
+	# 层主区：1~2 个入口
 	var gn: Array = []
 	for d in DIRS:
 		if inside.call(gcell + d):
@@ -143,7 +143,7 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 	var b := fd.map_border_px
 	L["border"] = [Rect2(-b, -b, bounds.size.x + 2 * b, b), Rect2(-b, bounds.size.y, bounds.size.x + 2 * b, b),
 		Rect2(-b, 0, b, bounds.size.y), Rect2(bounds.size.x, 0, b, bounds.size.y)]
-	# 3. 层守区围墙（全图唯一的墙：残垣围成的场地，入口 1~2 个）
+	# 3. 层主区围墙（全图唯一的墙：残垣围成的场地，入口 1~2 个）
 	var grc := chunk_rect_cell(gcell, cp)
 	var gch0: Dictionary = chunks[cid.call(gcell)]
 	for d in DIRS:
@@ -180,7 +180,7 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 			var bv: float = biome_at(T, chunk_rect(ch, cp).get_center())
 			ch.type = "grove" if bv < -0.12 else ("ruin" if bv > 0.18 else "field")
 	var solids := all_solids(L)
-	# 层守区入口、篝火、撤离点
+	# 层主区入口、篝火、撤离点
 	var gch: Dictionary = chunks[cid.call(gcell)]
 	var gc := chunk_rect(gch, cp).get_center()
 	var ents: Array = []
@@ -231,6 +231,29 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 			var p := _loot_point(rng, chunks, loot_chunks, routes, taken, solids, cp, grid)
 			taken.append(p)
 			spawn[kind].append(p)
+	# 6. 环境机关（§8.1）：普通区块空地上，离巡逻路线点 ≥ 150px
+	spawn["hazard"] = []
+	if fd.ecology:
+		var all_route: Array = []
+		for k2 in routes: all_route.append_array(routes[k2])
+		var norm: Array = chunks.filter(func(ch): return NORMAL.has(ch.type))
+		var htaken: Array = taken.duplicate()
+		for hi in fd.ecology.hazards.size():
+			var hz: HazardData = fd.ecology.hazards[hi]
+			for n in fd.ecology.hazard_count(hi):
+				for t in 200:
+					var ch: Dictionary = norm[rng.randi_range(0, norm.size() - 1)]
+					var ir := chunk_rect(ch, cp).grow(-120)
+					var p := Vector2(rng.randf_range(ir.position.x, ir.end.x), rng.randf_range(ir.position.y, ir.end.y))
+					if not point_reachable(grid, p) or not is_free(p, solids, hz.radius + 20.0):
+						continue
+					if all_route.any(func(q): return q.distance_to(p) < HAZARD_ROUTE_DIST) or htaken.any(func(q): return q.distance_to(p) < 180.0):
+						continue
+					if p.distance_to(start_pos) < SAFE_START_PX or p.distance_to(fire) < FIRE_SAFE_PX:
+						continue
+					htaken.append(p)
+					spawn.hazard.append({"id": hz.id, "idx": hi, "pos": p, "chunk": ch.id})
+					break
 	L["spawn_points"] = spawn
 	return L
 
@@ -307,7 +330,7 @@ static func all_solids(layout: Dictionary) -> Array[Rect2]:
 			out.append(r)
 	return out
 
-## 区块级最短路（chunk id 列表，含起点和层守区）
+## 区块级最短路（chunk id 列表，含起点和层主区）
 static func shortest_path(layout: Dictionary) -> Array:
 	var W: int = layout.grid_w
 	var s: Dictionary = layout.chunks[layout.start_chunk]
@@ -405,8 +428,8 @@ static func stats(layout: Dictionary) -> Dictionary:
 # ---------- 有机地形 ----------
 static var debug_nofill := false
 const TCELL := 64.0
-enum { T_OPEN, T_THICKET, T_ROCK, T_CLIFF, T_WATER, T_RUIN }
-const KIND_NAMES := ["空地", "灌木", "岩石", "断崖", "水", "残垣"]
+enum { T_OPEN, T_THICKET, T_ROCK, T_CLIFF, T_WATER, T_RUIN, T_ROOT } ## T_ROOT = 层主场地的根柱（挡视线和子弹）
+const KIND_NAMES := ["空地", "灌木", "岩石", "断崖", "水", "残垣", "根柱"]
 const OPAQUE_LAYER := 16 ## 挡视线、挡子弹的物理层（残垣、灌木、岩石、外圈边界、层主区围墙）
 
 static func blocks_sight(kind: int) -> bool:
@@ -444,6 +467,11 @@ static func _terrain(rng: RandomNumberGenerator, L: Dictionary, fd: FloorData) -
 	var n_wat := _noise(rng, 1.0 / 1500.0, 2)
 	var n_cli := _noise(rng, 1.0 / 1100.0, 2)
 	var n_wid := _noise(rng, 1.0 / 700.0, 1)
+	# 生态（§8.1）：群系偏移和地形阈值都只从 FloorData.ecology 读
+	var bias := fd.eco_f("biome_bias", 0.0)
+	var den_base := fd.eco_f("density_base", 0.53)
+	var water_th := fd.eco_f("water_th", 0.32)
+	var cliff_th := fd.eco_f("cliff_th", 0.25)
 	var g := PackedByteArray(); g.resize(nx * ny)
 	var biome := PackedFloat32Array(); biome.resize(nx * ny)
 	for y in ny:
@@ -451,8 +479,8 @@ static func _terrain(rng: RandomNumberGenerator, L: Dictionary, fd: FloorData) -
 			var px := (x + 0.5) * TCELL
 			var py := (y + 0.5) * TCELL
 			var i := y * nx + x
-			biome[i] = n_bio.get_noise_2d(px, py)
-			var dens := 0.53 + 0.2 * n_den.get_noise_2d(px, py)
+			biome[i] = n_bio.get_noise_2d(px, py) + bias
+			var dens := den_base + 0.2 * n_den.get_noise_2d(px, py)
 			g[i] = 1 if rng.randf() < dens else 0
 	# 元胞自动机 4-5 规则（3 轮），地图外算实心；用带 1 格实心外框的数组 + 行累加加速
 	var px_w := nx + 2
@@ -518,11 +546,11 @@ static func _terrain(rng: RandomNumberGenerator, L: Dictionary, fd: FloorData) -
 				var bend := sin(t * PI) * 260.0 * n_wid.get_noise_2d(p0.x + p1.x, p0.y + p1.y + t * 900.0)
 				var q := p0.lerp(p1, t) + nrm * bend
 				if not touches_guard and grc.grow(220.0).has_point(q):
-					q = p0.lerp(p1, t) ## 不让别的小路拐进层守区围墙
+					q = p0.lerp(p1, t) ## 不让别的小路拐进层主区围墙
 
 				var w := 125.0 + 45.0 * n_wid.get_noise_2d(q.x, q.y)
 				carve.call(q, w)
-	# 层守区入口外侧：篝火所在的空地
+	# 层主区入口外侧：篝火所在的空地
 	var gch: Dictionary = L.chunks[L.guard_chunk]
 	for d in gch.open_edges:
 		var gp: Rect2 = gch.open_edges[d]
@@ -537,32 +565,47 @@ static func _terrain(rng: RandomNumberGenerator, L: Dictionary, fd: FloorData) -
 			for xx in range(maxi(0, x0), mini(nx - 1, x1) + 1):
 				if Vector2((xx + 0.5) * TCELL, (yy + 0.5) * TCELL).distance_squared_to(c) <= r * r:
 					g[yy * nx + xx] = 0
-	# 层守区内部清空（只留几根柱子）
+	# 层主区内部清空（只留几根柱子）
 	for yy in range(int(grc.position.y / TCELL), int(grc.end.y / TCELL)):
 		for xx in range(int(grc.position.x / TCELL), int(grc.end.x / TCELL)):
 			var cc := Vector2((xx + 0.5) * TCELL, (yy + 0.5) * TCELL)
 			var lc := (cc - grc.position) / cp
 			var pillar := (absf(lc.x - 0.2) < 0.04 or absf(lc.x - 0.8) < 0.04) and (absf(lc.y - 0.2) < 0.04 or absf(lc.y - 0.8) < 0.04)
 			g[yy * nx + xx] = 2 if pillar else 0
+	# 场地机关“根柱”（§8.3 样例 2）：4 根方柱（覆盖 c±radius 的地形格），做掩体
+	var lord := fd.lord()
+	var root_pts: Array = []
+	if lord and lord.arena_hazard and lord.arena_hazard.id == "root_pillar":
+		var offs := [Vector2(0.5, 0.3), Vector2(0.5, 0.7), Vector2(0.3, 0.5), Vector2(0.7, 0.5)]
+		for oi in mini(lord.arena_hazard_count, offs.size()):
+			var c: Vector2 = grc.position + offs[oi] * cp
+			root_pts.append(c)
+			var hr := lord.arena_hazard.radius
+			for yy in range(int((c.y - hr) / TCELL), int((c.y + hr) / TCELL) + 1):
+				for xx in range(int((c.x - hr) / TCELL), int((c.x + hr) / TCELL) + 1):
+					g[yy * nx + xx] = 3
+	L["root_pillars"] = root_pts
 	# 种类：水（低洼）、断崖、灌木（林地）、岩石（野地）、残垣（废墟）
 	for i in nx * ny:
 		if g[i] == 0:
 			continue
 		var px := (i % nx + 0.5) * TCELL
 		var py := (i / nx + 0.5) * TCELL
-		if g[i] == 2:
+		if g[i] == 3:
+			g[i] = T_ROOT
+		elif g[i] == 2:
 			g[i] = T_RUIN
-		elif n_wat.get_noise_2d(px, py) > 0.32:
+		elif n_wat.get_noise_2d(px, py) > water_th:
 			g[i] = T_WATER
 		elif biome[i] < -0.12:
 			g[i] = T_THICKET
-		elif n_cli.get_noise_2d(px, py) > 0.25:
+		elif n_cli.get_noise_2d(px, py) > cliff_th:
 			g[i] = T_CLIFF
 		elif biome[i] > 0.18:
 			g[i] = T_RUIN if rng.randf() < 0.3 else T_ROCK
 		else:
 			g[i] = T_ROCK
-	var T := {"nx": nx, "ny": ny, "cell": TCELL, "cells": g, "biome": biome}
+	var T := {"nx": nx, "ny": ny, "cell": TCELL, "cells": g, "biome": biome, "tint": fd.ecology.palette if fd.ecology else Color(0, 0, 0, 0), "tint_k": fd.ecology.palette_strength if fd.ecology else 0.0}
 	# 修补：区块中心走不到时，从它到相邻的可达区块中心挖一条直路（最多 4 轮）
 	var repairs := 0
 	var rg := {}
@@ -653,7 +696,8 @@ static func biome_at(T: Dictionary, p: Vector2) -> float:
 	var y := clampi(int(p.y / T.cell), 0, T.ny - 1)
 	return T.biome[y * T.nx + x]
 
-const KIND_COLORS := [Color(0, 0, 0, 0), Color(0.16, 0.36, 0.18), Color(0.42, 0.4, 0.37), Color(0.3, 0.24, 0.2), Color(0.16, 0.3, 0.48), Color(0.5, 0.45, 0.38)]
+const HAZARD_ROUTE_DIST := 150.0 ## 机关离巡逻路线点（§8.1）
+const KIND_COLORS := [Color(0, 0, 0, 0), Color(0.16, 0.36, 0.18), Color(0.42, 0.4, 0.37), Color(0.3, 0.24, 0.2), Color(0.16, 0.3, 0.48), Color(0.5, 0.45, 0.38), Color(0.42, 0.3, 0.18)]
 const GROUND_WOOD := Color(0.13, 0.2, 0.13)
 const GROUND_WILD := Color(0.2, 0.2, 0.14)
 const GROUND_RUIN := Color(0.2, 0.18, 0.17)
@@ -672,7 +716,7 @@ static func terrain_images(L: Dictionary) -> Array:
 	for y in T.ny:
 		for x in T.nx:
 			var i: int = y * T.nx + x
-			ground.set_pixel(x, y, ground_color(T.biome[i]))
+			ground.set_pixel(x, y, ground_color(T.biome[i]).lerp(T.get("tint", Color.BLACK), T.get("tint_k", 0.0)))
 			var k: int = T.cells[i]
 			obs.set_pixel(x, y, KIND_COLORS[k] if k != 0 else Color(ground_color(T.biome[i]), 0.0))
 	return [ground, obs]

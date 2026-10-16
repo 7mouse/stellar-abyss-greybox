@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HazardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/hazard_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "spore_pod"
+display_name = "孢子囊"
+radius = 36.0
+effect_radius = 130.0
+effect_sec = 2.0
+slow_pct = 0.3
+noise_px = 300.0
+color = Color(0.75, 0.8, 0.35, 1)

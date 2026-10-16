@@ -1,6 +1,6 @@
 class_name GuardData
 extends Resource
-## 层守 = 模板 × 词缀 × 配色（data/guards/*.tres）。HP/伤害 = 模板第 1 层基准 × 倍率（不再乘楼层成长）
+## 层主（LordData）= 模板 × 词缀 × 配色（data/guards/*.tres）。HP/伤害 = 模板第 1 层基准 × 倍率（不再乘楼层成长）
 
 @export var id := ""
 @export var display_name := ""
@@ -19,3 +19,10 @@ extends Resource
 @export var summon_count_override := 0 ## 每次召唤数量；0 = 用词缀的 summon_count
 @export var xp := 30
 @export var loot_table: LootTable
+
+@export_group("层主（LordData）")
+@export var moves: PackedStringArray = [] ## 招式（灰盒只用于描述）
+@export var minions := "" ## 小弟："mushling:2"（实际召唤由召唤词缀驱动）
+@export var arena_hazard: HazardData ## 场地机关
+@export var arena_hazard_count := 0
+@export var arena_hazard_phase2_only := false ## 只在二阶段出现

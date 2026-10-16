@@ -176,7 +176,10 @@ func tick_alert(delta: float) -> void:
 		e._go(EnemyBase.S.PATROL)
 
 ## 听到声音（RETURN、追击中不响应）
+var last_heard_kind := "" ## 最近一次听到的声音种类（调试 / 测试）
+
 func hear(pos: Vector2, radius: float, _kind: String) -> void:
+	last_heard_kind = _kind
 	if not (e.state == EnemyBase.S.PATROL or e.state == EnemyBase.S.ALERT):
 		return
 	if clock < reaggro_at:

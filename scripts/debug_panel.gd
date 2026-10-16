@@ -44,10 +44,15 @@ func _ready() -> void:
 	for id in g.enemies:
 		_section("敌人：" + g.enemies[id].display_name, g.enemies[id].display_name, g.enemies[id])
 	for fd in g.floors:
-		_section("层守", fd.guard.display_name, fd.guard)
-		_affix_toggles("层守", fd.guard)
+		_section("层主", fd.lord().display_name, fd.lord())
+		_affix_toggles("层主", fd.lord())
+		if fd.ecology:
+			_section("生态", "第 %d 层：%s（改 biome_bias 等后重新生成本层生效）" % [fd.depth, fd.ecology.display_name], fd.ecology)
+	for hid in ["spore_pod", "root_snare", "falling_rock", "root_pillar"]:
+		var hr: HazardData = load("res://data/hazards/%s.tres" % hid)
+		_section("生态", "机关：" + hr.display_name, hr)
 	for id in g.affixes:
-		_section("层守", "词缀：" + g.affixes[id].display_name, g.affixes[id])
+		_section("层主", "词缀：" + g.affixes[id].display_name, g.affixes[id])
 	for fd in g.floors:
 		_section("楼层", "第 %d 层" % fd.depth, fd)
 	_section("仇恨", "全局仇恨参数 aggro_rules.tres（= 第 3 层）", load("res://data/aggro_rules.tres"))
@@ -115,7 +120,7 @@ func _build_tools() -> void:
 	spawn_count.value = 1
 	r2.add_child(spawn_count)
 	_btn(r2, "刷出", func(): spawn_enemies(Game.enemies.keys()[spawn_kind.selected], int(spawn_count.value)))
-	_btn(r2, "传送到层守区（入口外侧）", debug_guard)
+	_btn(r2, "传送到层主区（入口外侧）", debug_guard)
 	var rm := _row(tools)
 	_check(rm, "显示区块网格", show_chunks, func(v): show_chunks = v)
 	_check(rm, "显示视野锥和声音圈", show_aggro, func(v): show_aggro = v)
@@ -324,7 +329,7 @@ func add_mats(n: int) -> void:
 	Lineage.mats.moss_essence += n
 	Lineage.save()
 
-## 用真实掉落表刷 n 只普通怪 + n 只各层守 + n 个宝箱，统计每项出现率
+## 用真实掉落表刷 n 只普通怪 + n 只各层主 + n 个宝箱，统计每项出现率
 func drop_stats(n: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 12345
@@ -372,7 +377,9 @@ func export_all() -> Array:
 	list += Game.enemies.values()
 	list += Game.floors
 	for f in Game.floors:
-		list.append(f.guard)
+		list.append(f.lord())
+		if f.ecology:
+			list.append(f.ecology)
 	for r in list:
 		out.append(export_res(r))
 	return out

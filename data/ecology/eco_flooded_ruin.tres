@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EcologyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ecology_data.gd" id="s"]
+[ext_resource type="Script" path="res://scripts/resources/hazard_data.gd" id="sh"]
+[ext_resource type="Resource" path="res://data/hazards/falling_rock.tres" id="h"]
+[ext_resource type="Resource" path="res://data/guards/guard_3.tres" id="g"]
+
+[resource]
+script = ExtResource("s")
+id = "flooded_ruin"
+display_name = "积水甲虫废墟"
+palette = Color(0.16, 0.19, 0.22, 1)
+biome_bias = 0.25
+water_th = 0.22
+enemy_mix = "shellbug:0.35,mushling:0.40,rootshot:0.25"
+hazard_counts = Array[int]([4])
+hazards = Array[ExtResource("sh")]([ExtResource("h")])
+lord = ExtResource("g")

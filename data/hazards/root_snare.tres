@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="HazardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/hazard_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "root_snare"
+display_name = "缠根地块"
+radius = 70.0
+effect_radius = 70.0
+warn_sec = 0.8
+effect_sec = 1.5
+slow_pct = 0.4
+rearm_sec = 3.0
+color = Color(0.45, 0.32, 0.2, 1)

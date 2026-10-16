@@ -81,6 +81,7 @@ func _run() -> void:
 	await test_boons()
 	await test_open_map()
 	await test_aggro()
+	await test_ecology()
 	await test_nav_chase()
 	await test_walk_floor1()
 	await test_village()
@@ -163,8 +164,8 @@ func test_generation() -> void:
 		patrol_ok = patrol_ok and err <= 0.15
 		patrol_report.append("第 %d 层 %.1f / 期望 %.1f（%+.1f%%）" % [depth, groups / 50.0, expect / 50.0, (groups - expect) / expect * 100])
 	check(reach_ok, "OM1-1 第 1~3 层 × 50 个种子：unreachable_chunks 全部为空（40px 栅格，半径 24）%s" % bad_msg)
-	check(pts_ok, "OM1-1 巡逻点、营地、宝箱、资源点、篝火、撤离点、层守位置都能走到（不卡墙）")
-	check(cons_ok, "OM1-1 摆放约束：起点第 0 列、层守区最后一列、最短路 ≥ 5（第 3 层 ≥ 6）、营地距起点 ≥2 且两两 ≥2、至少 1 个营地在最短路 ±1、神龛不贴起点、层守区 1~2 个入口 %s" % cons_msg)
+	check(pts_ok, "OM1-1 巡逻点、营地、宝箱、资源点、篝火、撤离点、层主位置都能走到（不卡墙）")
+	check(cons_ok, "OM1-1 摆放约束：起点第 0 列、层主区最后一列、最短路 ≥ 5（第 3 层 ≥ 6）、营地距起点 ≥2 且两两 ≥2、至少 1 个营地在最短路 ±1、神龛不贴起点、层主区 1~2 个入口 %s" % cons_msg)
 	print("  （150 张图共换子种子重试 %d 次）" % retries)
 	var fd1 := Game.floors[0]
 	var a := MapGen.generate(42, 1, fd1)
@@ -225,7 +226,7 @@ func test_generation() -> void:
 	check(en_ok, "3.1 全层敌人总数 50 种子均值：第 1 层 %.1f（约 56）、第 2 层 %.1f（约 54）、第 3 层 %.1f（约 72），误差 ≤ 10%%" % enemies_avg)
 	check(count_ok, "OM4-1 营地、宝箱、资源点、神龛数量和设定精确相符（2 / 3 / 6 / 1），巡逻组 2~4 人、营地人数在区间内")
 	check(patrol_ok, "OM4-1 巡逻组数 50 种子均值和期望（普通区块 × patrol_chance）误差 ≤ 15%%：%s" % "，".join(patrol_report))
-	check(empty_ok, "OM4-2 起点区块和层守区内没有巡逻点 / 营地；巡逻路线点离障碍 ≥ 60px；宝箱/资源点离路线点 ≥ 150px")
+	check(empty_ok, "OM4-2 起点区块和层主区内没有巡逻点 / 营地；巡逻路线点离障碍 ≥ 60px；宝箱/资源点离路线点 ≥ 150px")
 
 # ---------------- T8 / T13.2 掉落 ----------------
 func test_drops() -> void:
@@ -538,7 +539,7 @@ func test_enemies() -> void:
 		e.queue_free()
 	check(not get_tree().paused, "T4 结束时游戏没有被弹窗暂停")
 
-# ---------------- T5 层守 + T6 撤离 + T14 线索 2 ----------------
+# ---------------- T5 层主 + T6 撤离 + T14 线索 2 ----------------
 func kill_guard(f: Node) -> void:
 	var src := Src.new()
 	f.add_child(src)
@@ -548,18 +549,18 @@ func kill_guard(f: Node) -> void:
 		await frames(1)
 
 func test_guards_and_exit() -> void:
-	print("== T5 层守 / T6 撤离点 / T14 系统日志 ==")
+	print("== T5 层主 / T6 撤离点 / T14 系统日志 ==")
 	var f := scene()
 	check(DP.find_editor(Game.floors[0].guard, "affix_frenzy") != null, "词缀可以在面板上勾选组合")
 	DP.set_guard_affix(Game.floors[0].guard, Game.affixes.frenzy, true)
-	check(Game.floors[0].guard.affixes.size() == 2, "勾选“狂暴”后第 1 层层守 = 硬壳 + 狂暴")
+	check(Game.floors[0].guard.affixes.size() == 3, "勾选“狂暴”后第 1 层层主 = 硬壳 + 孢子 + 狂暴")
 	DP.set_guard_affix(Game.floors[0].guard, Game.affixes.frenzy, false)
 	f.debug_guard()
 	await frames(3)
-	check(f.guard == null and not f.fence_up() and f.player.global_position.distance_to(f.layout.campfire_pos) < 1.0, "“传送到层守区”把主角放在入口外侧篝火旁，层守还没出现")
+	check(f.guard == null and not f.fence_up() and f.player.global_position.distance_to(f.layout.campfire_pos) < 1.0, "“传送到层主区”把主角放在入口外侧篝火旁，层主还没出现")
 	f.debug_enter_guard_zone()
 	await secs(0.5)
-	check(f.guard != null and f.fence_up(), "OM2 走进层守区入口线：开口升起能量栅栏，层守出现")
+	check(f.guard != null and f.fence_up(), "OM2 走进层主区入口线：开口升起能量栅栏，层主出现")
 	var ent: Dictionary = f.layout.guard_entrances[0]
 	var fence_r: Rect2 = ent.gap
 	f.player.global_position = fence_r.get_center() - Vector2(ent.dir) * 80.0
@@ -567,24 +568,24 @@ func test_guards_and_exit() -> void:
 	await secs(1.5)
 	f.player.sim_move = Vector2.ZERO
 	var dpos: float = (f.player.global_position - fence_r.get_center()).dot(Vector2(ent.dir))
-	check(dpos < 0.0 and f.guard_rect.has_point(f.player.global_position), "OM2-3 层守战期间栅栏不能穿过（朝外走 1.5 秒，主角停在栅栏内侧 %.0f px）" % -dpos)
+	check(dpos < 0.0 and f.guard_rect.has_point(f.player.global_position), "OM2-3 层主战期间栅栏不能穿过（朝外走 1.5 秒，主角停在栅栏内侧 %.0f px）" % -dpos)
 	f.player.global_position = f.guard_entry_pos(true)
 	await frames(2)
-	check(f.guard.max_hp == 400 and f.guard.damage == 10 and f.guard.poise == 60.0 and is_equal_approx(f.guard.back_mult, 1.5), "第 1 层层守：HP 400、伤害 10、poise 60（硬壳 +100%）、背后 ×1.5")
-	check(not f.exit_active and f.nearest_interactable().get("id", "") != "exit", "层守没死时撤离点不能互动")
+	check(f.guard.max_hp == 400 and f.guard.damage == 10 and f.guard.poise == 60.0 and is_equal_approx(f.guard.back_mult, 1.5), "第 1 层层主：HP 400、伤害 10、poise 60（硬壳 +100%）、背后 ×1.5")
+	check(not f.exit_active and f.nearest_interactable().get("id", "") != "exit", "层主没死时撤离点不能互动")
 	f.player.global_position = f.exit_pos
 	await frames(2)
 	check(not f.interact() or f.nearest_interactable().get("id", "") != "exit", "站在撤离点上也互动不了")
 	var t_kill := Time.get_ticks_msec()
 	await kill_guard(f)
 	await frames(1)
-	check(SysLog.is_showing() and "backup #0001" in SysLog.last_text and "sync OK" in SysLog.last_text, "第 1 层层守首杀闪出系统日志：%s" % SysLog.last_text)
+	check(SysLog.is_showing() and "backup #0001" in SysLog.last_text and "sync OK" in SysLog.last_text, "第 1 层层主首杀闪出系统日志：%s" % SysLog.last_text)
 	check(not get_tree().paused and f.player.input_enabled, "日志闪现不打断操作")
 	await until(func(): return not (SysLog.is_showing()))
 	check(absf(SysLog.last_duration - 0.35) <= 1.0 / 60.0 + 0.005, "日志显示 %.3f 秒（0.35 ± 1 帧）" % SysLog.last_duration)
 	await until(func(): return not (not f.exit_active))
 	check(f.exit_activated_at - f.guard_killed_at <= 1.0, "击杀后 %.2f 秒撤离点激活（≤ 1 秒）" % (f.exit_activated_at - f.guard_killed_at))
-	check(f.nearest_interactable().get("id", "") == "exit", "层守死后撤离点可以互动")
+	check(f.nearest_interactable().get("id", "") == "exit", "层主死后撤离点可以互动")
 	# 下潜
 	f.choose_exit(true)
 	check(await wait_scene(Game.SCN_FLOOR) and Game.run.depth == 2, "下潜：进入第 2 层")
@@ -592,11 +593,11 @@ func test_guards_and_exit() -> void:
 	check(f.depth == 2 and f.interactables.all(func(it): return it.id != "exit" or not it.enabled.call()), "第 2 层没有回第 1 层的路（下潜后无法返回）")
 	f.debug_enter_guard_zone()
 	await secs(0.5)
-	check(f.guard.has_affix("summon") and f.guard.gdata.base_enemy.id == "rootshot", "第 2 层层守：射手 + 召唤")
+	check(f.guard.has_affix("summon") and f.guard.gdata.base_enemy.id == "rootshot", "第 2 层层主：射手 + 召唤")
 	f.guard.summon_t = 9.99
 	await secs(0.2)
 	var sums: Array = f.guard_zone_enemies()
-	check(sums.size() == 2 and sums.all(func(e): return f.guard_rect.has_point(e.home_pos) and e.home_pos.distance_to(f.player.global_position) >= 159.0), "召唤：一次召 2 只菌菇小鬼，刷在层守区内、离主角 ≥ 160px")
+	check(sums.size() == 2 and sums.all(func(e): return f.guard_rect.has_point(e.home_pos) and e.home_pos.distance_to(f.player.global_position) >= 159.0), "召唤：一次召 2 只菌菇小鬼，刷在层主区内、离主角 ≥ 160px")
 	Game.clues.log_repeat_chance = 0.0
 	await kill_guard(f)
 	await frames(1)
@@ -608,7 +609,7 @@ func test_guards_and_exit() -> void:
 	f.debug_enter_guard_zone()
 	await secs(0.5)
 	var g: Guard = f.guard
-	check(g.max_hp == 1200 and g.damage == 9 and absf(g.windup - 1.35) < 0.001 and is_equal_approx(g.gdata.summon_every_mult, 1.5) and g.has_affix("hardshell") and g.has_affix("frenzy") and absf(g.effective_interval() - 1.5) < 0.01, "第 3 层层守：HP 1200、伤害 9、前摇 1.35 秒、召唤间隔 ×1.5、硬壳 + 狂暴、出手间隔 %.2f 秒" % g.effective_interval())
+	check(g.max_hp == 1200 and g.damage == 9 and absf(g.windup - 1.35) < 0.001 and is_equal_approx(g.gdata.summon_every_mult, 1.5) and g.has_affix("hardshell") and g.has_affix("frenzy") and absf(g.effective_interval() - 1.5) < 0.01, "第 3 层层主：HP 1200、伤害 9、前摇 1.35 秒、召唤间隔 ×1.5、硬壳 + 狂暴、出手间隔 %.2f 秒" % g.effective_interval())
 	var src := Src.new()
 	f.add_child(src)
 	g.take_hit(g.hp - 300, src, Vector2.ZERO)
@@ -965,15 +966,15 @@ func test_open_map() -> void:
 	check(f.get_node_or_null("Nav") is NavigationRegion2D and f.nav_ready and f.wall_rects.size() == MapGen.all_solids(L).size(), "floor.tscn 有 NavigationRegion2D，烘焙成功；墙和障碍全部生成（%d 个实心矩形）" % f.wall_rects.size())
 	var st: Dictionary = f.map_stats()
 	var on_map := get_tree().get_nodes_in_group("enemies")
-	check(on_map.size() == st.patrol_enemies + st.camp_enemies and on_map.all(func(e): var k := MapGen.chunk_at(L, e.global_position); return k != L.start_chunk and k != L.guard_chunk), "OM4-2 开局刷出巡逻 %d + 营地 %d 只，起点区块和层守区里没有普通怪" % [st.patrol_enemies, st.camp_enemies])
+	check(on_map.size() == st.patrol_enemies + st.camp_enemies and on_map.all(func(e): var k := MapGen.chunk_at(L, e.global_position); return k != L.start_chunk and k != L.guard_chunk), "OM4-2 开局刷出巡逻 %d + 营地 %d 只，起点区块和层主区里没有普通怪" % [st.patrol_enemies, st.camp_enemies])
 	check(on_map.all(func(e): return e.ai != null and (e.state == EnemyBase.S.PATROL or e.state == EnemyBase.S.ALERT)), "开局所有普通怪在巡逻 / 待机，没有人在追（离起点都超过 720px）")
 	# 篝火
 	f.player.hp = 40
 	f.player.global_position = L.campfire_pos + Vector2(0, 30)
 	await frames(2)
 	var fire_ok: bool = f.interact()
-	check(fire_ok and f.player.hp == 40 + roundi(f.player.max_hp * 0.3) and not f.interact(), "篝火（层守区入口外侧）回复 30%%（40 → %d），只能用一次" % f.player.hp)
-	check(not f.guard_rect.has_point(L.campfire_pos) and L.campfire_pos.distance_to(f.guard_entry_pos(false)) < 80.0, "篝火在层守区入口外侧约 200px")
+	check(fire_ok and f.player.hp == 40 + roundi(f.player.max_hp * 0.3) and not f.interact(), "篝火（层主区入口外侧）回复 30%%（40 → %d），只能用一次" % f.player.hp)
+	check(not f.guard_rect.has_point(L.campfire_pos) and L.campfire_pos.distance_to(f.guard_entry_pos(false)) < 80.0, "篝火在层主区入口外侧约 200px")
 	# 宝箱：长按 0.6 秒
 	var ch: Dictionary = find_it(f, "chest_0")
 	f.player.global_position = ch.pos + Vector2(0, 30)
@@ -1034,7 +1035,7 @@ func test_open_map() -> void:
 	DP.show_chunks = true
 	await frames(2)
 	var labels: Array = f.chunk_overlay.find_children("*", "Label", true, false)
-	check(f.chunk_overlay.visible and labels.size() == 30 and labels.any(func(l): return "层守区" in l.text) and labels.any(func(l): return "营地" in l.text), "F1“显示区块网格”：显示区块编号和类型（%s …）" % labels[0].text)
+	check(f.chunk_overlay.visible and labels.size() == 30 and labels.any(func(l): return "层主区" in l.text) and labels.any(func(l): return "营地" in l.text), "F1“显示区块网格”：显示区块编号和类型（%s …）" % labels[0].text)
 	DP.show_chunks = false
 	var txt: String = DP.map_stats_text()
 	check("巡逻组" in txt and "宝箱 3，资源点 6，强化神龛 1，营地神龛 2" in txt, "F1“地图统计”：%s" % txt.replace("\n", " / "))
@@ -1371,21 +1372,21 @@ func test_aggro() -> void:
 		await frames(2)
 	base.enemy_leash_px = 1100.0
 	(base as AggroRules).effective(f.fd.aggro_override, f.aggro)
-	# 层守区：主角在里面时普通怪不追；追击中主角进入层守区 → 回归
+	# 层主区：主角在里面时普通怪不追；追击中主角进入层主区 → 回归
 	var gin: Vector2 = f.guard_entry_pos(true)
 	var gout: Vector2 = f.guard_entry_pos(false)
 	f.player.global_position = gin
 	var e2: EnemyBase = f._map_enemy("mushling", gout, "t")
 	await secs(0.5)
-	check(e2.state == EnemyBase.S.PATROL, "3.4-3 主角在层守区里：入口外 %.0f px 的普通怪不追" % gin.distance_to(e2.global_position))
+	check(e2.state == EnemyBase.S.PATROL, "3.4-3 主角在层主区里：入口外 %.0f px 的普通怪不追" % gin.distance_to(e2.global_position))
 	f.player.global_position = gout + Vector2(f.layout.guard_entrances[0].dir) * 250.0
 	e2.ai.enter_chase("test")
 	await frames(3)
 	var chasing: bool = e2.state == EnemyBase.S.CHASE
 	f.player.global_position = gin
 	await frames(3)
-	check(chasing and (e2.state == EnemyBase.S.RETURN or e2.state == EnemyBase.S.PATROL) and e2.ai.last_reason == "guard_zone", "3.4-3 追击中主角进入层守区 → 普通怪回归")
-	f.guard_trigger.monitoring = false ## 上面进出层守区不算开战
+	check(chasing and (e2.state == EnemyBase.S.RETURN or e2.state == EnemyBase.S.PATROL) and e2.ai.last_reason == "guard_zone", "3.4-3 追击中主角进入层主区 → 普通怪回归")
+	f.guard_trigger.monitoring = false ## 上面进出层主区不算开战
 	await clear_enemies()
 	# ---- 2.8-5 追击上限 6、前摇令牌 3 ----
 	var C: Vector2 = spots[2]
@@ -1494,7 +1495,7 @@ func test_nav_chase() -> void:
 		check(f.nav_ready and f.bake_ms <= 200.0 and f.gen_ms <= 100.0, "OM3-2 第 %d 层：生成 %.1f ms（≤100）、导航烘焙 %.1f ms（≤200，桌面）" % [depth, f.gen_ms, f.bake_ms])
 		var goal: Vector2 = f.guard_entry_pos(true)
 		var path := await nav_path(f, f.layout.start_pos, goal)
-		check(path.size() >= 2 and path[-1].distance_to(goal) < 30.0, "OM2-1 第 %d 层导航路径：起点 → 层守区入口内侧，%d 个路点" % [depth, path.size()])
+		check(path.size() >= 2 and path[-1].distance_to(goal) < 30.0, "OM2-1 第 %d 层导航路径：起点 → 层主区入口内侧，%d 个路点" % [depth, path.size()])
 		Game.god_mode = true
 		await clear_enemies()
 		var L: Dictionary = f.layout
@@ -1527,7 +1528,7 @@ func test_nav_chase() -> void:
 			if not MapGen.is_free(pp, solids, 40.0) or not MapGen.is_free(ep, solids, 40.0):
 				continue
 			if f.guard_rect.grow(200.0).has_point(pp) or f.guard_rect.grow(200.0).has_point(ep):
-				continue ## 主角进层守区会升起栅栏，不算地形绕路
+				continue ## 主角进层主区会升起栅栏，不算地形绕路
 			if space.intersect_ray(PhysicsRayQueryParameters2D.create(ep, pp, 1)).is_empty():
 				continue
 			var np := await nav_path(f, ep, pp)
@@ -1603,7 +1604,7 @@ func test_nav_chase() -> void:
 
 # ---------------- M1 冒烟：自动打完第 1 层（上帝模式 + 沿导航走 / 传送） ----------------
 func test_walk_floor1() -> void:
-	print("== M1 冒烟：沿导航从起点走到层守区，打败层守，撤离 ==")
+	print("== M1 冒烟：沿导航从起点走到层主区，打败层主，撤离 ==")
 	Lineage.wipe()
 	plain()
 	Lineage.flags["opening_seen"] = true
@@ -1650,11 +1651,11 @@ func test_walk_floor1() -> void:
 			break
 	f.player.sim_move = Vector2.ZERO
 	await secs(0.3)
-	check(fail == "" and f.guard != null and f.fence_up(), "第 1 层：沿导航走 %.0f 秒（游戏时间）经过 %d 个区块，路上清掉 %d 只怪，走进层守区触发栅栏和层守 %s" % [gt, chunks_seen.size(), Game.run.kills - kills0, fail])
+	check(fail == "" and f.guard != null and f.fence_up(), "第 1 层：沿导航走 %.0f 秒（游戏时间）经过 %d 个区块，路上清掉 %d 只怪，走进层主区触发栅栏和层主 %s" % [gt, chunks_seen.size(), Game.run.kills - kills0, fail])
 	Game.base_time_scale = 1.0
 	await kill_guard(f)
 	await until(func(): return not (not f.exit_active))
-	check(f.exit_active and not f.fence_up() and f.exit_activated_at - f.guard_killed_at <= 1.0, "层守死后 %.2f 秒撤离点亮起，栅栏撤掉" % (f.exit_activated_at - f.guard_killed_at))
+	check(f.exit_active and not f.fence_up() and f.exit_activated_at - f.guard_killed_at <= 1.0, "层主死后 %.2f 秒撤离点亮起，栅栏撤掉" % (f.exit_activated_at - f.guard_killed_at))
 	f.player.global_position = f.exit_pos
 	await frames(2)
 	check(f.nearest_interactable().get("id", "") == "exit", "走到撤离点可以互动")
@@ -1665,3 +1666,286 @@ func test_walk_floor1() -> void:
 	scene().finish()
 	await wait_scene(Game.SCN_VILLAGE)
 	Game.god_mode = false
+
+# ---------------- M4 生态 × 层主（§8、§9） ----------------
+func _kind_share(L: Dictionary) -> Dictionary:
+	var T: Dictionary = L.terrain
+	var n := {}
+	var bsum := 0.0
+	for i in T.cells.size():
+		n[T.cells[i]] = int(n.get(T.cells[i], 0)) + 1
+		bsum += T.biome[i]
+	var out := {"bio": bsum / T.cells.size()}
+	for k in MapGen.KIND_NAMES.size():
+		out[k] = float(n.get(k, 0)) / T.cells.size()
+	return out
+
+func _avg_share(fd: FloorData, seeds: Array) -> Dictionary:
+	var acc := {}
+	for sd in seeds:
+		var s := _kind_share(MapGen.generate(sd, fd.depth, fd))
+		for k in s:
+			acc[k] = float(acc.get(k, 0.0)) + s[k] / seeds.size()
+	return acc
+
+func test_ecology() -> void:
+	print("== M4 生态 × 层主 ==")
+	var want := [
+		["fungal_grove", "菌褶林", "菌母·苔根巨菇", "shellbug", ["hardshell", "spore"], 400, 10, 1.8, {"mushling": 0.60, "rootshot": 0.25, "shellbug": 0.15}, "spore_pod", 6, "spore_pod", 4],
+		["root_gorge", "根须深谷", "根须射手王", "rootshot", ["summon"], 400, 12, 1.7, {"rootshot": 0.50, "mushling": 0.35, "shellbug": 0.15}, "root_snare", 5, "root_pillar", 4],
+		["flooded_ruin", "积水甲虫废墟", "狂暴硬壳甲虫", "shellbug", ["hardshell", "frenzy"], 1200, 9, 1.95, {"shellbug": 0.35, "mushling": 0.40, "rootshot": 0.25}, "falling_rock", 4, "falling_rock", 3],
+	]
+	var biases := [-0.25, 0.0, 0.25]
+	var seeds := [424242, 1001, 2002, 3003, 4004]
+	for i in 3:
+		var fd: FloorData = Game.floors[i]
+		var w: Array = want[i]
+		var eco: EcologyData = fd.ecology
+		var lord: GuardData = fd.lord()
+		var hp := roundi(lord.base_enemy.max_hp * lord.hp_mult)
+		var dmg := roundi(lord.base_enemy.damage * lord.dmg_mult)
+		var affs: Array = lord.affixes.map(func(a): return a.id)
+		check(eco != null and eco.id == w[0] and eco.display_name == w[1] and lord == eco.lord and lord.display_name == w[2] and lord.base_enemy.id == w[3] and affs == w[4]
+			and hp == w[5] and dmg == w[6] and is_equal_approx(lord.attack_interval, w[7]) and is_equal_approx(eco.biome_bias, biases[i]),
+			"8.3 第 %d 层：%s + %s（%s 模板，词缀 %s，HP %d / 伤害 %d / 间隔 %.2f 秒，biome_bias %+.2f）" % [i + 1, eco.display_name, lord.display_name, lord.base_enemy.display_name, "+".join(lord.affixes.map(func(a): return a.display_name)), hp, dmg, lord.attack_interval, eco.biome_bias])
+		var mix := fd.mix()
+		var mix_ok := mix.size() == 3
+		for k in w[8]:
+			mix_ok = mix_ok and is_equal_approx(mix.get(k, -1.0), w[8][k])
+		check(mix_ok and fd.enemy_mix != eco.enemy_mix, "第 %d 层敌人种群只读生态：%s" % [i + 1, eco.enemy_mix])
+		check(eco.hazards.size() == 1 and eco.hazards[0].id == w[9] and eco.hazard_count(0) == w[10] and lord.arena_hazard.id == w[11] and lord.arena_hazard_count == w[12],
+			"第 %d 层机关：%s ×%d，场地机关 %s ×%d" % [i + 1, eco.hazards[0].display_name, w[10], lord.arena_hazard.display_name, w[12]])
+		# 摆放：数量、普通区块、离路线点 ≥ 150px、可达
+		var placed_ok := true
+		var min_route := 1e9
+		for sd in seeds:
+			var L := MapGen.generate(sd, fd.depth, fd)
+			var hz: Array = L.spawn_points.hazard
+			var route: Array = []
+			for p in L.spawn_points.patrol: route.append_array(p.points)
+			placed_ok = placed_ok and hz.size() == w[10]
+			for h in hz:
+				placed_ok = placed_ok and MapGen.NORMAL.has(L.chunks[h.chunk].type) and not L.chunks[h.chunk].type == "guard"
+				for q in route:
+					min_route = minf(min_route, q.distance_to(h.pos))
+		check(placed_ok and min_route >= 150.0, "第 %d 层 5 个种子：每层 %d 个机关都放在普通区块，离巡逻路线点最近 %.0f px（≥ 150）" % [i + 1, w[10], min_route])
+	# 地表：和不带生态的同参数对比
+	var sh := []
+	var base_sh := []
+	for i in 3:
+		var fd: FloorData = Game.floors[i]
+		sh.append(_avg_share(fd, seeds))
+		var eco := fd.ecology
+		fd.ecology = null
+		base_sh.append(_avg_share(fd, seeds))
+		fd.ecology = eco
+	check(sh[0].bio < base_sh[0].bio - 0.2 and sh[0][MapGen.T_THICKET] > base_sh[0][MapGen.T_THICKET] and sh[0][MapGen.T_WATER] < base_sh[0][MapGen.T_WATER],
+		"菌褶林：林地为主（群系均值 %.2f vs 无生态 %.2f），灌木 %.1f%%（无生态 %.1f%%），水 %.1f%%（无生态 %.1f%%）" % [sh[0].bio, base_sh[0].bio, sh[0][MapGen.T_THICKET] * 100, base_sh[0][MapGen.T_THICKET] * 100, sh[0][MapGen.T_WATER] * 100, base_sh[0][MapGen.T_WATER] * 100])
+	check(sh[1][MapGen.T_CLIFF] > base_sh[1][MapGen.T_CLIFF] * 1.3, "根须深谷：断崖 %.1f%%（无生态 %.1f%%）" % [sh[1][MapGen.T_CLIFF] * 100, base_sh[1][MapGen.T_CLIFF] * 100])
+	check(sh[2].bio > base_sh[2].bio + 0.2 and sh[2][MapGen.T_RUIN] > base_sh[2][MapGen.T_RUIN] and sh[2][MapGen.T_WATER] > base_sh[2][MapGen.T_WATER],
+		"积水甲虫废墟：废墟为主（群系均值 %.2f vs %.2f），残垣 %.1f%%（%.1f%%），积水 %.1f%%（%.1f%%）" % [sh[2].bio, base_sh[2].bio, sh[2][MapGen.T_RUIN] * 100, base_sh[2][MapGen.T_RUIN] * 100, sh[2][MapGen.T_WATER] * 100, base_sh[2][MapGen.T_WATER] * 100])
+	# 验收 2：同一个生态改 biome_bias，地表和刷怪同时变化
+	var fd1: FloorData = Game.floors[0]
+	var b0 := fd1.ecology.biome_bias
+	var LA := MapGen.generate(424242, 1, fd1)
+	fd1.ecology.biome_bias = 0.35
+	var LB := MapGen.generate(424242, 1, fd1)
+	fd1.ecology.biome_bias = b0
+	var types := func(L: Dictionary) -> Dictionary:
+		var d := {}
+		for c in L.chunks: d[c.type] = int(d.get(c.type, 0)) + 1
+		return d
+	var ta: Dictionary = types.call(LA)
+	var tb: Dictionary = types.call(LB)
+	var pa: Array = LA.spawn_points.patrol.map(func(p): return p.points[0])
+	var pb: Array = LB.spawn_points.patrol.map(func(p): return p.points[0])
+	check(_kind_share(LB).bio > _kind_share(LA).bio + 0.4 and int(tb.get("ruin", 0)) > int(ta.get("ruin", 0)) and int(tb.get("grove", 0)) < int(ta.get("grove", 0)) and pa != pb,
+		"验收 2：biome_bias −0.25 → +0.35，同种子林地区块 %d → %d、废墟区块 %d → %d，巡逻组 %d → %d 组且位置改变" % [int(ta.get("grove", 0)), int(tb.get("grove", 0)), int(ta.get("ruin", 0)), int(tb.get("ruin", 0)), pa.size(), pb.size()])
+	# ecology_pool：按权重抽，不和上一层重复，可复现
+	var pool_fd := FloorData.new()
+	pool_fd.ecology_pool = [Game.floors[0].ecology, Game.floors[1].ecology, Game.floors[2].ecology]
+	var rep := true
+	var norep := true
+	for sd in 200:
+		var e1 := pool_fd.pick_ecology(sd, "root_gorge")
+		rep = rep and e1 == pool_fd.pick_ecology(sd, "root_gorge")
+		norep = norep and e1.id != "root_gorge"
+	check(rep and norep, "8.2-1 ecology_pool：200 个种子都不和上一层（根须深谷）重复，同种子结果相同")
+	check(DP.find_editor(Game.floors[0].ecology, "biome_bias") != null and DP.find_editor(load("res://data/hazards/spore_pod.tres"), "slow_pct") != null and DP.find_editor(Game.floors[2].lord(), "arena_hazard_count") != null, "生态 / 机关 / 层主场地参数都在 F1 面板可调")
+	await test_ecology_floor()
+
+func test_ecology_floor() -> void:
+	var src := Src.new()
+	add_child(src)
+	for depth in [1, 2, 3]:
+		DP.jump_floor(depth)
+		await frames(1)
+		await wait_scene(Game.SCN_FLOOR)
+		var f := scene()
+		var fd: FloorData = f.fd
+		var hz: Array = get_tree().get_nodes_in_group("hazards")
+		var txt: String = f.map_stats_text()
+		var cnt := {}
+		var tot := 0
+		for e in get_tree().get_nodes_in_group("enemies"):
+			cnt[e.data.id] = int(cnt.get(e.data.id, 0)) + 1
+			tot += 1
+		var picks := {}
+		for k in 6000:
+			var id: String = f._pick_enemy()
+			picks[id] = int(picks.get(id, 0)) + 1
+		var dev := 0.0
+		for k in fd.mix():
+			dev = maxf(dev, absf(float(picks.get(k, 0)) / 6000.0 - fd.mix()[k]))
+		check(hz.size() == fd.ecology.hazard_count(0) and fd.ecology.display_name in txt and fd.ecology.hazards[0].display_name in txt and "敌种比例" in txt and dev < 0.02,
+			"验收 1 第 %d 层：场上 %d 个%s；抽怪 6000 次最大偏差 %.3f；实际 %d 只（%s）；F1 地图统计：%s" % [depth, hz.size(), fd.ecology.hazards[0].display_name, dev, tot, str(cnt), " | ".join(txt.split("\n").slice(-3))])
+		Game.god_mode = true
+		await clear_enemies()
+		for h in get_tree().get_nodes_in_group("hazards"):
+			h.queue_free()
+		await frames(2)
+		# 验收 3：不击杀层主就不能前往下一层（也不能撤离）
+		check(not f.exit_active and f.choose_exit(true) == false and f.choose_exit(false) == false and scene() == f, "验收 3 / 方案 A 第 %d 层：层主没死时选下潜和撤离都无效，仍在本层" % depth)
+		if depth == 1:
+			await _test_spore(f, src)
+		elif depth == 2:
+			await _test_snare(f, src)
+		else:
+			await _test_rock(f, src)
+		# 方案 A：击杀后二选一 / 第 3 层只能撤离
+		if depth < 3:
+			Game.god_mode = false
+			f.player.hp = 50
+			Game.run.hp = 50
+			var mh: int = Game.max_hp()
+			f.choose_exit(true)
+			await wait_scene(Game.SCN_FLOOR)
+			check(Game.run.depth == depth + 1 and scene().player.hp == mini(mh, 50 + roundi(mh * 0.4)), "方案 A：第 %d 层击杀后下潜，HP 50 → %d（回复 40%% = %d）" % [depth, scene().player.hp, roundi(mh * 0.4)])
+			Game.god_mode = true
+	Game.god_mode = false
+
+func _lord_fight(f: Node) -> Guard:
+	f.debug_enter_guard_zone()
+	await secs(0.4)
+	return f.guard
+
+func _test_spore(f: Node, src: Node) -> void:
+	var p: Player = f.player
+	var hd: HazardData = load("res://data/hazards/spore_pod.tres")
+	var E := p.global_position
+	var pod: SporePod = f._spawn_hazard(hd, E + Vector2(300, 0), false)
+	var e: EnemyBase = f._map_enemy("mushling", E + Vector2(300, 0) + Vector2(0, 100), "t")
+	var far: EnemyBase = f._map_enemy("mushling", E + Vector2(300, 0) + Vector2(0, 290), "t2")
+	await frames(3)
+	p.global_position = E + Vector2(300 - 30, 0) ## 踩上
+	await frames(3)
+	var clouds := get_tree().get_nodes_in_group("spore_clouds")
+	await frames(2)
+	check(pod.spent and clouds.size() == 1 and is_equal_approx(p.hazard_speed_mult(), 0.7) and is_equal_approx(e.hazard_speed_mult(), 0.7) and far.ai.last_heard_kind == "spore",
+		"孢子囊被踩：爆出孢子云，主角移速 ×%.2f、云里的敌人 ×%.2f（敌我都减速），290px 外的敌人听到爆开声（300px），状态 %s" % [p.hazard_speed_mult(), e.hazard_speed_mult(), EnemyBase.S.keys()[far.state]])
+	var t0 := Time.get_ticks_msec()
+	await until(func(): return get_tree().get_nodes_in_group("spore_clouds").is_empty(), 6.0)
+	var dur := (Time.get_ticks_msec() - t0) / 1000.0 * Engine.time_scale
+	check(absf(dur - 2.0) < 0.25, "孢子云持续约 %.2f 秒（2 秒）" % dur)
+	await clear_enemies()
+	# 被打
+	var pod2: SporePod = f._spawn_hazard(hd, p.global_position + Vector2(90, 0), false)
+	await frames(2)
+	p.hitbox.begin(5, 80.0, 120.0, Vector2.RIGHT)
+	await frames(2)
+	p.hitbox.end()
+	check(pod2.spent, "孢子囊被打：主角攻击碰到就爆")
+	await until(func(): return get_tree().get_nodes_in_group("spore_clouds").is_empty(), 6.0)
+	# 层主：孢子词缀 + 场地 4 个孢子囊
+	var g: Guard = await _lord_fight(f)
+	var arena: Array = f.arena_hazards
+	check(arena.size() == 4 and arena.all(func(h): return h is SporePod and f.guard_rect.has_point(h.global_position)), "菌母·苔根巨菇：场地内 %d 个孢子囊" % arena.size())
+	g.attack_dir = Vector2.RIGHT
+	g._begin_attack()
+	await frames(2)
+	var gc: Array = get_tree().get_nodes_in_group("spore_clouds")
+	check(g.has_affix("spore") and g.spore_clouds == 1 and gc.size() == 1 and is_equal_approx(gc[0].sec, 2.0), "新词缀“孢子”：重砸后落点留下 %.0f 秒孢子云" % (gc[0].sec if gc.size() else 0.0))
+	g.hitbox.end()
+	arena[0].burst()
+	g.global_position = arena[0].global_position
+	await frames(3)
+	check(g.hazard_speed_mult() < 1.0, "打爆场地孢子囊可以减速层主（×%.2f）" % g.hazard_speed_mult())
+	await kill_guard(f)
+	await until(func(): return f.exit_active)
+	check(f.arena_hazards.is_empty(), "层主死后场地机关清掉，撤离点亮起")
+
+func _test_snare(f: Node, src: Node) -> void:
+	var p: Player = f.player
+	var hd: HazardData = load("res://data/hazards/root_snare.tres")
+	var s: RootSnare = f._spawn_hazard(hd, p.global_position, false)
+	await frames(2)
+	var t0 := Time.get_ticks_msec()
+	await until(func(): return s.fire_count > 0, 4.0)
+	var warn := (Time.get_ticks_msec() - t0) / 1000.0 * Engine.time_scale
+	check(s.caught and is_equal_approx(p.hazard_speed_mult(), 0.6) and absf(warn - 0.8) < 0.1, "缠根地块：预兆 %.2f 秒（0.8）后缠住，移速 ×%.2f（−40%%）" % [warn, p.hazard_speed_mult()])
+	t0 = Time.get_ticks_msec()
+	await until(func(): return p.hazard_speed_mult() >= 1.0, 4.0)
+	var hold := (Time.get_ticks_msec() - t0) / 1000.0 * Engine.time_scale
+	check(absf(hold - 1.5) < 0.12, "缠住持续 %.2f 秒（1.5）" % hold)
+	# 预兆期间走开：不被缠
+	await until(func(): return s.cd <= 0.0, 6.0)
+	await frames(2)
+	await until(func(): return s.t >= 0.0, 2.0)
+	p.global_position += Vector2(200, 0)
+	await until(func(): return s.fire_count > 1, 3.0)
+	check(not s.caught and p.hazard_speed_mult() >= 1.0, "预兆 0.8 秒内离开地块就不会被缠住")
+	s.queue_free()
+	# 层主：根柱 4 根，挡视线和子弹
+	var L: Dictionary = f.layout
+	var g: Guard = await _lord_fight(f)
+	var space: PhysicsDirectSpaceState2D = f.get_world_2d().direct_space_state
+	var blocked := 0
+	for c in L.root_pillars:
+		var q := PhysicsRayQueryParameters2D.create(c + Vector2(-140, 0), c + Vector2(140, 0), MapGen.OPAQUE_LAYER)
+		if not space.intersect_ray(q).is_empty() and f.guard_rect.has_point(c):
+			blocked += 1
+	check(L.root_pillars.size() == 4 and blocked == 4 and MapGen.blocks_sight(MapGen.T_ROOT), "根须射手王：场地 4 根根柱，%d 根挡住视线 / 子弹射线（OPAQUE 层）" % blocked)
+	check(g.gdata.minions == "mushling:2" and is_equal_approx(g.active_affixes[0].summon_every, 10.0), "小弟：菌菇小鬼 ×2，每 10 秒召唤")
+	await kill_guard(f)
+	await until(func(): return f.exit_active)
+
+func _test_rock(f: Node, src: Node) -> void:
+	var p: Player = f.player
+	var hd: HazardData = load("res://data/hazards/falling_rock.tres")
+	Game.god_mode = false
+	p.hp = p.max_hp
+	p.iframe_left = 0.0
+	var r: FallingRock = f._spawn_hazard(hd, p.global_position + Vector2(200, 0), false)
+	await frames(2)
+	var hp0 := p.hp
+	var t0 := Time.get_ticks_msec()
+	await until(func(): return r.fire_count > 0, 4.0)
+	var warn := (Time.get_ticks_msec() - t0) / 1000.0 * Engine.time_scale
+	check(p.hp == hp0 and absf(warn - 1.2) < 0.1, "落石：主角走进 220px，裂纹预兆 %.2f 秒（1.2）；在砸击半径外没受伤" % warn)
+	await until(func(): return r.cd <= 0.0, 8.0)
+	p.global_position = r.global_position
+	p.iframe_left = 0.0
+	hp0 = p.hp
+	await until(func(): return r.fire_count > 1, 4.0)
+	check(hp0 - p.hp == 14, "落石砸中主角：伤害 %d（14）" % (hp0 - p.hp))
+	r.queue_free()
+	Game.god_mode = true
+	var g: Guard = await _lord_fight(f)
+	check(f.arena_hazards.is_empty(), "狂暴硬壳甲虫一阶段：场地没有落石")
+	g.take_hit(g.hp - 590, src, Vector2.ZERO)
+	await until(func(): return not g.invulnerable)
+	await frames(2)
+	var rocks: Array = f.arena_hazards
+	check(g.phase == 2 and rocks.size() == 3 and rocks.all(func(h): return h is FallingRock and f.guard_rect.has_point(h.global_position)), "二阶段：场地出现 %d 处落石" % rocks.size())
+	var rk: FallingRock = rocks[0]
+	g.global_position = rk.global_position
+	g.velocity = Vector2.ZERO
+	var ghp := g.hp
+	rk.smash()
+	var lord_dmg := ghp - g.hp
+	check(lord_dmg == 28 or (lord_dmg == 42 and g.back_mult > 1.0), "落石砸中层主：伤害 %d（14 × 2）" % lord_dmg)
+	await kill_guard(f)
+	await until(func(): return f.exit_active)
+	var opts_ok: bool = Game.FINAL_FLOOR == 3
+	f.choose_exit(true)
+	check(opts_ok and await wait_scene(Game.SCN_EXTRACT), "方案 A：第 3 层击杀后只能撤离（选下潜也进结算）")

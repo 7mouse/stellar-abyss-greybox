@@ -2,7 +2,7 @@ class_name EnemyBase
 extends CharacterBody2D
 ## 普通敌人基类：IDLE / CHASE / WINDUP / ATTACK / RECOVER / HURT / DEAD / RETURN / PATROL / ALERT
 ## 地图怪（ai 不为空，见 EnemyAI）：PATROL 巡逻 → ALERT 警觉 → CHASE 追击 → RETURN 回归；前摇要先拿攻击令牌，追击名额满了就包围待机。
-## ai 为空（层守、召唤物、调试刷怪、测试场）= 旧行为，IDLE 立即开追、一直追。追击/回归走 NavigationAgent2D（use_nav，楼层烘焙完导航后打开）。
+## ai 为空（层主、召唤物、调试刷怪、测试场）= 旧行为，IDLE 立即开追、一直追。追击/回归走 NavigationAgent2D（use_nav，楼层烘焙完导航后打开）。
 ## 攻击前摇有明显预兆（变色 + “!” 图标），时长 = windup；poise 打满才硬直（普通怪 poise 0 = 每下都硬直）
 
 signal died(enemy: EnemyBase)
@@ -42,7 +42,7 @@ var _windup_started := 0.0
 var rules: AggroRules ## 仇恨参数（地图怪）；null = 一直追
 var ai: EnemyAI
 var home_pos := Vector2.INF ## 出生点
-var no_go := Rect2() ## 主角在这个矩形里（层守区）时普通怪不追、正在追的回归
+var no_go := Rect2() ## 主角在这个矩形里（层主区）时普通怪不追、正在追的回归
 var use_nav := false
 var nav: NavigationAgent2D
 var _repath_t := 0.0
@@ -116,6 +116,7 @@ func _physics_process(delta: float) -> void:
 		return
 	state_t += delta
 	slow_left = maxf(0.0, slow_left - delta)
+	hz_slow_left = maxf(0.0, hz_slow_left - delta)
 	cooldown = maxf(0.0, cooldown - delta)
 	if target == null or not is_instance_valid(target):
 		var ps := get_tree().get_nodes_in_group("player")
@@ -174,8 +175,19 @@ func _go(s: int) -> void:
 	state = s
 	state_t = 0.0
 
+
+## 环境机关减速（孢子云 −30%、缠根 −40%）：取持续中最强的一个
+var hz_slow_left := 0.0
+var hz_slow_pct := 0.0
+func apply_hazard_slow(pct: float, sec: float) -> void:
+	if hz_slow_left <= 0.0 or pct >= hz_slow_pct:
+		hz_slow_pct = pct
+	hz_slow_left = maxf(hz_slow_left, sec)
+func hazard_speed_mult() -> float:
+	return 1.0 - hz_slow_pct if hz_slow_left > 0.0 else 1.0
+
 func speed() -> float:
-	return data.move_speed * (0.5 if slow_left > 0.0 else 1.0)
+	return data.move_speed * (0.5 if slow_left > 0.0 else 1.0) * hazard_speed_mult()
 
 func should_return() -> bool:
 	return false

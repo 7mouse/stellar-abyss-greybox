@@ -4,6 +4,7 @@
 [ext_resource type="Resource" path="res://data/guards/guard_3.tres" id="r0"]
 [ext_resource type="Resource" path="res://data/loot_tables/chest.tres" id="r1"]
 [ext_resource type="Resource" path="res://data/loot_tables/node.tres" id="r2"]
+[ext_resource type="Resource" path="res://data/ecology/eco_flooded_ruin.tres" id="eco"]
 
 [resource]
 script = ExtResource("s")
@@ -18,3 +19,4 @@ patrol_chance = 0.7
 camp_size_min = 5
 camp_size_max = 7
 node_loot = ExtResource("r2")
+ecology = ExtResource("eco")

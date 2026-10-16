@@ -16,7 +16,7 @@ var attacks: Array[AttackData] = [preload("res://data/attacks/light_1.tres"), pr
 var skill: AttackData = preload("res://data/attacks/skill_sweep.tres")
 var enemies := {"mushling": preload("res://data/enemies/mushling.tres"), "rootshot": preload("res://data/enemies/rootshot.tres"), "shellbug": preload("res://data/enemies/shellbug.tres")}
 var floors: Array[FloorData] = [preload("res://data/floors/floor_1.tres"), preload("res://data/floors/floor_2.tres"), preload("res://data/floors/floor_3.tres")]
-var affixes := {"frenzy": preload("res://data/guards/affix_frenzy.tres"), "summon": preload("res://data/guards/affix_summon.tres"), "hardshell": preload("res://data/guards/affix_hardshell.tres")}
+var affixes := {"frenzy": preload("res://data/guards/affix_frenzy.tres"), "summon": preload("res://data/guards/affix_summon.tres"), "hardshell": preload("res://data/guards/affix_hardshell.tres"), "spore": preload("res://data/guards/affix_spore.tres")}
 var clues: LoreClues = preload("res://data/lore/clues.tres")
 
 var run: Run

@@ -1,13 +1,13 @@
 extends Node2D
 ## 一层开放地图：MapGen 生成一整张有机地形的平层地图，没有房间和门。
 ## 主角从起点出发，路上遇到巡逻组和营地（EnemyAI：视野锥、声音、联动、回归；AggroDirector：追击 ≤6、前摇 ≤3）；
-## 走进层守区入口线 → 开口升起能量栅栏、层守出现；层守死后栅栏撤掉、撤离点亮起（撤离或下潜，进入下一层后无法返回）。
+## 走进层主区入口线 → 开口升起能量栅栏、层主出现；层主死后栅栏撤掉、撤离点亮起（撤离或下潜，进入下一层后无法返回）。
 
 signal guard_killed
 signal exit_activated
 signal guard_zone_entered
 
-const TYPE_NAMES := {"start": "起点", "guard": "层守区", "camp": "营地", "shrine": "神龛", "field": "野地", "grove": "林地", "ruin": "废墟"}
+const TYPE_NAMES := {"start": "起点", "guard": "层主区", "camp": "营地", "shrine": "神龛", "field": "野地", "grove": "林地", "ruin": "废墟"}
 const TYPE_COLORS := {"start": Color(0.16, 0.2, 0.18), "guard": Color(0.22, 0.12, 0.14), "camp": Color(0.2, 0.15, 0.12),
 	"shrine": Color(0.14, 0.15, 0.24), "field": Color(0.15, 0.17, 0.15), "grove": Color(0.12, 0.18, 0.13), "ruin": Color(0.17, 0.16, 0.15)}
 const AGGRO_DEFAULT := preload("res://data/aggro_rules.tres")
@@ -29,6 +29,7 @@ var guard_dead := false
 var guard_rect := Rect2()
 var guard_trigger: Area2D
 var fence_bodies: Array = []
+var arena_hazards: Array = []
 var exit_active := false
 var exit_pos := Vector2.ZERO
 var exit_rect: ColorRect
@@ -103,7 +104,7 @@ func _ready() -> void:
 	minimap.setup(self)
 	hud.add_child(minimap)
 	Game.run.floor_stats = {"t0": Time.get_ticks_msec() / 1000.0, "combat_sec": 0.0, "guard_sec": 0.0, "hp_start": player.hp, "dmg_taken": 0, "kills": 0, "level_start": Game.level()}
-	hud.show_toast("第 %d 层 · 苔根林窟" % depth)
+	hud.show_toast("第 %d 层 · 苔根林窟 · %s" % [depth, fd.ecology.display_name] if fd.ecology else "第 %d 层 · 苔根林窟" % depth)
 
 # ---------- 构建 ----------
 func _build_map() -> void:
@@ -125,7 +126,7 @@ func _build_map() -> void:
 			_solid(r, MapGen.KIND_COLORS[MapGen.T_RUIN])
 		for i in c.obstacles.size():
 			_solid(c.obstacles[i], Color(0, 0, 0, 0), true, MapGen.blocks_sight(c.obstacle_kinds[i]))
-	# 层守区：入口栅栏 + 入口线触发器
+	# 层主区：入口栅栏 + 入口线触发器
 	guard_rect = MapGen.chunk_rect(layout.chunks[layout.guard_chunk], cp)
 	NoiseBus.wall_rect = guard_rect
 	for e in layout.guard_entrances:
@@ -143,7 +144,7 @@ func _build_map() -> void:
 	guard_trigger.add_child(tcs)
 	add_child(guard_trigger)
 	guard_trigger.body_entered.connect(_on_guard_zone_body)
-	# 篝火（层守区入口外侧）、撤离点（层守区内侧）
+	# 篝火（层主区入口外侧）、撤离点（层主区内侧）
 	var fp: Vector2 = layout.campfire_pos
 	UI.rect(self, fp - Vector2(30, 30), Vector2(60, 60), Color(1, 0.55, 0.15)).z_index = -5
 	_add_interact(fp, "篝火：回复 %d%% HP" % roundi(fd.campfire_heal * 100), _use_campfire.bind("campfire"), func(): return not used.has("campfire"), "campfire", "campfire")
@@ -185,7 +186,41 @@ func _build_map() -> void:
 		var r := UI.rect(self, p - Vector2(24, 24), Vector2(48, 48), Color(0.35, 0.95, 0.7))
 		r.z_index = -5
 		_add_interact(p, "采集萤苔丛", _take_node.bind(k, r), func(): return not used.has(k), "node", k, 1.0)
+	# 环境机关（生态 §8.1）
+	for h in sp.get("hazard", []):
+		_spawn_hazard(fd.ecology.hazards[h.idx], h.pos, false)
 	_build_overlay()
+
+## 机关节点；arena = 层主场地机关（层主死后清掉）
+func _spawn_hazard(hd: HazardData, pos: Vector2, arena: bool) -> Hazard:
+	var h: Hazard
+	match hd.id:
+		"spore_pod": h = SporePod.new()
+		"root_snare": h = RootSnare.new()
+		"falling_rock": h = FallingRock.new()
+		_: return null
+	h.setup(hd, pos, arena)
+	world.add_child(h)
+	if arena:
+		arena_hazards.append(h)
+	return h
+
+## 层主场地机关：阶段 1 进场就放，或只在二阶段出现（落石）
+func _spawn_arena_hazards(phase: int) -> void:
+	var lord := fd.lord()
+	if lord == null or lord.arena_hazard == null or lord.arena_hazard.id == "root_pillar":
+		return
+	if lord.arena_hazard_phase2_only != (phase == 2):
+		return
+	var pts: Array = []
+	for i in lord.arena_hazard_count:
+		var p := zone_point(200.0)
+		for t in 30:
+			if pts.all(func(q): return q.distance_to(p) >= 220.0) and p.distance_to(layout.exit_pos) > 140.0:
+				break
+			p = zone_point(200.0)
+		pts.append(p)
+		_spawn_hazard(lord.arena_hazard, p, true)
 
 ## opaque = 挡视线和子弹（物理层 1 + OPAQUE_LAYER）；水、断崖只在层 1（只挡移动）
 func _solid(r: Rect2, color: Color, wall := true, opaque := true) -> StaticBody2D:
@@ -272,13 +307,27 @@ func map_stats() -> Dictionary:
 	s["enemies_alive"] = get_tree().get_nodes_in_group("enemies").filter(func(e): return e != guard).size()
 	s["gen_ms"] = gen_ms
 	s["bake_ms"] = bake_ms
+	s["ecology"] = fd.ecology.display_name if fd.ecology else "—"
+	s["lord"] = fd.lord().display_name if fd.lord() else "—"
+	var hz := {}
+	for h in layout.spawn_points.get("hazard", []):
+		var n: String = fd.ecology.hazards[h.idx].display_name
+		hz[n] = int(hz.get(n, 0)) + 1
+	s["hazards"] = hz
+	var cnt := {}
+	var tot := 0
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if e != guard and not e.has_meta("summoned"):
+			cnt[e.data.id] = int(cnt.get(e.data.id, 0)) + 1
+			tot += 1
+	s["enemy_ratio"] = cnt.keys().map(func(k): return "%s %.2f" % [Game.enemies[k].display_name, float(cnt[k]) / maxi(1, tot)])
 	return s
 
 func map_stats_text() -> String:
 	var s := map_stats()
 	return "第 %d 层（种子 %d）：区块 %d（普通 %d），最短路 %d 区块\n巡逻组 %d（%d 只），营地 %d（%d 只），场上普通怪 %d\n宝箱 %d，资源点 %d，强化神龛 %d，营地神龛 %d\n生成 %.1f ms，导航烘焙 %.1f ms" % [
 		depth, layout.seed, s.chunks, s.normal_chunks, s.path_len, s.patrol_groups, s.patrol_enemies, s.camps, s.camp_enemies, s.enemies_alive,
-		s.chests, s.nodes, s.shrines, s.camps, s.gen_ms, s.bake_ms]
+		s.chests, s.nodes, s.shrines, s.camps, s.gen_ms, s.bake_ms] + "\n生态：%s　层主：%s\n敌种比例：%s\n机关：%s" % [s.ecology, s.lord, " / ".join(s.enemy_ratio), " ".join(s.hazards.keys().map(func(k): return "%s ×%d" % [k, s.hazards[k]]))]
 
 # ---------- 刷怪 ----------
 func _pick_enemy() -> String:
@@ -520,7 +569,7 @@ func _take_corpse() -> void:
 	player.refresh_stats()
 	hud.show_toast("回收：" + "，".join(msg))
 
-# ---------- 层守 ----------
+# ---------- 层主 ----------
 func _on_guard_zone_body(body: Node) -> void:
 	if body == player and guard == null and not guard_dead:
 		_enter_guard_zone.call_deferred() ## 物理回调里不能直接加物体
@@ -534,17 +583,19 @@ func _enter_guard_zone() -> void:
 
 func spawn_guard() -> Guard:
 	guard = Guard.new()
-	guard.setup_guard(fd.guard, depth)
+	guard.setup_guard(fd.lord(), depth)
 	guard.position = layout.guard_pos
 	guard.use_nav = nav_ready
 	guard.set_meta("zone", true)
 	guard.died.connect(_on_guard_died)
 	guard.summon_requested.connect(_on_summon)
+	guard.phase2_started.connect(_spawn_arena_hazards.bind(2))
 	world.add_child(guard)
 	guard_t0 = Time.get_ticks_msec() / 1000.0
+	_spawn_arena_hazards(1)
 	return guard
 
-## 召唤物刷新点：层守区内的随机空地，离主角 ≥ min_player_dist
+## 召唤物刷新点：层主区内的随机空地，离主角 ≥ min_player_dist
 func zone_point(min_player_dist := 160.0) -> Vector2:
 	var rc := guard_rect.grow(-110)
 	var solids := MapGen.all_solids(layout)
@@ -562,17 +613,17 @@ func _on_summon(eid: String, n: int) -> void:
 		var e := spawn_enemy(eid, zone_point(160.0), "summon")
 		e.set_meta("summoned", true)
 
-## 层守区入口（第一个开口）内侧 / 外侧的点
+## 层主区入口（第一个开口）内侧 / 外侧的点
 func guard_entry_pos(inside := true) -> Vector2:
 	var e: Dictionary = layout.guard_entrances[0]
 	return e.gap.get_center() + Vector2(e.dir) * (-200.0 if inside else 200.0)
 
-## 调试：传送到层守区入口外侧（篝火旁），走进去即开战
+## 调试：传送到层主区入口外侧（篝火旁），走进去即开战
 func debug_guard() -> void:
 	player.global_position = layout.campfire_pos
 	cam.snap()
 
-## 调试 / 测试：直接走进层守区（触发栅栏和层守）
+## 调试 / 测试：直接走进层主区（触发栅栏和层主）
 func debug_enter_guard_zone() -> void:
 	player.global_position = guard_entry_pos(true)
 	cam.snap()
@@ -584,6 +635,10 @@ func _on_guard_died(_g: EnemyBase) -> void:
 	guard_killed.emit()
 	for e in guard_zone_enemies():
 		e.queue_free()
+	for h in arena_hazards:
+		if is_instance_valid(h):
+			h.queue_free()
+	arena_hazards.clear()
 	await get_tree().create_timer(0.5, false).timeout
 	if not is_inside_tree():
 		return
@@ -593,7 +648,7 @@ func _on_guard_died(_g: EnemyBase) -> void:
 	exit_activated.emit()
 	hud.show_toast("撤离点已亮起")
 
-## 线索 2：层守第一次被击杀必定闪现，之后按 log_repeat_chance
+## 线索 2：层主第一次被击杀必定闪现，之后按 log_repeat_chance
 func _guard_log_flash() -> void:
 	var key := "guard_seen_%d" % depth
 	var first: bool = not Lineage.flags.get(key, false)
@@ -615,7 +670,10 @@ func _use_exit() -> void:
 	popup_open = false
 	choose_exit(i == 1)
 
-func choose_exit(descend: bool) -> void:
+## 方案 A（§9）：撤离点只在层主死后出现；层主战前不能撤离也不能下潜
+func choose_exit(descend: bool) -> bool:
+	if not guard_dead or not exit_active:
+		return false
 	Game.run.hp = player.hp
 	if descend and depth < Game.FINAL_FLOOR:
 		Game.log_floor("descend")
@@ -623,6 +681,7 @@ func choose_exit(descend: bool) -> void:
 	else:
 		Game.log_floor("extract")
 		Game.extract()
+	return true
 
 func _on_player_died(cause: String) -> void:
 	Game.run.hp = 0

@@ -6,10 +6,12 @@
 [ext_resource type="Resource" path="res://data/loot_tables/guard_2.tres" id="r1"]
 [ext_resource type="Resource" path="res://data/guards/affix_summon.tres" id="r2"]
 
+[ext_resource type="Resource" path="res://data/hazards/root_pillar.tres" id="h1"]
+
 [resource]
 script = ExtResource("s")
 id = "guard_2"
-display_name = "层守·召唤射手"
+display_name = "根须射手王"
 base_enemy = ExtResource("r0")
 hp_mult = 18.1818
 dmg_mult = 2.4
@@ -20,3 +22,7 @@ affixes = Array[ExtResource("sa")]([ExtResource("r2")])
 phase2_hp_ratio = 0.0
 xp = 40
 loot_table = ExtResource("r1")
+moves = PackedStringArray("瞄准射击（瞄准线 0.6 秒）", "三连散射")
+minions = "mushling:2"
+arena_hazard = ExtResource("h1")
+arena_hazard_count = 4

@@ -58,11 +58,16 @@ func _init() -> void:
 		for q in sp.chest: dot.call(q, Color(1, 0.85, 0.2), 6)
 		for q in sp.node: dot.call(q, Color(0.3, 1, 0.75), 5)
 		for i in L.shrines: dot.call(MapGen.chunk_rect(L.chunks[i], L.chunk_px).get_center(), Color(0.6, 0.5, 1), 7)
+		for h in sp.get("hazard", []):
+			var hc: Color = fd.ecology.hazards[h.idx].color
+			dot.call(h.pos, Color(0, 0, 0), 9)
+			dot.call(h.pos, hc.lightened(0.35), 7)
 		dot.call(L.start_pos, Color(1, 1, 1), 9)
 		dot.call(L.campfire_pos, Color(1, 0.55, 0.15), 7)
 		dot.call(L.guard_pos, Color(0.9, 0.2, 0.9), 10)
 		dot.call(L.exit_pos, Color(0.6, 0.6, 0.7), 6)
 		g.save_png("%s/floor%d_seed%d.png" % [out, depth, seed])
+		print("floor %d seed %d：%s，机关 %d，根柱 %d" % [depth, seed, fd.ecology.display_name if fd.ecology else "-", sp.get("hazard", []).size(), L.get("root_pillars", []).size()])
 	quit()
 
 static func _poly(r: Rect2) -> PackedVector2Array:

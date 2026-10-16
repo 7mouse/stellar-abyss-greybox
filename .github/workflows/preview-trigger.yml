@@ -1,0 +1,15 @@
+# open-map-m1 push 时，触发 main 上的“网页版部署”工作流（ref=main），
+# 由它统一构建根路径 + /open-map/ 并部署。
+name: 预览部署触发
+on:
+  push:
+    branches: [open-map-m1]
+permissions:
+  actions: write
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main

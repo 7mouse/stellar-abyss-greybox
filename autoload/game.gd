@@ -132,23 +132,12 @@ func recall_to_village() -> void:
 	run.charm_recalled = true
 	goto(SCN_VILLAGE)
 
-## 从村里回到被中断的那一层的起点。该层之后的掉落乘 return_drop_mult
+## 从村里回到被中断的那一层的起点。掉落和离开时一样
 func recall_return() -> void:
 	if run == null or not run.suspended:
 		return
-	var mem: Dictionary = run.floor_memory.get(run.depth, {})
-	mem["returned"] = true
-	run.floor_memory[run.depth] = mem
 	run.suspended = false
 	enter_floor(run.depth)
-
-func floor_drop_mult() -> float:
-	if run == null or recall == null:
-		return 1.0
-	var mem: Dictionary = run.floor_memory.get(run.depth, {})
-	if not bool(mem.get("returned", false)):
-		return 1.0
-	return recall.return_drop_mult
 
 func descend() -> void:
 	run.hp = mini(max_hp(), run.hp + roundi(max_hp() * player_stats.heal_between_floors))
@@ -227,24 +216,29 @@ func store_bag(id: String) -> bool:
 		note_run_store(true, it.category, n)
 		return true
 	if id == RecallCharm.ITEM_ID:
-		var src := run.charm_source
-		if not run.take_item(id, 1):
-			return false
-		Lineage.charm_carried = 1
-		Lineage.charm_source = src
-		if not recall.deposit_carried():
-			run.add_item(ItemStack.new(it, 1))
-			run.charm_source = src
-			Lineage.charm_carried = 0
-			return false
-		note_run_store(true, it.category, 1)
-		return true
+		return store_charm(run.sealed_count(id) > 0, false)
 	if not Lineage.can_vault(it):
 		return false
 	if not Lineage.vault_put(it, 1):
 		return false
 	run.take_item(id, 1)
 	note_run_store(true, it.category, 1)
+	return true
+
+## 背包里的 1 张回村符存进仓库或保险箱。存进去就解开封印
+func store_charm(sealed: bool, to_vault: bool) -> bool:
+	if run == null or recall == null:
+		return false
+	if not run.take_kind(RecallCharm.ITEM_ID, sealed, 1):
+		return false
+	var ok := recall.vault_add_charm(1) if to_vault else true
+	if not to_vault:
+		Lineage.charm_carried += 1
+		Lineage.save()
+	if not ok:
+		run.add_item(ItemStack.new(Items.get_item(RecallCharm.ITEM_ID), 1, sealed, ""))
+		return false
+	note_run_store(true, "key_item", 1)
 	return true
 
 func hitstop(sec: float) -> void:

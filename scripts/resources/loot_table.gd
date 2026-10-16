@@ -5,7 +5,7 @@ extends Resource
 @export var id := ""
 @export var entries: Array[Dictionary] = []
 
-func roll(rng: RandomNumberGenerator, rare_mult := 1.0, drop_mult := 1.0) -> Array[ItemStack]:
+func roll(rng: RandomNumberGenerator, rare_mult := 1.0) -> Array[ItemStack]:
 	var out: Array[ItemStack] = []
 	for e in entries:
 		var iid := String(e.get("item", ""))
@@ -13,7 +13,7 @@ func roll(rng: RandomNumberGenerator, rare_mult := 1.0, drop_mult := 1.0) -> Arr
 		var it: ItemData = null if any_equip else Items.get_item(iid)
 		if it == null and not any_equip:
 			continue
-		var ch := float(e.get("chance", 1.0)) * drop_mult
+		var ch := float(e.get("chance", 1.0))
 		if any_equip or it.category in ["rare_material", "equipment"]:
 			ch *= rare_mult
 		if rng.randf() < ch:

@@ -18,7 +18,7 @@ func _fill() -> void:
 		var row := HBoxContainer.new()
 		body.add_child(row)
 		var l := Label.new()
-		l.text = "%s ×%d" % [st.item.display_name, st.count]
+		l.text = Game.recall.stack_label(st) if st.item.id == RecallCharm.ITEM_ID else "%s ×%d" % [st.item.display_name, st.count]
 		l.custom_minimum_size = Vector2(360, 0)
 		l.add_theme_font_size_override("font_size", 24)
 		row.add_child(l)
@@ -32,7 +32,16 @@ func _fill() -> void:
 		down.disabled = i == run.bag.size() - 1
 		down.pressed.connect(_move.bind(i, 1))
 		row.add_child(down)
-		if st.item.category in ["material", "rare_material"]:
+		if st.item.id == RecallCharm.ITEM_ID:
+			var wh := Button.new()
+			wh.text = "存入仓库"
+			wh.pressed.connect(_store_charm.bind(st.sealed, false))
+			row.add_child(wh)
+			var vt := Button.new()
+			vt.text = "放入保险箱"
+			vt.pressed.connect(_store_charm.bind(st.sealed, true))
+			row.add_child(vt)
+		elif st.item.category in ["material", "rare_material"]:
 			var dep := Button.new()
 			dep.text = "存入仓库"
 			dep.pressed.connect(_store.bind(st.item.id))
@@ -51,4 +60,8 @@ func _move(i: int, dir: int) -> void:
 
 func _store(id: String) -> void:
 	Game.store_bag(id)
+	rebuild()
+
+func _store_charm(sealed: bool, to_vault: bool) -> void:
+	Game.store_charm(sealed, to_vault)
 	rebuild()

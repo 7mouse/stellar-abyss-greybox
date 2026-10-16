@@ -19,10 +19,9 @@ var mats := {"moss": 0, "moss_essence": 0}
 var shards_bank := 0
 var upgrades := {"vit": 0, "swift": 0}
 var flags := {}
-var charm_carried := 0 ## 不在局内时拿在身上的回村符（0 或 1）
+var charm_carried := 0 ## 仓库里的回村符张数（没在保险箱、也没在背包里）
 var charm_source := ""
-var charm_lord_seen := {} ## "层数" -> true，每层第一次击杀层主。死亡不清除
-var charm_pending: Array = [] ## 首杀时已经持有符，回村后可领的层数。死亡不清除
+var charm_lord_seen := {} ## "层数" -> true，区域最后一层的层主第一次击杀。死亡不清除
 var rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
@@ -161,7 +160,7 @@ func buy_upgrade(kind: String) -> bool:
 func to_dict() -> Dictionary:
 	return {"v": 1, "gen_counter": gen_counter, "individuals": individuals, "epitaphs": epitaphs, "corpse": corpse, "vault": vault,
 		"vault_level": vault_level, "loadout": loadout, "mats": mats, "shards_bank": shards_bank, "upgrades": upgrades, "flags": flags,
-		"charm_carried": charm_carried, "charm_source": charm_source, "charm_lord_seen": charm_lord_seen, "charm_pending": charm_pending}
+		"charm_carried": charm_carried, "charm_source": charm_source, "charm_lord_seen": charm_lord_seen}
 
 func save() -> void:
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
@@ -206,9 +205,6 @@ func load_save() -> void:
 	charm_lord_seen = {}
 	for k in d.get("charm_lord_seen", {}):
 		charm_lord_seen[str(k)] = bool(d.charm_lord_seen[k])
-	charm_pending = []
-	for x in d.get("charm_pending", []):
-		charm_pending.append(int(x))
 
 func reset_memory() -> void:
 	gen_counter = 0
@@ -225,7 +221,6 @@ func reset_memory() -> void:
 	charm_carried = 0
 	charm_source = ""
 	charm_lord_seen = {}
-	charm_pending = []
 
 func wipe() -> void:
 	reset_memory()

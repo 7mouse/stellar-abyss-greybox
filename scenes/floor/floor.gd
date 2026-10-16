@@ -67,6 +67,7 @@ func _ready() -> void:
 		Game.start_run.call_deferred()
 		return
 	depth = Game.run.depth
+	Game.recall.settle_on_floor_entry()
 	fd = Game.floor_data(depth)
 	aggro = AGGRO_DEFAULT.effective(fd.aggro_override)
 	NoiseBus.rules = aggro
@@ -587,13 +588,13 @@ func _open_chest(key: String, vis: ColorRect = null) -> void:
 	NoiseBus.emit_kind(player.global_position, "chest")
 	if vis:
 		vis.color = Color(0.4, 0.35, 0.2)
-	var got := fd.chest_loot.roll(rng, 1.0 + float(player.mods.get("rare_drop_pct", 0)), Game.floor_drop_mult())
+	var got := fd.chest_loot.roll(rng, 1.0 + float(player.mods.get("rare_drop_pct", 0)))
 	var names: Array = []
 	for st in got:
 		Game.run.add_item(st)
 		names.append("%s ×%d" % [st.item.display_name, st.count])
 	if Game.recall.roll_chest(key):
-		names.append(Game.recall.display_name)
+		names.append(Game.recall.dropped_name())
 	hud.show_toast("宝箱：" + "，".join(names))
 
 func _take_node(key: String, vis: ColorRect = null) -> void:
@@ -773,12 +774,17 @@ func _show_recall_block() -> void:
 func try_recall() -> bool:
 	if _recall_done or channeling or popup_open or player == null or player.state == Player.S.DEAD:
 		return false
-	if not Game.recall.carrying():
+	if Game.run == null or Game.run.count_of(RecallCharm.ITEM_ID) <= 0:
 		if hud:
 			hud.show_toast("没有回村符")
 		return false
 	if recall_blocked():
 		_show_recall_block()
+		return false
+	if not Game.recall.can_use():
+		last_recall_hint = Game.recall.sealed_hint if not Game.recall.carrying() else "这一局已经用过回村符"
+		if hud:
+			hud.show_toast(last_recall_hint)
 		return false
 	channeling = true
 	channel_t = 0.0
@@ -809,10 +815,12 @@ func _tick_recall(delta: float) -> void:
 	if hud:
 		if channeling:
 			hud.channel_label.text = "回村引导 %.1f / %.1f 秒" % [channel_t, Game.recall.channel_sec]
-		elif blocked and Game.recall.carrying():
+		elif blocked and Game.run != null and Game.run.count_of(RecallCharm.ITEM_ID) > 0:
 			hud.channel_label.text = Game.recall.blocked_hint
-		elif Game.recall.carrying():
+		elif Game.recall.can_use():
 			hud.channel_label.text = Game.recall.use_hint
+		elif Game.run != null and Game.run.count_of(RecallCharm.ITEM_ID) > 0:
+			hud.channel_label.text = Game.recall.sealed_hint
 		else:
 			hud.channel_label.text = ""
 	if not channeling:
@@ -842,7 +850,6 @@ func _finish_recall() -> void:
 	Game.recall_to_village()
 
 func _snapshot_floor() -> void:
-	var prev: Dictionary = Game.run.floor_memory.get(depth, {})
 	var picked: Array = []
 	for k in used:
 		picked.append(k)
@@ -852,7 +859,6 @@ func _snapshot_floor() -> void:
 		"picked": picked,
 		"guard_dead": guard_dead,
 		"corpse_taken": corpse_taken,
-		"returned": bool(prev.get("returned", false)),
 	}
 
 func _apply_floor_memory() -> void:

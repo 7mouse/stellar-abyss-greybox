@@ -42,8 +42,6 @@ func _ready() -> void:
 	prompt = UI.label(hud, "", Vector2(700, 900), 30, Color(1, 0.95, 0.6))
 	toast = UI.label(hud, "", Vector2(560, 160), 32, Color(0.85, 1, 0.85))
 	UI.label(hud, "WASD/左摇杆 移动　E/手柄B 互动　F1/` 调试", Vector2(40, 1020), 22, Color(0.7, 0.7, 0.7))
-	if not Lineage.charm_pending.is_empty():
-		_fac("claim", "领取回村符", Vector2(620, 720), Vector2(200, 80), Color(0.75, 0.55, 0.25), _claim)
 	if Game.run and Game.run.suspended:
 		_recall_facilities()
 	if not Lineage.flags.get("opening_seen", false):
@@ -152,15 +150,6 @@ func _bag() -> void:
 
 func _return_floor() -> void:
 	Game.recall_return()
-
-func _claim() -> void:
-	if Game.recall.owned() >= Game.recall.max_owned:
-		show_toast("已经持有回村符，暂时不能领")
-		return
-	if Game.recall.claim_pending():
-		show_toast("领取了" + Game.recall.display_name)
-	else:
-		show_toast("没有可领取的回村符")
 
 # ---------- 开场（方案 B；保留“死了就是真死”台词） ----------
 const OPENING := [["black", "23:47。楼梯。"], ["black", "有人推了我一把。"], ["sky", "【系统】欢迎来到起程村。"], ["sky", "【系统】打穿第 100 层就能回去。"], ["sky", "【系统】在这里死了，就是真的死了。"]]

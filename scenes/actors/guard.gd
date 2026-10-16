@@ -101,7 +101,7 @@ func _begin_attack() -> void:
 var spore_clouds := 0
 
 func roll_loot(rare_mult := 1.0) -> Array[ItemStack]:
-	return gdata.loot_table.roll(Game.rng, rare_mult, Game.floor_drop_mult()) if gdata.loot_table else []
+	return gdata.loot_table.roll(Game.rng, rare_mult) if gdata.loot_table else []
 
 func xp_value() -> int:
 	return gdata.xp

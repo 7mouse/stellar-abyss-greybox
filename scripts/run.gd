@@ -18,13 +18,14 @@ var xp := 0
 var level_start := 1
 var clue_seen: Array[String] = []
 var floor_stats := {} ## 本层统计：floor_t0, combat_sec, guard_sec, hp_start, dmg_taken, kills, level_start
-var charm_source := "" ## 当前这张回村符从哪来：chest / elite / lord / pending
+var charm_source := "" ## 当前这张能用的回村符从哪来：chest / elite / lord / craft
+var charm_uses := 0 ## 这一局已经成功使用的次数
 var suspended := false ## 用回村符回到村里，这局还没结束
 var just_recalled := false
 var charm_recalled := false ## 这局用过回村符
 var charm_stashed := false ## 用符回村之后往仓库或保险箱存过东西
 var unbossed_open := 0 ## 当前这条楼层日志上，层主没死就存进村里的材料数
-var floor_memory := {} ## depth -> {seed, killed, picked, guard_dead, corpse_taken, returned}
+var floor_memory := {} ## depth -> {seed, killed, picked, guard_dead, corpse_taken}
 
 func add_item(st: ItemStack) -> void:
 	if st.item.category == "shard":
@@ -35,10 +36,10 @@ func add_item(st: ItemStack) -> void:
 		equipped.append(st)
 		return
 	for b in bag:
-		if b.item == st.item:
+		if b.item == st.item and b.sealed == st.sealed and b.source == st.source:
 			b.count += st.count
 			return
-	bag.append(ItemStack.new(st.item, st.count))
+	bag.append(ItemStack.new(st.item, st.count, st.sealed, st.source))
 
 func take_item(id: String, n := 1) -> bool:
 	for i in bag.size():
@@ -62,6 +63,51 @@ func swap_bag(i: int, j: int) -> void:
 	var tmp: ItemStack = bag[i]
 	bag[i] = bag[j]
 	bag[j] = tmp
+
+func count_kind(id: String, want_sealed: bool) -> int:
+	var n := 0
+	for b in bag:
+		if b.item.id == id and b.sealed == want_sealed:
+			n += b.count
+	return n
+
+func unsealed_count(id: String) -> int:
+	return count_kind(id, false)
+
+func sealed_count(id: String) -> int:
+	return count_kind(id, true)
+
+## 从指定封印状态的叠里拿走 n 个
+func take_kind(id: String, want_sealed: bool, n: int) -> bool:
+	if n <= 0 or count_kind(id, want_sealed) < n:
+		return false
+	var left := n
+	for i in range(bag.size() - 1, -1, -1):
+		var b := bag[i]
+		if b.item.id != id or b.sealed != want_sealed:
+			continue
+		var use := mini(left, b.count)
+		b.count -= use
+		left -= use
+		if b.count <= 0:
+			bag.remove_at(i)
+		if left <= 0:
+			break
+	return true
+
+func remove_all(id: String) -> void:
+	for i in range(bag.size() - 1, -1, -1):
+		if bag[i].item.id == id:
+			bag.remove_at(i)
+
+## 进入一层时，多出来的没封印回村符改成封印
+func seal_excess(id: String, n: int) -> void:
+	if n <= 0 or not take_kind(id, false, n):
+		return
+	var it := Items.get_item(id)
+	if it == null:
+		return
+	add_item(ItemStack.new(it, n, true, ""))
 
 func count_of(id: String) -> int:
 	if id == "shard":

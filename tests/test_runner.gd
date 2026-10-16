@@ -90,6 +90,7 @@ func _run() -> void:
 	await test_death_flow()
 	await test_full_flow_input()
 	await test_csv()
+	await test_recall_charm()
 	print("\n结果：%d 通过，%d 失败" % [passes, fails])
 	Lineage.wipe()
 	Log.clear()
@@ -2093,3 +2094,258 @@ func test_m4_designer() -> void:
 
 func _col_close(a: Color, b: Color) -> bool:
 	return absf(a.r - b.r) < 0.01 and absf(a.g - b.g) < 0.01 and absf(a.b - b.b) < 0.01
+
+# ---------------- 紧急回村符 ----------------
+func test_recall_charm() -> void:
+	print("== 紧急回村符 ==")
+	var rules := Game.recall
+	var saved := {
+		"chest": rules.chest_drop_chance, "elite": rules.elite_drop_chance, "channel": rules.channel_sec,
+		"ret": rules.return_enabled, "t1": rules.trap_rooms_floor_1, "t2": rules.trap_rooms_floor_2, "t3": rules.trap_rooms_floor_3,
+	}
+	var editors_ok := true
+	for prop in ["display_name", "max_owned", "chest_drop_chance", "elite_drop_chance", "channel_sec", "return_enabled", "blocked_hint", "trap_rooms_floor_1", "trap_rooms_floor_2", "trap_rooms_floor_3", "elite_ids", "use_hint"]:
+		editors_ok = editors_ok and DP.find_editor(rules, prop) != null
+	check(editors_ok, "F1 回村符分组能改 recall_charm.tres 的全部可调项")
+	var ev_ok := false
+	var joy_ok := false
+	for ev in InputMap.action_get_events("recall"):
+		if ev is InputEventKey and ev.physical_keycode == KEY_R:
+			ev_ok = true
+		if ev is InputEventJoypadButton and ev.button_index == JOY_BUTTON_RIGHT_SHOULDER:
+			joy_ok = true
+	check(ev_ok and joy_ok, "使用回村符：键盘 R，手柄 RB")
+	# 旧表头改名
+	Log.clear()
+	var p := Log.path("floors")
+	var oldp_pre := p.get_basename() + ".old.csv"
+	if FileAccess.file_exists(oldp_pre):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(oldp_pre))
+	var oldf := FileAccess.open(p, FileAccess.WRITE)
+	oldf.store_line("time,run_id,gen_no,depth,result")
+	oldf.store_line("old")
+	oldf.close()
+	Log.write("floors", ["t", 0, 1, "recall", 0, 0, 0, 1, 1, 0, 0, "", 1, 1, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, ""])
+	var oldp := p.get_basename() + ".old.csv"
+	check(FileAccess.file_exists(oldp) and "time,run_id,gen_no,depth,result\n" in FileAccess.get_file_as_string(oldp), "旧 floors.csv 表头被改名为 .old.csv")
+	var hdr_rows := Log.rows("floors")
+	check(hdr_rows.size() >= 2 and hdr_rows[0] == Log.HEADERS.floors and "charm_used" in hdr_rows[0] and hdr_rows[0].ends_with("charm_source"), "新 floors.csv 用带 charm_* 列的表头")
+	Log.clear()
+	# 持有上限：身上 + 保险箱一共 1 个，已有则跳过掉落
+	Lineage.wipe()
+	Game.run = null
+	rules.chest_drop_chance = 1.0
+	rules.elite_drop_chance = 1.0
+	check(rules.grant("chest") and rules.owned() == 1 and Lineage.charm_carried == 1, "没有符时可以获得 1 个")
+	check(not rules.roll_chest("cap-chest") and not rules.grant("elite") and rules.owned() == 1, "已经持有时宝箱和再次发放都跳过，仍然只有 1 个")
+	check(Lineage.vault_put(RecallCharm.ITEM_ID) and Lineage.charm_carried == 0 and rules.owned() == 1 and Lineage.vault[0].id == RecallCharm.ITEM_ID, "符可以放进保险箱，放入后仍然只算 1 个")
+	Game.run = Run.new()
+	Game.run.seed = 7
+	Game.run.depth = 1
+	check(not rules.roll_elite("shellbug", "cap-elite") and not rules.roll_chest("cap-chest-2") and Game.run.count_of(RecallCharm.ITEM_ID) == 0, "符在保险箱里时，精英和宝箱的掉落判定直接跳过")
+	check(not rules.roll_elite("mushling", "not-elite"), "不在 elite_ids 里的敌人不会掉符")
+	Game.run = null
+	var taken := Lineage.vault_take(0)
+	check(taken != null and taken.id == RecallCharm.ITEM_ID and Lineage.charm_carried == 1 and rules.owned() == 1, "从保险箱取出后拿在身上，总数还是 1")
+	Lineage.charm_carried = 0
+	check(rules.owned() == 0 and rules.roll_elite("shellbug", "elite-ok") == false, "没有进行中的局时精英不往存档里塞符")
+	Game.run = Run.new()
+	Game.run.seed = 7
+	Game.run.depth = 2
+	check(rules.roll_elite("shellbug", "elite-ok") and Game.run.charm_source == "elite" and rules.owned() == 1, "精英（硬壳甲虫）按精英概率掉符，来源记为 elite")
+	check(not rules.roll_chest("after-elite"), "精英符已经到手后，宝箱不再掷骰")
+	# 层主首杀与待领，死亡后还在
+	Lineage.wipe()
+	Game.run = Run.new()
+	Game.run.seed = 3
+	Game.run.depth = 1
+	Game.run.shards_carried = 0
+	rules.on_lord_killed(1)
+	check(rules.owned() == 1 and Game.run.charm_source == "lord" and bool(Lineage.charm_lord_seen.get("1", false)) and Lineage.charm_pending.is_empty(), "层主第一次被击杀，身上没有符时直接给 1 个，并记下首杀")
+	rules.on_lord_killed(1)
+	check(rules.owned() == 1 and Lineage.charm_pending.is_empty(), "同一层的第二次击杀不再给符")
+	rules.on_lord_killed(2)
+	rules.on_lord_killed(3)
+	check(Lineage.charm_pending == [2, 3] and bool(Lineage.charm_lord_seen.get("2", false)) and bool(Lineage.charm_lord_seen.get("3", false)), "首杀时已经持有符：第 2、3 层记成待领")
+	Lineage.save()
+	var pend := Lineage.charm_pending.duplicate()
+	var seen := Lineage.charm_lord_seen.duplicate()
+	Lineage.reset_memory()
+	Lineage.load_save()
+	check(Lineage.charm_pending == pend and Lineage.charm_lord_seen == seen, "首杀和待领写入存档后再读回来一致")
+	Lineage.record_death(Game.run, 1, 0, "回村符测试")
+	Lineage.new_individual("")
+	check(Lineage.charm_pending == pend and Lineage.charm_lord_seen == seen, "换人（死亡）之后首杀和待领都还在")
+	Game.run = null
+	check(rules.owned() == 0 and rules.claim_pending() and Lineage.charm_carried == 1 and Lineage.charm_source == "pending" and Lineage.charm_pending == [3], "身上没有符时可以在村里领 1 个待领，来源记为 pending")
+	check(not rules.claim_pending() and rules.owned() == 1 and Lineage.charm_pending == [3], "领到 1 个之后，剩下的待领要等身上没有符才能再领")
+	check(Lineage.vault_put(RecallCharm.ITEM_ID), "待领来的符也能放进保险箱")
+	Lineage.record_death(Run.new(), 1, 0, "回村符测试")
+	Lineage.new_individual("")
+	check(rules.owned() == 1 and Lineage.vault.size() == 1 and Lineage.vault[0].id == RecallCharm.ITEM_ID and Lineage.charm_pending == [3] and bool(Lineage.charm_lord_seen.get("1", false)), "符在保险箱里时死亡不会丢掉，待领和首杀也还在")
+	# 陷阱房数量
+	var trap_ok := true
+	var trap_msg := ""
+	for depth in [1, 2, 3]:
+		var want: int = rules.trap_count(depth)
+		for s in 8:
+			var L := MapGen.generate(s * 13 + 4, depth, Game.floor_data(depth))
+			if L.traps.size() != want:
+				trap_ok = false
+				trap_msg = "层 %d 种子 %d 陷阱 %d" % [depth, s, L.traps.size()]
+			for id in L.traps:
+				var ch: Dictionary = L.chunks[id]
+				trap_ok = trap_ok and ch.no_recall and ch.type in ["field", "grove", "ruin"] and id != L.start_chunk and id != L.guard_chunk
+	check(trap_ok and rules.trap_count(1) == 0 and rules.trap_count(2) == 1 and rules.trap_count(3) == 1, "灰盒第 2、3 层各 1 间陷阱房（no_recall），第 1 层没有 %s" % trap_msg)
+	# 楼层里：禁区、受击打断、使用、回村不能存、楼层状态
+	Lineage.wipe()
+	plain()
+	Lineage.flags["opening_seen"] = true
+	Lineage.save()
+	rules.chest_drop_chance = 0.0
+	rules.elite_drop_chance = 0.0
+	rules.channel_sec = 5.0
+	rules.return_enabled = true
+	Game.base_time_scale = 1.0
+	Game.god_mode = true
+	Game.run = null
+	var banked: int = int(Lineage.mats.moss)
+	Game.start_run()
+	check(await wait_scene(Game.SCN_FLOOR), "进入第 1 层")
+	var f := scene()
+	var src := Src.new()
+	f.add_child(src)
+	f.debug_enter_guard_zone()
+	await secs(0.4)
+	await kill_guard(f)
+	check(rules.owned() == 1 and Game.run.charm_source == "lord" and bool(Lineage.charm_lord_seen.get("1", false)), "层里击杀层主（本存档第一次）拿到回村符")
+	check(f.recall_blocked() and not f.try_recall() and f.last_recall_hint == rules.blocked_hint and not f.channeling and rules.carrying(), "层主区内不能使用回村符，提示「此处无法使用回村符」，符还在")
+	rules.on_lord_killed(2)
+	var tracked: Array = []
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if str(e.get_meta("rid", "")) != "":
+			tracked.append(e)
+	check(tracked.size() >= 2, "第 1 层至少有 2 只带编号的地图怪（%d）" % tracked.size())
+	var victim: EnemyBase = tracked[0]
+	var survivor: EnemyBase = tracked[1]
+	var victim_id := str(victim.get_meta("rid", ""))
+	var survivor_id := str(survivor.get_meta("rid", ""))
+	var home: Vector2 = survivor.home_pos
+	survivor.hp = maxi(1, survivor.max_hp / 5)
+	survivor.ai.enter_chase("test", false)
+	check(survivor.state == EnemyBase.S.CHASE, "活着的那只在回村前处于追击")
+	victim.take_hit(999999, src, Vector2.ZERO)
+	await frames(2)
+	f._open_chest("chest_0")
+	Game.run.add_item(ItemStack.new(Items.get_item("trinket_hp"), 1))
+	var moss_carry: int = Game.run.count_of("moss")
+	check(moss_carry >= 3 and f.used.has("chest_0"), "宝箱已拾取（萤苔 %d）" % moss_carry)
+	f.player.global_position = f.layout.start_pos
+	await frames(3)
+	Game.god_mode = false
+	check(not f.recall_blocked() and f.try_recall() and f.channeling and not f.player.input_enabled, "起点可以开始引导，引导中不能操作")
+	await secs(0.2)
+	var hp_before: int = f.player.hp
+	f.player.take_hit(1, src, Vector2.ZERO)
+	await frames(2)
+	check(not f.channeling and f.player.input_enabled and rules.carrying() and f.player.hp == hp_before - 1 and int(Game.run.floor_stats.get("charm_interrupted", 0)) >= 1, "受击打断引导，回村符不消耗（HP %d → %d）" % [hp_before, f.player.hp])
+	rules.channel_sec = 0.25
+	f.player.hp = 15
+	Game.run.hp = 15
+	check(f.try_recall(), "打断后可以重新引导")
+	check(await until(func(): return scene().scene_file_path == Game.SCN_VILLAGE, 3.0), "引导结束回到起程村")
+	var v := scene()
+	check(Game.run != null and Game.run.suspended and Game.run.count_of("moss") == moss_carry and Lineage.mats.moss == banked and not rules.carrying(), "回村不是撤离：背包里的萤苔还在，仓库材料没增加，符已消耗")
+	var fl := Log.rows("floors")
+	var hdr := Log.HEADERS.floors.split(",")
+	var cols := fl[-1].split(",")
+	check(cols[hdr.find("result")] == "recall" and int(cols[hdr.find("charm_used")]) == 1 and int(cols[hdr.find("charm_floor")]) == 1 and int(cols[hdr.find("charm_interrupted")]) >= 1 and cols[hdr.find("charm_source")] == "lord", "floors.csv 记下 charm_used / charm_floor / charm_interrupted / charm_source：%s" % fl[-1])
+	check(not Lineage.vault_put("trinket_hp") and not Lineage.vault_put("moss_essence") and not Lineage.vault_put(RecallCharm.ITEM_ID) and Lineage.vault.is_empty(), "回村后保险箱和仓库都不能存东西")
+	v.player.global_position = v.facility("vault").pos + Vector2(0, 90)
+	await frames(2)
+	check(v.interact() and v.panel_open == null and "不能使用保险箱" in v.toast.text, "保险箱互动被拒绝：%s" % v.toast.text)
+	v.player.global_position = v.facility("bench").pos + Vector2(0, 80)
+	await frames(2)
+	check(v.interact() and v.panel_open == null and "仓库" in v.toast.text, "强化台（局外存放）同样不能用")
+	check(v.player.hp == 15, "回到村里时生命还是楼层里的 %d" % v.player.hp)
+	v.player.global_position = v.facility("rest").pos + Vector2(0, 80)
+	await frames(2)
+	check(v.interact() and v.player.hp == v.player.max_hp and Game.run.hp == v.player.max_hp, "可以回复生命到 %d" % v.player.hp)
+	var bag_before: Array = Game.run.bag.map(func(st): return st.item.id)
+	v.player.global_position = v.facility("bag").pos + Vector2(0, 80)
+	await frames(2)
+	check(v.interact() and v.panel_open != null, "可以打开整理背包")
+	var store_btn := false
+	for b in v.panel_open.box.find_children("*", "Button", true, false):
+		if "放入" in b.text or "保险箱" in b.text or "仓库" in b.text:
+			store_btn = true
+	var moved := false
+	for b in v.panel_open.box.find_children("*", "Button", true, false):
+		if b.text == "下移" and not b.disabled:
+			b.pressed.emit()
+			moved = true
+			break
+	await frames(2)
+	var bag_after: Array = Game.run.bag.map(func(st): return st.item.id)
+	check(not store_btn and moved and bag_after != bag_before and bag_after.size() == bag_before.size(), "背包只能调整顺序（%s → %s），没有存入按钮" % [str(bag_before), str(bag_after)])
+	if v.panel_open:
+		v.panel_open.close()
+		await frames(2)
+	check(v.facility("claim").is_empty() == false, "有待领时村里出现领取回村符")
+	v.player.global_position = v.facility("claim").pos + Vector2(0, 70)
+	await frames(2)
+	var claim_ok: bool = v.interact()
+	check(claim_ok and rules.owned() == 1 and Game.run.charm_source == "pending" and Lineage.charm_pending.is_empty(), "身上没有符时领走待领的那一张")
+	rules.return_enabled = false
+	Game.goto(Game.SCN_VILLAGE)
+	check(await wait_scene(Game.SCN_VILLAGE), "关闭返回入口后重新进村")
+	v = scene()
+	check(v.facility("return").is_empty() and Game.run.suspended, "return_enabled 关掉时没有「返回第 N 层」")
+	rules.return_enabled = true
+	Game.goto(Game.SCN_VILLAGE)
+	check(await wait_scene(Game.SCN_VILLAGE), "打开返回入口后重新进村")
+	v = scene()
+	var ret: Dictionary = v.facility("return")
+	check(ret.get("name", "") == "返回第 1 层", "返回入口文案：%s" % ret.get("name", ""))
+	v.player.global_position = ret.pos + Vector2(0, 80)
+	await frames(2)
+	var back: bool = v.interact()
+	check(back and await wait_scene(Game.SCN_FLOOR), "从返回入口回到第 1 层")
+	f = scene()
+	var mem: Dictionary = Game.run.floor_memory.get(1, {})
+	var back_victim := false
+	var survivor_now: EnemyBase = null
+	for e in get_tree().get_nodes_in_group("enemies"):
+		var rid := str(e.get_meta("rid", ""))
+		if rid == victim_id:
+			back_victim = true
+		if rid == survivor_id:
+			survivor_now = e
+	check(f.layout.seed == Game.run.seed and int(mem.get("seed", -1)) == Game.run.seed and "chest_0" in mem.get("picked", []) and victim_id in mem.get("killed", []), "楼层种子、已拾取、已击杀都留着")
+	check(f.used.has("chest_0") and not back_victim and f.guard_dead and f.exit_active and f.guard == null, "宝箱不会再出现，被击杀的怪和层主不会复活，撤离点保持亮起")
+	check(survivor_now != null and survivor_now.hp == survivor_now.max_hp and not survivor_now.ai.in_combat() and survivor_now.global_position.distance_to(home) < 80.0, "活着的怪满血、仇恨清空、回到巡逻点（HP %s，距离 %.0f）" % [str(survivor_now.hp if survivor_now else -1), survivor_now.global_position.distance_to(home) if survivor_now else -1])
+	Game.god_mode = true
+	Game.enter_floor(2)
+	check(await wait_scene(Game.SCN_FLOOR) and scene().depth == 2, "进入第 2 层看陷阱房")
+	f = scene()
+	check(f.layout.traps.size() == 1, "第 2 层这一局有 1 间陷阱房")
+	var trap_id: int = f.layout.traps[0]
+	f.player.global_position = MapGen.chunk_rect(f.layout.chunks[trap_id], f.layout.chunk_px).get_center()
+	await frames(3)
+	check(f.recall_blocked() and f.last_recall_hint == "此处无法使用回村符" and not f.try_recall() and rules.carrying(), "走进陷阱房会提示，并且不能使用回村符")
+	f.player.global_position = f.guard_rect.get_center()
+	await frames(3)
+	check(f.recall_blocked() and not f.try_recall(), "第 2 层层主区同样不能使用")
+	# 还原可调项，避免污染资源
+	rules.chest_drop_chance = saved.chest
+	rules.elite_drop_chance = saved.elite
+	rules.channel_sec = saved.channel
+	rules.return_enabled = saved.ret
+	rules.trap_rooms_floor_1 = saved.t1
+	rules.trap_rooms_floor_2 = saved.t2
+	rules.trap_rooms_floor_3 = saved.t3
+	Game.goto(Game.SCN_VILLAGE)
+	check(await wait_scene(Game.SCN_VILLAGE), "测试结束先离开楼层再清局")
+	Game.god_mode = false
+	Game.run = null
+	Lineage.wipe()

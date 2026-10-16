@@ -2096,27 +2096,17 @@ func _col_close(a: Color, b: Color) -> bool:
 	return absf(a.r - b.r) < 0.01 and absf(a.g - b.g) < 0.01 and absf(a.b - b.b) < 0.01
 
 # ---------------- 紧急回村符 ----------------
-func _drop_hits(table: LootTable, item_id: String, mult: float, n: int, seed_v: int) -> int:
-	var rng := RandomNumberGenerator.new()
-	var hit := 0
-	for i in n:
-		rng.seed = seed_v + i
-		for st in table.roll(rng, 1.0, mult):
-			if st.item.id == item_id:
-				hit += 1
-				break
-	return hit
-
 func test_recall_charm() -> void:
 	print("== 紧急回村符 ==")
 	var rules := Game.recall
 	var saved := {
-		"chest": rules.chest_drop_chance, "elite": rules.elite_drop_chance, "channel": rules.channel_sec,
-		"rdm": rules.return_drop_mult, "craft": rules.craft_material_count,
+		"chest": rules.chest_drop_chance, "elite": rules.elite_drop_chance, "lord": rules.lord_drop_chance,
+		"zone": rules.zone_length, "channel": rules.channel_sec, "craft": rules.craft_material_count,
+		"carry": rules.carry_per_floor, "uses": rules.uses_per_run,
 		"t1": rules.trap_rooms_floor_1, "t2": rules.trap_rooms_floor_2, "t3": rules.trap_rooms_floor_3,
 	}
 	var editors_ok := true
-	for prop in ["display_name", "max_owned", "chest_drop_chance", "elite_drop_chance", "channel_sec", "return_drop_mult", "craft_material_count", "blocked_hint", "trap_rooms_floor_1", "trap_rooms_floor_2", "trap_rooms_floor_3", "elite_ids", "use_hint"]:
+	for prop in ["display_name", "chest_drop_chance", "elite_drop_chance", "lord_drop_chance", "zone_length", "channel_sec", "craft_material_count", "carry_per_floor", "uses_per_run", "blocked_hint", "trap_rooms_floor_1", "trap_rooms_floor_2", "trap_rooms_floor_3", "elite_ids", "use_hint", "sealed_hint"]:
 		editors_ok = editors_ok and DP.find_editor(rules, prop) != null
 	check(editors_ok, "F1 回村符分组能改 recall_charm.tres 的全部可调项")
 	var ev_ok := false
@@ -2127,6 +2117,7 @@ func test_recall_charm() -> void:
 		if ev is InputEventJoypadButton and ev.button_index == JOY_BUTTON_RIGHT_SHOULDER:
 			joy_ok = true
 	check(ev_ok and joy_ok, "使用回村符：键盘 R，手柄 RB")
+	check(is_equal_approx(rules.chest_drop_chance, 0.005) and is_equal_approx(rules.elite_drop_chance, 0.003) and is_equal_approx(rules.lord_drop_chance, 0.02) and rules.zone_length == 3 and rules.craft_material_count == 3 and rules.carry_per_floor == 1 and rules.uses_per_run == 1, "顶稀有：宝箱 0.005、精英 0.003、层主每次 0.02，区域 3 层，制作 3 个材料，进层带 1 张，一局用 1 次")
 	# 旧表头改名
 	Log.clear()
 	var p := Log.path("floors")
@@ -2143,58 +2134,79 @@ func test_recall_charm() -> void:
 	var hdr_rows := Log.rows("floors")
 	check(hdr_rows.size() >= 2 and hdr_rows[0] == Log.HEADERS.floors and "charm_stash_run" in hdr_rows[0] and "unbossed_mat_out" in hdr_rows[0] and hdr_rows[0].ends_with("unbossed_mat_out"), "新 floors.csv 用带 charm_* 和风险监控列的表头")
 	Log.clear()
-	# 持有上限：身上 + 保险箱一共 1 个，已有则跳过掉落
+	# 没有全局持有上限：已经有符也照常掉，仓库和保险箱都能放多张
 	Lineage.wipe()
 	Game.run = null
 	rules.chest_drop_chance = 1.0
 	rules.elite_drop_chance = 1.0
-	check(rules.grant("chest") and rules.owned() == 1 and Lineage.charm_carried == 1, "没有符时可以获得 1 个")
-	check(not rules.roll_chest("cap-chest") and not rules.grant("elite") and rules.owned() == 1, "已经持有时宝箱和再次发放都跳过，仍然只有 1 个")
-	check(Lineage.vault_put(RecallCharm.ITEM_ID) and Lineage.charm_carried == 0 and rules.owned() == 1 and Lineage.vault[0].id == RecallCharm.ITEM_ID, "符可以放进保险箱，放入后仍然只算 1 个")
+	rules.lord_drop_chance = 0.0
+	check(rules.grant("chest") and rules.owned() == 1 and Lineage.charm_carried == 1, "没有符时可以获得 1 个，先放在仓库")
+	check(rules.grant("elite") and Lineage.charm_carried == 2 and rules.owned() == 2, "已经持有时仍然可以再获得")
+	check(Lineage.vault_put(RecallCharm.ITEM_ID) and Lineage.vault_put(RecallCharm.ITEM_ID) and Lineage.charm_carried == 0 and Lineage.vault.size() == 1 and int(Lineage.vault[0].count) == 2, "保险箱可以叠放多张回村符")
 	Game.run = Run.new()
 	Game.run.seed = 7
 	Game.run.depth = 1
-	check(not rules.roll_elite("shellbug", "cap-elite") and not rules.roll_chest("cap-chest-2") and Game.run.count_of(RecallCharm.ITEM_ID) == 0, "符在保险箱里时，精英和宝箱的掉落判定直接跳过")
+	check(rules.roll_chest("still-rolls") and Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1, "保险箱里已经有符时，宝箱仍然会掉")
+	check(rules.roll_elite("shellbug", "still-elite") and Game.run.sealed_count(RecallCharm.ITEM_ID) == 1 and Game.run.count_of(RecallCharm.ITEM_ID) == 2, "已经有 1 张时再掉到的是封印，两张都在背包里")
 	check(not rules.roll_elite("mushling", "not-elite"), "不在 elite_ids 里的敌人不会掉符")
 	Game.run = null
 	var taken := Lineage.vault_take(0)
-	check(taken != null and taken.id == RecallCharm.ITEM_ID and Lineage.charm_carried == 1 and rules.owned() == 1, "从保险箱取出后拿在身上，总数还是 1")
+	check(taken != null and taken.id == RecallCharm.ITEM_ID and Lineage.charm_carried == 2, "从保险箱取出后整叠回到仓库")
 	Lineage.charm_carried = 0
-	check(rules.owned() == 0 and rules.roll_elite("shellbug", "elite-ok") == false, "没有进行中的局时精英不往存档里塞符")
+	check(rules.roll_elite("shellbug", "elite-ok") == false, "没有进行中的局时精英不往存档里塞符")
 	Game.run = Run.new()
 	Game.run.seed = 7
 	Game.run.depth = 2
-	check(rules.roll_elite("shellbug", "elite-ok") and Game.run.charm_source == "elite" and rules.owned() == 1, "精英（硬壳甲虫）按精英概率掉符，来源记为 elite")
-	check(not rules.roll_chest("after-elite"), "精英符已经到手后，宝箱不再掷骰")
-	# 层主首杀与待领，死亡后还在
+	check(rules.roll_elite("shellbug", "elite-ok") and Game.run.charm_source == "elite" and Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1, "精英（硬壳甲虫）按精英概率掉符，来源记为 elite")
+	check(rules.roll_chest("after-elite") and Game.run.sealed_count(RecallCharm.ITEM_ID) == 1, "已经有符时宝箱继续掷，多出来的那张封印")
+	# 封印的第二张不能用；存进去就解开。进层最多带 1 张
+	check(rules.can_use() and rules.consume() and Game.run.charm_uses == 1 and Game.run.unsealed_count(RecallCharm.ITEM_ID) == 0 and Game.run.sealed_count(RecallCharm.ITEM_ID) == 1, "用掉没封印的那张，封印的还在")
+	Game.run.charm_uses = 0
+	check(not rules.can_use() and not rules.consume() and Game.run.sealed_count(RecallCharm.ITEM_ID) == 1, "封印的第二张这一局不能用")
+	var stock_before := Lineage.charm_carried
+	check(Game.store_charm(true, false) and Game.run.sealed_count(RecallCharm.ITEM_ID) == 0 and Lineage.charm_carried == stock_before + 1, "封印的符存进仓库")
+	Game.run = Run.new()
+	Game.run.seed = 11
+	Game.run.depth = 1
+	rules.bring_into_run()
+	check(Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1 and Game.run.sealed_count(RecallCharm.ITEM_ID) == 0 and rules.can_use(), "存进仓库之后封印解开，下一次可以带去用")
+	Lineage.charm_carried = 3
+	Lineage.vault.clear()
+	Lineage.vault.append({"id": RecallCharm.ITEM_ID, "count": 2})
+	Game.run = Run.new()
+	Game.run.seed = 12
+	Game.run.depth = 1
+	rules.bring_into_run()
+	rules.settle_on_floor_entry()
+	check(Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1 and Game.run.count_of(RecallCharm.ITEM_ID) == 1 and Lineage.charm_carried == 2 and int(Lineage.vault[0].count) == 2, "进层只从仓库带 1 张，保险箱里的不动")
+	Game.run.add_item(ItemStack.new(Items.get_item(RecallCharm.ITEM_ID), 1, false, "extra"))
+	rules.settle_on_floor_entry()
+	check(Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1 and Game.run.sealed_count(RecallCharm.ITEM_ID) == 1, "进层时背包里多出来的没封印符会改成封印")
+	# 层主：平时按概率，只有区域最后一层的第一次击杀必给。死亡后这份记录还在
 	Lineage.wipe()
 	Game.run = Run.new()
 	Game.run.seed = 3
 	Game.run.depth = 1
-	Game.run.shards_carried = 0
+	rules.lord_drop_chance = 0.0
 	rules.on_lord_killed(1)
-	check(rules.owned() == 1 and Game.run.charm_source == "lord" and bool(Lineage.charm_lord_seen.get("1", false)) and Lineage.charm_pending.is_empty(), "层主第一次被击杀，身上没有符时直接给 1 个，并记下首杀")
-	rules.on_lord_killed(1)
-	check(rules.owned() == 1 and Lineage.charm_pending.is_empty(), "同一层的第二次击杀不再给符")
 	rules.on_lord_killed(2)
+	check(rules.owned() == 0 and not bool(Lineage.charm_lord_seen.get("1", false)), "第 1、2 层层主概率是 0 时不给符，也没有必给")
 	rules.on_lord_killed(3)
-	check(Lineage.charm_pending == [2, 3] and bool(Lineage.charm_lord_seen.get("2", false)) and bool(Lineage.charm_lord_seen.get("3", false)), "首杀时已经持有符：第 2、3 层记成待领")
+	check(rules.owned() == 1 and Game.run.charm_source == "lord" and bool(Lineage.charm_lord_seen.get("3", false)) and Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1, "第 3 层是区域最后一层，第一次击杀必给 1 张")
+	rules.on_lord_killed(3)
+	check(rules.owned() == 1, "同一层主再杀一次，概率是 0 时不再给")
+	rules.lord_drop_chance = 1.0
+	rules.on_lord_killed(1)
+	check(Game.run.count_of(RecallCharm.ITEM_ID) == 2 and Game.run.sealed_count(RecallCharm.ITEM_ID) == 1, "每次层主击杀都会掷，掷中的第二张是封印")
 	Lineage.save()
-	var pend := Lineage.charm_pending.duplicate()
 	var seen := Lineage.charm_lord_seen.duplicate()
 	Lineage.reset_memory()
 	Lineage.load_save()
-	check(Lineage.charm_pending == pend and Lineage.charm_lord_seen == seen, "首杀和待领写入存档后再读回来一致")
+	check(Lineage.charm_lord_seen == seen and bool(Lineage.charm_lord_seen.get("3", false)), "区域末层的首杀记录写入存档后再读回来一致")
 	Lineage.record_death(Game.run, 1, 0, "回村符测试")
 	Lineage.new_individual("")
-	check(Lineage.charm_pending == pend and Lineage.charm_lord_seen == seen, "换人（死亡）之后首杀和待领都还在")
 	Game.run = null
-	check(rules.owned() == 0 and rules.claim_pending() and Lineage.charm_carried == 1 and Lineage.charm_source == "pending" and Lineage.charm_pending == [3], "身上没有符时可以在村里领 1 个待领，来源记为 pending")
-	check(not rules.claim_pending() and rules.owned() == 1 and Lineage.charm_pending == [3], "领到 1 个之后，剩下的待领要等身上没有符才能再领")
-	check(Lineage.vault_put(RecallCharm.ITEM_ID), "待领来的符也能放进保险箱")
-	Lineage.record_death(Run.new(), 1, 0, "回村符测试")
-	Lineage.new_individual("")
-	check(rules.owned() == 1 and Lineage.vault.size() == 1 and Lineage.vault[0].id == RecallCharm.ITEM_ID and Lineage.charm_pending == [3] and bool(Lineage.charm_lord_seen.get("1", false)), "符在保险箱里时死亡不会丢掉，待领和首杀也还在")
+	check(bool(Lineage.charm_lord_seen.get("3", false)) and rules.owned() == 0, "换人（死亡）之后首杀记录还在，背包里的符丢掉")
 	# 陷阱房数量
 	var trap_ok := true
 	var trap_msg := ""
@@ -2209,66 +2221,35 @@ func test_recall_charm() -> void:
 				var ch: Dictionary = L.chunks[id]
 				trap_ok = trap_ok and ch.no_recall and ch.type in ["field", "grove", "ruin"] and id != L.start_chunk and id != L.guard_chunk
 	check(trap_ok and rules.trap_count(1) == 0 and rules.trap_count(2) == 1 and rules.trap_count(3) == 1, "灰盒第 2、3 层各 1 间陷阱房（no_recall），第 1 层没有 %s" % trap_msg)
-	# 返回后的掉落倍率：普通材料、碎片、稀有材料都乘，不是只乘稀有
-	var chest_lt: LootTable = load("res://data/loot_tables/chest.tres")
-	var enemy_lt: LootTable = load("res://data/loot_tables/enemy_common.tres")
-	var guard_lt: LootTable = load("res://data/loot_tables/guard_1.tres")
-	var samples := 800
-	var moss_full := _drop_hits(chest_lt, "moss", 1.0, samples, 424242)
-	var moss_half := _drop_hits(chest_lt, "moss", 0.5, samples, 424242)
-	var shard_full := _drop_hits(chest_lt, "shard", 1.0, samples, 424242)
-	var shard_half := _drop_hits(chest_lt, "shard", 0.5, samples, 424242)
-	var bug_full := _drop_hits(enemy_lt, "moss", 1.0, samples, 424242)
-	var bug_half := _drop_hits(enemy_lt, "moss", 0.5, samples, 424242)
-	var ess_full := _drop_hits(guard_lt, "moss_essence", 1.0, samples, 424242)
-	var ess_half := _drop_hits(guard_lt, "moss_essence", 0.5, samples, 424242)
-	check(moss_full == samples and absi(moss_half - samples / 2) < 50, "宝箱萤苔必掉，乘 0.5 之后大约一半（%d / %d）" % [moss_half, samples])
-	check(shard_half > 0 and absf(float(shard_full) / float(shard_half) - 2.0) < 0.45, "宝箱碎片概率也除以 2（%d → %d）" % [shard_full, shard_half])
-	check(bug_half > 0 and absf(float(bug_full) / float(bug_half) - 2.0) < 0.45, "小怪掉落乘 0.5（%d → %d）" % [bug_full, bug_half])
-	check(ess_half > 0 and absf(float(ess_full) / float(ess_half) - 2.0) < 0.45, "层主稀有材料乘 0.5（%d → %d）" % [ess_full, ess_half])
-	check(_drop_hits(chest_lt, "moss", 0.0, 40, 1) == 0, "倍率为 0 时宝箱不再掉落")
-	# 层主首杀的符不吃这个倍率
-	Lineage.charm_carried = 0
-	Lineage.vault.clear()
-	Game.run = Run.new()
-	Game.run.depth = 9
-	Game.run.floor_memory[9] = {"returned": true}
-	rules.return_drop_mult = 0.0
-	rules.chest_drop_chance = 1.0
-	check(is_equal_approx(Game.floor_drop_mult(), 0.0) and not rules.roll_chest("mult-zero"), "返回后的楼层上，宝箱回村符概率同样乘倍率")
-	rules.on_lord_killed(9)
-	check(rules.owned() == 1 and Game.run.charm_source == "lord", "层主第一次击杀仍然必给回村符，不吃返回掉落倍率")
-	rules.return_drop_mult = 0.5
-	rules.chest_drop_chance = saved.chest
-	Game.run = null
-	# 制作：2 个萤苔精，不限哪一层；已经持有时做不了，按钮变灰
+	# 制作：3 个萤苔精，不限哪一层；已经持有还能再做
 	Lineage.wipe()
-	rules.craft_material_count = 2
+	Game.run = null
+	rules.craft_material_count = 3
 	check(not rules.craft() and rules.owned() == 0, "没有材料时做不出回村符")
 	Lineage.mats.moss_essence = 2
-	check(rules.craft() and rules.owned() == 1 and Lineage.charm_carried == 1 and int(Lineage.mats.moss_essence) == 0 and Lineage.charm_source == "craft", "2 个层主稀有材料做成 1 张符")
-	Lineage.mats.moss_essence = 4
-	check(not rules.craft() and int(Lineage.mats.moss_essence) == 4, "已经持有时不能再做，材料不扣")
+	check(not rules.craft() and int(Lineage.mats.moss_essence) == 2, "2 个层主稀有材料不够做")
+	Lineage.mats.moss_essence = 3
+	check(rules.craft() and rules.owned() == 1 and Lineage.charm_carried == 1 and int(Lineage.mats.moss_essence) == 0 and Lineage.charm_source == "craft", "3 个层主稀有材料做成 1 张符")
+	Lineage.mats.moss_essence = 3
+	check(rules.craft() and Lineage.charm_carried == 2 and int(Lineage.mats.moss_essence) == 0, "已经持有时还能再做一张")
 	var craft_panel: Panel2 = load("res://scenes/village/craft_ui.gd").new()
 	get_tree().root.add_child(craft_panel)
 	await frames(2)
-	var grey := false
+	var craft_enabled := false
 	for b in craft_panel.box.find_children("*", "Button", true, false):
 		if b.text == "制作回村符":
-			grey = b.disabled
-	check(grey, "已经持有回村符时，制作按钮是灰的")
+			craft_enabled = not b.disabled
+	check(craft_enabled, "已经持有回村符时，制作按钮仍然可点")
 	craft_panel.close()
 	await frames(2)
-	Lineage.mats.moss_essence = 4
-	check(Lineage.charm_carried == 1 and Lineage.vault_put(RecallCharm.ITEM_ID) and Lineage.charm_carried == 0 and rules.owned() == 1 and not rules.craft() and int(Lineage.mats.moss_essence) == 4, "符在保险箱里也算持有，制作被持有上限拦住")
-	Lineage.vault.clear()
+	rules.craft_material_count = 4
+	Lineage.mats.moss_essence = 3
+	check(not rules.craft() and int(Lineage.mats.moss_essence) == 3, "把材料数量改成 4 之后，3 个不够")
 	rules.craft_material_count = 3
 	Lineage.mats.moss_essence = 2
-	check(not rules.craft() and int(Lineage.mats.moss_essence) == 2, "把材料数量改成 3 之后，2 个不够")
 	Game.run = Run.new()
 	Game.run.add_item(ItemStack.new(Items.get_item("moss_essence"), 1))
-	check(rules.craft_material_have() == 3 and rules.craft() and Game.run.count_of("moss_essence") == 0 and int(Lineage.mats.moss_essence) == 0 and rules.owned() == 1, "仓库和背包里的萤苔精可以合在一起用，不限哪一层打来的")
-	rules.craft_material_count = 2
+	check(rules.craft_material_have() == 3 and rules.craft() and Game.run.count_of("moss_essence") == 0 and int(Lineage.mats.moss_essence) == 0 and Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1, "仓库和背包里的萤苔精可以合在一起用，不限哪一层打来的")
 	Game.run = null
 	# 楼层里：禁区、受击打断、使用、回村可存、楼层状态
 	Lineage.wipe()
@@ -2277,8 +2258,8 @@ func test_recall_charm() -> void:
 	Lineage.save()
 	rules.chest_drop_chance = 0.0
 	rules.elite_drop_chance = 0.0
+	rules.lord_drop_chance = 1.0
 	rules.channel_sec = 5.0
-	rules.return_drop_mult = 0.5
 	Game.base_time_scale = 1.0
 	Game.god_mode = true
 	Game.run = null
@@ -2291,9 +2272,8 @@ func test_recall_charm() -> void:
 	f.debug_enter_guard_zone()
 	await secs(0.4)
 	await kill_guard(f)
-	check(rules.owned() == 1 and Game.run.charm_source == "lord" and bool(Lineage.charm_lord_seen.get("1", false)), "层里击杀层主（本存档第一次）拿到回村符")
+	check(rules.owned() == 1 and Game.run.charm_source == "lord" and Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1 and not bool(Lineage.charm_lord_seen.get("1", false)), "第 1 层层主按掉落概率给符，不是每层必给")
 	check(f.recall_blocked() and not f.try_recall() and f.last_recall_hint == rules.blocked_hint and not f.channeling and rules.carrying(), "层主区内不能使用回村符，提示「此处无法使用回村符」，符还在")
-	rules.on_lord_killed(2)
 	var tracked: Array = []
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if str(e.get_meta("rid", "")) != "":
@@ -2315,6 +2295,11 @@ func test_recall_charm() -> void:
 	check(moss_carry >= 3 and f.used.has("chest_0"), "宝箱已拾取（萤苔 %d）" % moss_carry)
 	f.player.global_position = f.layout.start_pos
 	await frames(3)
+	check(rules.grant("chest") and Game.run.sealed_count(RecallCharm.ITEM_ID) == 1 and rules.can_use(), "地上再捡到的第二张是封印，原来那张还能用")
+	check(Game.run.take_kind(RecallCharm.ITEM_ID, false, 1), "先把没封印的那张拿开")
+	check(not f.try_recall() and f.last_recall_hint == rules.sealed_hint and Game.run.sealed_count(RecallCharm.ITEM_ID) == 1, "只剩封印的符时不能引导")
+	Game.run.add_item(ItemStack.new(Items.get_item(RecallCharm.ITEM_ID), 1, false, "lord"))
+	Game.run.charm_source = "lord"
 	Game.god_mode = false
 	check(not f.recall_blocked() and f.try_recall() and f.channeling and not f.player.input_enabled, "起点可以开始引导，引导中不能操作")
 	await secs(0.2)
@@ -2376,11 +2361,9 @@ func test_recall_charm() -> void:
 	if v.panel_open:
 		v.panel_open.close()
 		await frames(2)
-	check(v.facility("claim").is_empty() == false, "有待领时村里出现领取回村符")
-	v.player.global_position = v.facility("claim").pos + Vector2(0, 70)
-	await frames(2)
-	var claim_ok: bool = v.interact()
-	check(claim_ok and rules.owned() == 1 and Game.run.charm_source == "pending" and Lineage.charm_pending.is_empty(), "身上没有符时领走待领的那一张")
+	Game.run.add_item(ItemStack.new(Items.get_item(RecallCharm.ITEM_ID), 1, false, "chest"))
+	Game.run.charm_source = "chest"
+	check(rules.carrying(), "回村之后可以再带 1 张没封印的符进层")
 	var ret: Dictionary = v.facility("return")
 	check(ret.get("name", "") == "返回第 1 层", "返回入口文案：%s" % ret.get("name", ""))
 	v.player.global_position = ret.pos + Vector2(0, 80)
@@ -2397,18 +2380,13 @@ func test_recall_charm() -> void:
 			back_victim = true
 		if rid == survivor_id:
 			survivor_now = e
-	check(bool(mem.get("returned", false)) and is_equal_approx(Game.floor_drop_mult(), 0.5), "返回之后这层掉落倍率是 0.5")
-	rules.return_drop_mult = 0.0
-	var quiet := EnemyBase.new()
-	quiet.setup(Game.enemies.mushling, 1, Game.floor_data(1))
-	var quiet_lord := Guard.new()
-	quiet_lord.setup_guard(Game.floor_data(1).lord(), 1)
 	var zrng := RandomNumberGenerator.new()
 	zrng.seed = 3
-	check(quiet.roll_loot(1.0).is_empty() and quiet_lord.roll_loot(1.0).is_empty() and Game.floors[0].chest_loot.roll(zrng, 1.0, Game.floor_drop_mult()).is_empty(), "返回后的这一层，小怪、层主和宝箱都走同一个掉落倍率")
-	quiet.free()
-	quiet_lord.free()
-	rules.return_drop_mult = 0.5
+	var back_moss := false
+	for st in Game.floors[0].chest_loot.roll(zrng):
+		if st.item.id == "moss":
+			back_moss = true
+	check(back_moss and rules.carrying(), "返回之后掉落和原来一样，宝箱萤苔仍然必掉")
 	check(f.layout.seed == Game.run.seed and int(mem.get("seed", -1)) == Game.run.seed and "chest_0" in mem.get("picked", []) and victim_id in mem.get("killed", []), "楼层种子、已拾取、已击杀都留着")
 	check(f.used.has("chest_0") and not back_victim and f.guard_dead and f.exit_active and f.guard == null, "宝箱不会再出现，被击杀的怪和层主不会复活，撤离点保持亮起")
 	check(survivor_now != null and survivor_now.hp == survivor_now.max_hp and not survivor_now.ai.in_combat() and survivor_now.global_position.distance_to(home) < 80.0, "活着的怪满血、仇恨清空、回到巡逻点（HP %s，距离 %.0f）" % [str(survivor_now.hp if survivor_now else -1), survivor_now.global_position.distance_to(home) if survivor_now else -1])
@@ -2475,9 +2453,12 @@ func test_recall_charm() -> void:
 	# 还原可调项，避免污染资源
 	rules.chest_drop_chance = saved.chest
 	rules.elite_drop_chance = saved.elite
+	rules.lord_drop_chance = saved.lord
+	rules.zone_length = saved.zone
 	rules.channel_sec = saved.channel
-	rules.return_drop_mult = saved.rdm
 	rules.craft_material_count = saved.craft
+	rules.carry_per_floor = saved.carry
+	rules.uses_per_run = saved.uses
 	rules.trap_rooms_floor_1 = saved.t1
 	rules.trap_rooms_floor_2 = saved.t2
 	rules.trap_rooms_floor_3 = saved.t3

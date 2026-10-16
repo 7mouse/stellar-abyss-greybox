@@ -150,6 +150,7 @@ func descend() -> void:
 func on_player_died(cause: String) -> void:
 	if run == null or not last_death.is_empty() and last_death.get("run_id") == run.id:
 		return
+	Tutorial.notify("death")
 	var res := Lineage.record_death(run, level(), run.xp, cause)
 	last_death = {"run_id": run.id, "cause": cause, "depth": run.depth, "level": level(), "name": Lineage.current().name,
 		"gen_no": Lineage.current().gen_no, "candidates": run.last_boons(Lineage.legacy_rules.legacy_pick_from), "lost_shards": res.lost_shards, "clue_seen": run.clue_seen.duplicate()}
@@ -271,6 +272,9 @@ func slowmo(sec: float, scale: float) -> void:
 		return
 	_slowmo_scale = scale
 	_slowmo_until = maxi(_slowmo_until, Time.get_ticks_msec() + int(round(sec * 1000.0)))
+
+func _input(e: InputEvent) -> void:
+	InputGlyph.note(e)
 
 # ---------- 输入 ----------
 func _setup_input() -> void:

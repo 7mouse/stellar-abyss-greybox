@@ -209,6 +209,8 @@ var _hurt_len := 0.3
 func _go(s: int) -> void:
 	state = s
 	state_t = 0.0
+	if s == S.WINDUP and target != null and is_instance_valid(target) and global_position.distance_to(target.global_position) <= Tutorial.rules.dash_threat_px:
+		Tutorial.notify("threat")
 
 
 ## 环境机关减速（孢子云 −30%、缠根 −40%）：取持续中最强的一个

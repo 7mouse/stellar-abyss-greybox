@@ -1,6 +1,6 @@
 class_name SettingsControls
 extends RefCounted
-## 暂停菜单里的设置条：镜头震动、顿帧。
+## 暂停菜单和村落里的设置条：镜头震动、顿帧。教学重置由新手引导补上。
 
 static func fill(box: VBoxContainer) -> void:
 	for c in box.get_children():
@@ -25,6 +25,16 @@ static func fill(box: VBoxContainer) -> void:
 	hs.button_pressed = Settings.hitstop_enabled
 	hs.toggled.connect(func(v: bool) -> void: Settings.set_hitstop_enabled(v))
 	box.add_child(hs)
+	var reset := Button.new()
+	reset.focus_mode = Control.FOCUS_ALL
+	reset.custom_minimum_size = Vector2(420, 64)
+	reset.add_theme_font_size_override("font_size", 28)
+	reset.text = "重置教学"
+	reset.pressed.connect(func() -> void:
+		Tutorial.reset_progress()
+		reset.text = "教学已重置"
+	)
+	box.add_child(reset)
 
 static func _shake_text() -> String:
 	return "镜头震动 %d%%" % Settings.camera_shake

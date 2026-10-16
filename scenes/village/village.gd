@@ -13,6 +13,8 @@ var opening_label: Label
 var opening_skippable := false
 var panel_open: Panel2
 var _toast_t := 0.0
+var _intro_visit := false
+var _settings: CanvasLayer
 
 func _ready() -> void:
 	UI.rect(self, Vector2.ZERO, MAP, Color(0.16, 0.19, 0.15)).z_index = -10
@@ -25,7 +27,9 @@ func _ready() -> void:
 	_fac("bench", "简易强化台", Vector2(1700, 380), Vector2(140, 90), Color(0.6, 0.4, 0.3), _bench)
 	_fac("well", "下潜井口", Vector2(1200, 1100), Vector2(160, 160), Color(0.08, 0.08, 0.1), _dive)
 	_fac("board", "布告栏", Vector2(400, 900), Vector2(120, 80), Color(0.5, 0.42, 0.3), func(): play_opening(true))
-	_fac("npc", "老冒险者", Vector2(1550, 800), Vector2(40, 64), Color(0.75, 0.7, 0.55), func(): show_toast("老冒险者：“往下走吧，越深越好。”"))
+	_intro_visit = not Lineage.flags.get("opening_seen", false)
+	var npc_pos := Vector2(1380, 1100) if _intro_visit else Vector2(1550, 800)
+	_fac("npc", "老冒险者", npc_pos, Vector2(40, 64), Color(0.75, 0.7, 0.55), _talk_elder)
 	_fac("craft", "制作回村符", Vector2(1880, 980), Vector2(220, 90), Color(0.72, 0.48, 0.22), func(): _open("res://scenes/village/craft_ui.gd"))
 	player = Player.new()
 	player.position = Vector2(1200, 700)
@@ -41,7 +45,18 @@ func _ready() -> void:
 	title_label = UI.label(hud, "", Vector2(40, 30), 28)
 	prompt = UI.label(hud, "", Vector2(700, 900), 30, Color(1, 0.95, 0.6))
 	toast = UI.label(hud, "", Vector2(560, 160), 32, Color(0.85, 1, 0.85))
-	UI.label(hud, "WASD/左摇杆 移动　E/手柄B 互动　F1/` 调试", Vector2(40, 1020), 22, Color(0.7, 0.7, 0.7))
+	UI.label(hud, "F1 / ` 调试", Vector2(40, 1020), 22, Color(0.7, 0.7, 0.7))
+	var settings_b := Button.new()
+	settings_b.text = "设置"
+	settings_b.position = Vector2(1760, 24)
+	settings_b.custom_minimum_size = Vector2(120, 48)
+	settings_b.focus_mode = Control.FOCUS_ALL
+	settings_b.add_theme_font_size_override("font_size", 24)
+	settings_b.pressed.connect(_open_settings)
+	hud.add_child(settings_b)
+	Tutorial.notify("village")
+	if Tutorial.take_epitaph_flash():
+		_flash_epitaph()
 	if Game.run and Game.run.suspended:
 		_recall_facilities()
 	if not Lineage.flags.get("opening_seen", false):
@@ -58,9 +73,10 @@ func _wall(r: Rect2) -> void:
 	add_child(sb)
 
 func _fac(id: String, n: String, pos: Vector2, size: Vector2, color: Color, cb: Callable) -> void:
-	UI.rect(self, pos - size / 2, size, color).z_index = -5
+	var rect := UI.rect(self, pos - size / 2, size, color)
+	rect.z_index = -5
 	UI.label(self, n, pos + Vector2(-size.x / 2, -size.y / 2 - 40), 24)
-	facilities.append({"id": id, "name": n, "pos": pos, "size": size, "cb": cb})
+	facilities.append({"id": id, "name": n, "pos": pos, "size": size, "cb": cb, "rect": rect})
 
 func facility(id: String) -> Dictionary:
 	for f in facilities:
@@ -87,7 +103,7 @@ func _process(delta: float) -> void:
 	var ind := Lineage.current()
 	title_label.text = "起程村　%s　Lv%d　萤苔 %d　萤苔精 %d　记忆碎片 %d　保险箱 %d/%d" % [ind.name, ind.level, Lineage.mats.moss, Lineage.mats.moss_essence, Lineage.shards_bank, Lineage.vault.size(), Lineage.vault_capacity()]
 	var f := nearest()
-	prompt.text = ("【E / 手柄B】" + f.name) if not f.is_empty() and panel_open == null and opening == null else ""
+	prompt.text = ("【%s】%s" % [InputGlyph.interact(), f.name]) if not f.is_empty() and panel_open == null and opening == null else ""
 	_toast_t -= delta
 	toast.visible = _toast_t > 0.0
 
@@ -122,6 +138,53 @@ func _vault() -> void:
 
 func _bench() -> void:
 	_open("res://scenes/village/bench.gd")
+
+func _talk_elder() -> void:
+	if _intro_visit:
+		show_toast(Tutorial.rules.elder_text)
+	else:
+		show_toast("老冒险者：“往下走吧，越深越好。”")
+
+func _open_settings() -> void:
+	if _settings:
+		return
+	_settings = CanvasLayer.new()
+	_settings.layer = 40
+	add_child(_settings)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.55)
+	dim.size = Vector2(1920, 1080)
+	dim.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.pressed:
+			_close_settings()
+	)
+	_settings.add_child(dim)
+	var box := VBoxContainer.new()
+	box.position = Vector2(700, 360)
+	_settings.add_child(box)
+	SettingsControls.fill(box)
+	var close := Button.new()
+	close.text = "关闭"
+	close.custom_minimum_size = Vector2(420, 64)
+	close.focus_mode = Control.FOCUS_ALL
+	close.add_theme_font_size_override("font_size", 28)
+	close.pressed.connect(_close_settings)
+	box.add_child(close)
+	close.grab_focus()
+
+func _close_settings() -> void:
+	if _settings:
+		_settings.queue_free()
+		_settings = null
+
+func _flash_epitaph() -> void:
+	var fac := facility("epitaph")
+	var rect: CanvasItem = fac.get("rect")
+	if rect == null:
+		return
+	var tw := create_tween()
+	tw.tween_property(rect, "modulate", Color(3, 3, 2.4), 0.12)
+	tw.tween_property(rect, "modulate", Color.WHITE, 0.45)
 
 func _dive() -> void:
 	if Game.run and Game.run.suspended:

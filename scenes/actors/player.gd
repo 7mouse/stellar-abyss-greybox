@@ -249,6 +249,7 @@ func try_dash() -> bool:
 	state = S.DASH
 	HitFeedback.play_dash()
 	NoiseBus.emit_kind(global_position, "dash")
+	Tutorial.notify("dash")
 	return true
 
 func _update_facing() -> void:
@@ -339,9 +340,12 @@ func _tick_attack(delta: float) -> void:
 		hitbox.end()
 	if phase == "recovery" and phase_t >= atk.recovery:
 		if state == S.ATTACK:
+			var finished := combo_i
 			combo_i = (combo_i + 1) % 3
 			combo_timer = Game.attacks[0].combo_reset
 			Mastery.use("root_blade")
+			if finished == 2:
+				Tutorial.notify("combo")
 		state = S.IDLE
 		phase = ""
 		if attack_buffered:
@@ -363,6 +367,8 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 	var depth_now := Game.run.depth if Game.run else 0
 	if is_invulnerable():
 		Log.write("hits", [Game.run.id if Game.run else "", depth_now, sname, "主角", 0, state == S.DASH or iframe_left > 0.0])
+		if dash_iframe_left > 0.0 or state == S.DASH:
+			Tutorial.notify("dash_dodge")
 		return false
 	var real := 0 if Game.god_mode else dmg
 	hp = maxi(0, hp - real)

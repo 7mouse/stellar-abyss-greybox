@@ -158,6 +158,8 @@ func _to_alert(src: Vector2, from_noise: bool) -> void:
 	if src != Vector2.INF and src.distance_to(e.global_position) > 1.0:
 		e.facing = (src - e.global_position).normalized()
 	e._go(EnemyBase.S.ALERT)
+	if not from_noise:
+		Tutorial.notify("spotted", e)
 
 func tick_alert(delta: float) -> void:
 	alert_t += delta
@@ -202,6 +204,7 @@ func on_hit() -> void:
 
 ## 进入追击；group = 同组全部追击；allow_link = 是否对 link_radius 内别组的巡逻怪做一次联动判定
 func enter_chase(reason: String, allow_link := true) -> void:
+	Tutorial.notify("chased", e)
 	if in_combat() or e.state == EnemyBase.S.DEAD:
 		return
 	last_reason = reason

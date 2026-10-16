@@ -95,6 +95,7 @@ func grant(source: String) -> bool:
 		Lineage.charm_source = source
 		last_sealed = false
 		Lineage.save()
+	Tutorial.notify("charm")
 	return true
 
 func consume() -> bool:

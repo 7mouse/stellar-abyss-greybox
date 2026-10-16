@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="TutorialRules" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/tutorial_rules.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+hint_sec = 8.0
+retry_sec = 20.0
+max_shows = 2
+move_delay_sec = 1.5
+move_px = 120.0
+attack_range_px = 400.0
+dash_threat_px = 150.0
+dash_uses_skip = 3
+loot_px = 200.0
+fire_px = 300.0
+cone_sec = 3.0
+banner_sec = 2.0
+telegraph_flashes = 2
+boss_name = "苔冠王野猪"
+move_text = "[%s] 先站起来。"
+attack_text = "[%s] 拔刀。连砍三下，第三下最重。"
+dash_text = "[%s] 冲过去。动起来的那一瞬间，刀砍不到你。"
+loot_text = "[%s] 捡起来。死了，背上的东西就不是你的了。"
+stealth_text = "它还没看清你。躲到树后面，或者离开它面前。"
+fire_text = "篝火。坐一会儿，前面就是这层的主人。"
+fire_full_text = "……前面就是这层的主人。"
+extract_text = "出口开了。走出去才算活下来。"
+death_text = "林 #07 的记录到此为止。"
+charm_text = "紧急回村符。引导 3 秒，挨打会断。层主身边用不了。"
+elder_text = "老冒险者：“井口在这儿。往下走吧，越深越好。”"

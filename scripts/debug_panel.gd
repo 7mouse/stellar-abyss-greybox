@@ -68,6 +68,8 @@ func _ready() -> void:
 	_section("线索", "虚拟世界线索 clues.tres", g.clues)
 	_section("回村符", "紧急回村符 recall_charm.tres", g.recall)
 	_section("打击感", "hit_feel.tres", g.hit_feel)
+	_section("教学", "tutorial_rules.tres", load("res://data/tutorial/tutorial_rules.tres"))
+	_btn(_group("教学"), "重置教学", func(): Tutorial.reset_progress())
 	_btn(_group("回村符"), "发 1 张回村符到身上", give_recall_charm)
 	risk_label = _lbl(_group("回村符"), "", 18)
 	root.visible = false

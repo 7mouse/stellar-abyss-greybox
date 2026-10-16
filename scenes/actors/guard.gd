@@ -2,6 +2,9 @@ class_name Guard
 extends EnemyBase
 ## 层主 = 敌人模板 × 词缀 × 配色。词缀：狂暴（攻速 +30%）、召唤（每 10 秒 2 只菌菇小鬼）、硬壳（poise +100%，背后受伤 ×1.5）、孢子（重砸后落点留 2 秒孢子云）
 ## 二阶段：HP 降到 phase2_hp_ratio 时 1 秒演出（无敌），之后加 phase2_affix
+## T4 接线：冲撞预警线出现的那一帧调用 hook_charge_telegraph(预警线节点)。
+## 当前层主还没有冲撞，普通前摇不会自动调用。
+
 signal phase2_started
 signal summon_requested(enemy_id: String, count: int)
 
@@ -87,6 +90,10 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		phase2_started.emit()
 		HitFeedback.on_boss_phase(self)
 	return ok
+
+## T4：冲撞预警线亮起时把那条线传进来，教学会让它额外闪两下。只闪第一次。
+func hook_charge_telegraph(visual: CanvasItem) -> void:
+	Tutorial.notify("boss_first_telegraph", visual)
 
 ## 孢子词缀：重砸（非射击模板）落点留下孢子云
 func _begin_attack() -> void:

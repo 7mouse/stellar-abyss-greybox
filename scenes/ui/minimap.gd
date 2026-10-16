@@ -118,6 +118,10 @@ func _prof_draw() -> void:
 		var pp := _clamp_ring(to_map(floor_node.player.global_position), c, rad - 16.0)
 		draw_circle(pp, 5, Color(1, 0.95, 0.85))
 		var ep := to_map(floor_node.exit_pos)
+		if Tutorial.wants_exit_marker():
+			var mp := _clamp_ring(ep, c, rad - 12.0)
+			draw_circle(mp, 8, Color(0.95, 0.85, 0.2, 0.95))
+			draw_arc(mp, 12, 0, TAU, 16, Color(1, 0.95, 0.5), 2.0, true)
 		var d := ep - pp
 		if d.length() > 12.0:
 			var u := d.normalized()

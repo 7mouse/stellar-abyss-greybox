@@ -480,9 +480,9 @@ func _prof_physics_process(delta: float) -> void:
 	if it.is_empty():
 		hud.prompt.text = ""
 	elif it.hold > 0.0:
-		hud.prompt.text = "【长按 E / 手柄B】%s%s" % [it.text, ("（%d%%）" % roundi(hold_t / it.hold * 100)) if hold_key == it.key else ""]
+		hud.prompt.text = "【长按 %s】%s%s" % [InputGlyph.interact(), it.text, ("（%d%%）" % roundi(hold_t / it.hold * 100)) if hold_key == it.key else ""]
 	else:
-		hud.prompt.text = "【E / 手柄B】" + it.text
+		hud.prompt.text = "【%s】%s" % [InputGlyph.interact(), it.text]
 	if exit_rect:
 		exit_rect.color = Color(0.3, 0.95, 0.88, 0.92) if exit_active else Color(0.12, 0.28, 0.32, 0.55)
 	if chunk_overlay and Game.debug_panel and "show_chunks" in Game.debug_panel:
@@ -581,12 +581,14 @@ func _on_dashed(_from: Vector2, to: Vector2) -> void:
 # ---------- 互动 ----------
 func _use_campfire(key: String) -> void:
 	used[key] = true
+	Tutorial.notify("fire")
 	var n := roundi(player.max_hp * fd.campfire_heal)
 	player.heal(n)
 	hud.show_toast("篝火回复 %d HP" % n)
 
 func _open_chest(key: String, vis: ColorRect = null) -> void:
 	used[key] = true
+	Tutorial.notify("loot")
 	NoiseBus.emit_kind(player.global_position, "chest")
 	if vis:
 		vis.color = Color(0.4, 0.35, 0.2)
@@ -601,6 +603,7 @@ func _open_chest(key: String, vis: ColorRect = null) -> void:
 
 func _take_node(key: String, vis: ColorRect = null) -> void:
 	used[key] = true
+	Tutorial.notify("loot")
 	if vis:
 		vis.color = Color(0.2, 0.3, 0.25)
 	Game.run.floor_stats["nodes_taken"] = int(Game.run.floor_stats.get("nodes_taken", 0)) + 1
@@ -617,6 +620,7 @@ func _boon_altar(key: String) -> void:
 
 func _take_corpse() -> void:
 	corpse_taken = true
+	Tutorial.notify("loot")
 	var c := Lineage.corpse
 	var msg := []
 	if String(c.get("item", "")) != "":
@@ -638,6 +642,7 @@ func _take_corpse() -> void:
 func _on_guard_zone_body(body: Node) -> void:
 	if body == player and guard == null and not guard_dead:
 		_enter_guard_zone.call_deferred() ## 物理回调里不能直接加物体
+		Tutorial.notify("boss_enter")
 
 func _enter_guard_zone() -> void:
 	if guard != null or guard_dead or not is_inside_tree():
@@ -699,6 +704,7 @@ func _on_guard_died(_g: EnemyBase) -> void:
 	guard_killed_at = Time.get_ticks_msec() / 1000.0
 	_guard_log_flash()
 	guard_killed.emit()
+	Tutorial.notify("guard_dead")
 	for e in guard_zone_enemies():
 		e.queue_free()
 	for h in arena_hazards:
@@ -745,6 +751,7 @@ func choose_exit(descend: bool) -> bool:
 	if not guard_dead or not exit_active:
 		return false
 	Game.run.hp = player.hp
+	Tutorial.notify("extract")
 	if descend and depth < Game.FINAL_FLOOR:
 		Game.log_floor("descend")
 		Game.descend()

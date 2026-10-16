@@ -11,6 +11,8 @@ func _ready() -> void:
 	var text := "%s　Lv%d\n倒在第 %d 层　死因：%s" % [d.get("name", ""), d.get("level", 1), d.get("depth", 0), d.get("cause", "")]
 	label = UI.label(self, text, Vector2(560, 420), 44)
 	sub = UI.label(self, "未带出的记忆碎片丢失 %d 个（载入备份时没同步的那部分记忆）" % d.get("lost_shards", 0), Vector2(560, 560), 26, Color(0.7, 0.6, 0.7))
+	if Tutorial.death_line != "":
+		UI.label(self, Tutorial.death_line, Vector2(560, 340), 32, Color(0.8, 0.78, 0.7))
 	_run(text)
 
 func _run(text: String) -> void:

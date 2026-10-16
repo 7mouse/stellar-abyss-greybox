@@ -257,7 +257,8 @@ func _process(_d: float) -> void:
 			ProjectSettings.globalize_path(Lineage.save_path), ProjectSettings.globalize_path(Log.dir)]
 		if risk_label:
 			var s: Dictionary = Log.risk_summary()
-			risk_label.text = "回村并存物 %d/%d 局（%.0f%%）　未击杀层主带出材料 合计 %d　平均 %.2f" % [int(s.stash_runs), int(s.runs), float(s.share) * 100.0, int(s.unbossed_sum), float(s.unbossed_avg)]
+			var stock: int = Game.recall.stock() if Game.recall else 0
+			risk_label.text = "回村并存物 %d/%d 局（%.0f%%）　未击杀层主带出材料 合计 %d　平均 %.2f　回村符库存 %d" % [int(s.stash_runs), int(s.runs), float(s.share) * 100.0, int(s.unbossed_sum), float(s.unbossed_avg), stock]
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("debug_toggle"):

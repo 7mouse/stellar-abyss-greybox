@@ -115,6 +115,7 @@ func extract() -> void:
 	for st in run.equipped:
 		got.equipment.append(st.item.id)
 	recall.bank_from_run()
+	stamp_charm_stock()
 	var ind := Lineage.current()
 	ind.level = level()
 	ind.xp = run.xp
@@ -174,7 +175,7 @@ func log_floor(result: String) -> void:
 		"|".join(run.boon_order), fs.get("level_start", 1), level(), run.count_of("moss"), run.shards_carried, "|".join(run.clue_seen),
 		fs.get("chunks_visited", 0), fs.get("encounters", 0), fs.get("chasers_peak", 0), fs.get("camps_cleared", 0), fs.get("nodes_taken", 0),
 		fs.get("charm_used", 0), fs.get("charm_floor", 0), fs.get("charm_interrupted", 0), fs.get("charm_source", ""),
-		1 if run.charm_recalled and run.charm_stashed else 0, run.unbossed_open])
+		1 if run.charm_recalled and run.charm_stashed else 0, run.unbossed_open, recall.stock() if recall else 0])
 	_floor_log_open = true
 
 var _floor_log_open := false
@@ -187,6 +188,12 @@ func _lord_dead_now() -> bool:
 		return bool(sc.guard_dead)
 	var mem: Dictionary = run.floor_memory.get(run.depth, {})
 	return bool(mem.get("guard_dead", false))
+
+## 撤离入库之后，把这一行的库存改成仓库 + 保险箱的张数
+func stamp_charm_stock() -> void:
+	if recall == null or not _floor_log_open:
+		return
+	Log.patch_last("floors", {"charm_stock": recall.stock()})
 
 ## 把局里的东西放进仓库或保险箱之后记一笔。层主没死时材料计入 unbossed_mat_out
 func note_run_store(from_run: bool, category: String, count: int) -> void:
@@ -293,7 +300,7 @@ func _setup_web() -> void:
 	var win = JavaScriptBridge.get_interface("window")
 	_js_obj = JavaScriptBridge.create_object("Object")
 	var cb_dl = JavaScriptBridge.create_callback(func(_a): Log.download_all())
-	var cb_row = JavaScriptBridge.create_callback(func(_a): Log.write("floors", ["selftest", 0, 0, "selftest", 0, 0, 0, 0, 0, 0, 0, "", 1, 1, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0]))
+	var cb_row = JavaScriptBridge.create_callback(func(_a): Log.write("floors", ["selftest", 0, 0, "selftest", 0, 0, 0, 0, 0, 0, 0, "", 1, 1, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0]))
 	var cb_run = JavaScriptBridge.create_callback(func(_a): start_run())
 	var cb_perf = JavaScriptBridge.create_callback(func(_a):
 		var sc := get_tree().current_scene

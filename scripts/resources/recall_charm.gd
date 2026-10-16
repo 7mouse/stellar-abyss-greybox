@@ -41,6 +41,14 @@ func is_elite(id: String) -> bool:
 func is_zone_end(depth: int) -> bool:
 	return zone_length > 0 and depth > 0 and depth % zone_length == 0
 
+## 仓库 + 保险箱里的回村符。背包里的不算，死亡会丢，撤离入库之后才算进库存
+func stock() -> int:
+	var n := Lineage.charm_carried
+	for e in Lineage.vault:
+		if String(e.get("id", "")) == ITEM_ID:
+			n += int(e.get("count", 0))
+	return n
+
 func owned() -> int:
 	var n := Lineage.charm_carried
 	if Game.run:

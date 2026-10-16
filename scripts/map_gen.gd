@@ -13,6 +13,7 @@ const NORMAL := ["field", "grove", "ruin"]
 const MAX_RETRY := 5
 const PATROL_OBS_MARGIN := 90.0 ## 巡逻路线点离障碍/墙 ≥ 60px（取 90，给组员站位留余量）
 const SAFE_START_PX := 720.0 ## 巡逻点离主角出生点的最小距离（> 临时追击半径 600，开局不被立刻追）
+const FIRE_SAFE_PX := 400.0 ## 巡逻点离篝火的最小距离（篝火旁不站巡逻）
 const LOOT_ROUTE_DIST := 150.0 ## 宝箱/资源点离路线点 ≥ 150px
 
 ## 模板：每项 [x, y, w, h]（区块内归一化），共 14 个
@@ -240,7 +241,7 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 			if pts.size() >= want:
 				break
 			var p := Vector2(rng.randf_range(rc.position.x, rc.end.x), rng.randf_range(rc.position.y, rc.end.y))
-			if is_free(p, solids, PATROL_OBS_MARGIN) and p.distance_to(start_pos) >= SAFE_START_PX and pts.all(func(q): return q.distance_to(p) >= 160.0):
+			if is_free(p, solids, PATROL_OBS_MARGIN) and p.distance_to(start_pos) >= SAFE_START_PX and p.distance_to(fire) >= FIRE_SAFE_PX and pts.all(func(q): return q.distance_to(p) >= 160.0):
 				pts.append(p)
 		if pts.size() < 2:
 			continue

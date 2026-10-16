@@ -1,5 +1,5 @@
 extends Node
-## 灰盒 2 无头验收。运行：tests/run_tests.sh（退出码 0 = 全部通过）
+## 灰盒 2 / 开放地图 M1 无头验收。运行：tests/run_tests.sh（退出码 0 = 全部通过）
 
 var passes := 0
 var fails := 0
@@ -79,7 +79,10 @@ func _run() -> void:
 	await test_enemies()
 	await test_guards_and_exit()
 	await test_boons()
-	await test_rooms()
+	await test_open_map()
+	await test_temp_aggro()
+	await test_nav_chase()
+	await test_walk_floor1()
 	await test_village()
 	await test_death_flow()
 	await test_full_flow_input()
@@ -89,29 +92,89 @@ func _run() -> void:
 	Log.clear()
 	get_tree().quit(0 if fails == 0 else 1)
 
-# ---------------- T13.1 / T6 楼层生成 ----------------
+# ---------------- OM1 开放地图生成 / OM4 分布 ----------------
 func test_generation() -> void:
-	print("== T6/T13 楼层生成 ==")
-	var ok := true
-	var struct_ok := true
+	print("== OM1 地图生成 MapGen / OM4 分布 ==")
+	var reach_ok := true
+	var pts_ok := true
+	var cons_ok := true
+	var count_ok := true
+	var empty_ok := true
 	var bad_msg := ""
+	var cons_msg := ""
+	var tmax := 0.0
+	var retries := 0
+	var patrol_report := []
+	var patrol_ok := true
 	for depth in [1, 2, 3]:
 		var fd := Game.floor_data(depth)
+		var groups := 0.0
+		var expect := 0.0
 		for s in 50:
-			var L := FloorGen.generate(s * 7 + 1, depth, fd)
-			var bad := FloorGen.unreachable_rooms(L)
-			if not bad.is_empty():
-				ok = false
-				bad_msg = "层 %d 种子 %d 房间 %s" % [depth, s, str(bad)]
-			var main: Array = L.rooms.filter(func(r): return r.main).map(func(r): return r.type)
-			var nc := main.count("combat")
-			var sides: Array = L.rooms.filter(func(r): return not r.main)
-			struct_ok = struct_ok and main[0] == "entrance" and main[-1] == "guard" and main[-2] == "campfire" and nc >= fd.combat_rooms_min and nc <= fd.combat_rooms_max
-			struct_ok = struct_ok and sides.size() <= fd.side_rooms_max and sides.all(func(r): return r.type in ["chest", "boon"])
-	check(ok, "第 1~3 层各生成 50 次，所有房间按 40px 栅格都能走到（无死路、无卡墙）%s" % bad_msg)
-	check(struct_ok, "主路：入口 → 战斗 ×3~4 → 篝火 → 层守；支路 ≤2 个且为宝箱/强化")
-	check(var_to_str(FloorGen.generate(42, 1, Game.floors[0]).rooms) == var_to_str(FloorGen.generate(42, 1, Game.floors[0]).rooms), "固定种子可复现")
-	check(var_to_str(FloorGen.generate(42, 1, Game.floors[0]).rooms) != var_to_str(FloorGen.generate(42, 2, Game.floors[1]).rooms), "种子 + 层号决定布局")
+			var t0 := Time.get_ticks_usec()
+			var L := MapGen.generate(s * 7 + 1, depth, fd)
+			tmax = maxf(tmax, (Time.get_ticks_usec() - t0) / 1000.0)
+			retries += int(L.attempt)
+			var bad := MapGen.unreachable_chunks(L)
+			if not bad.is_empty() or not L.ok:
+				reach_ok = false
+				bad_msg = "层 %d 种子 %d 区块 %s ok=%s" % [depth, s, str(bad), L.ok]
+			var up := MapGen.unreachable_points(L)
+			if not up.is_empty():
+				pts_ok = false
+				bad_msg += " 点 %s" % str(up)
+			var ch: Array = L.chunks
+			var sc: Vector2i = ch[L.start_chunk].cell
+			var gc: Vector2i = ch[L.guard_chunk].cell
+			var path := MapGen.shortest_path(L)
+			var pcells: Array = path.map(func(i): return ch[i].cell)
+			var camps: Array = L.camps.map(func(i): return ch[i].cell)
+			var c_ok: bool = sc.x == 0 and gc.x == fd.grid_w - 1 and path.size() - 1 >= fd.min_start_guard_dist
+			c_ok = c_ok and camps.all(func(c): return MapGen.cheb(c, sc) >= 2)
+			for i in camps.size():
+				for j in range(i + 1, camps.size()):
+					c_ok = c_ok and MapGen.cheb(camps[i], camps[j]) >= 2
+			c_ok = c_ok and camps.any(func(c): return pcells.any(func(p): return MapGen.cheb(p, c) <= 1))
+			c_ok = c_ok and L.shrines.all(func(i): return MapGen.cheb(ch[i].cell, sc) >= 2)
+			c_ok = c_ok and L.guard_entrances.size() >= 1 and L.guard_entrances.size() <= 2 and ch[L.guard_chunk].open_edges.size() == L.guard_entrances.size()
+			if not c_ok:
+				cons_ok = false
+				cons_msg = "层 %d 种子 %d" % [depth, s]
+			var st := MapGen.stats(L)
+			count_ok = count_ok and st.camps == fd.camps and st.chests == fd.chests and st.nodes == fd.resource_nodes and st.shrines == fd.shrines
+			var sp: Dictionary = L.spawn_points
+			count_ok = count_ok and sp.patrol.all(func(p): return p.size >= fd.patrol_size_min and p.size <= fd.patrol_size_max and p.points.size() >= 2 and p.points.size() <= 4)
+			count_ok = count_ok and sp.camp.all(func(c): return c.size >= fd.camp_size_min and c.size <= fd.camp_size_max)
+			var solids := MapGen.all_solids(L)
+			for p in sp.patrol:
+				for q in p.points:
+					var k := MapGen.chunk_at(L, q)
+					empty_ok = empty_ok and k != L.start_chunk and k != L.guard_chunk and MapGen.is_free(q, solids, 60.0)
+			for c in sp.camp:
+				var k := MapGen.chunk_at(L, c.center)
+				empty_ok = empty_ok and k != L.start_chunk and k != L.guard_chunk
+			for q in sp.chest + sp.node:
+				for p in sp.patrol:
+					if MapGen.chunk_at(L, q) == p.chunk:
+						empty_ok = empty_ok and p.points.all(func(r): return r.distance_to(q) >= 150.0)
+			groups += st.patrol_groups
+			expect += st.normal_chunks * fd.patrol_chance
+		var err := absf(groups - expect) / expect
+		patrol_ok = patrol_ok and err <= 0.15
+		patrol_report.append("第 %d 层 %.1f / 期望 %.1f（%+.1f%%）" % [depth, groups / 50.0, expect / 50.0, (groups - expect) / expect * 100])
+	check(reach_ok, "OM1-1 第 1~3 层 × 50 个种子：unreachable_chunks 全部为空（40px 栅格，半径 24）%s" % bad_msg)
+	check(pts_ok, "OM1-1 巡逻点、营地、宝箱、资源点、篝火、撤离点、层守位置都能走到（不卡墙）")
+	check(cons_ok, "OM1-1 摆放约束：起点第 0 列、层守区最后一列、最短路 ≥ 5（第 3 层 ≥ 6）、营地距起点 ≥2 且两两 ≥2、至少 1 个营地在最短路 ±1、神龛不贴起点、层守区 1~2 个入口 %s" % cons_msg)
+	print("  （150 张图共换子种子重试 %d 次）" % retries)
+	var fd1 := Game.floors[0]
+	var a := MapGen.generate(42, 1, fd1)
+	var b := MapGen.generate(42, 1, fd1)
+	check(var_to_str(a.chunks) == var_to_str(b.chunks) and var_to_str(a.spawn_points) == var_to_str(b.spawn_points), "OM1-2 同种子同层生成两次，chunks 和 spawn_points 完全一致")
+	check(var_to_str(a.chunks) != var_to_str(MapGen.generate(42, 2, Game.floors[1]).chunks) and var_to_str(a.chunks) != var_to_str(MapGen.generate(43, 1, fd1).chunks), "种子 / 层号不同 → 布局不同")
+	check(tmax <= 100.0, "OM1-3 单次生成最长 %.1f ms（≤ 100 ms，桌面）" % tmax)
+	check(count_ok, "OM4-1 营地、宝箱、资源点、神龛数量和设定精确相符（2 / 3 / 6 / 1），巡逻组 2~4 人、营地人数在区间内")
+	check(patrol_ok, "OM4-1 巡逻组数 50 种子均值和期望（普通区块 × patrol_chance）误差 ≤ 15%%：%s" % "，".join(patrol_report))
+	check(empty_ok, "OM4-2 起点区块和层守区内没有巡逻点 / 营地；巡逻路线点离障碍 ≥ 60px；宝箱/资源点离路线点 ≥ 150px")
 
 # ---------------- T8 / T13.2 掉落 ----------------
 func test_drops() -> void:
@@ -366,12 +429,6 @@ func test_enemies() -> void:
 		e.queue_free()
 	await frames(2)
 	Game.god_mode = false
-	# 冲刺可能把玩家带进相邻战斗房：触发刷怪，测试清怪后房间“清空”弹出强化 3 选 1 并暂停游戏
-	# （视楼层布局而定 → 之前随种子偶发失败）。这段测试期间把战斗房暂时标为已清空，结束后恢复。
-	var saved_cleared := {}
-	for rid in f.rooms_state:
-		saved_cleared[rid] = f.rooms_state[rid].cleared
-		f.rooms_state[rid].cleared = true
 	for id in Game.enemies:
 		for dodge in [false, true]:
 			for e in get_tree().get_nodes_in_group("enemies"):
@@ -381,7 +438,7 @@ func test_enemies() -> void:
 			f.player.iframe_left = 0.0
 			var gp: Vector2 = f.player.global_position
 			var dist: float = {"mushling": 60.0, "rootshot": 380.0, "shellbug": 90.0}[id]
-			var e: EnemyBase = f.spawn_enemy(id, gp + Vector2(dist, 0), -1)
+			var e: EnemyBase = f.spawn_enemy(id, gp + Vector2(dist, 0))
 			e.cooldown = 0.0
 			if not await until(func(): return not (e.state != EnemyBase.S.WINDUP)):
 				printerr("    调试：%s 状态 %d aggro %s cd %.2f 距离 %.0f 敌 %s 玩家 %s 玩家hp %d paused %s 场景 %s" % [id, e.state, e.aggro, e.cooldown, e.global_position.distance_to(f.player.global_position), e.global_position, f.player.global_position, f.player.hp, get_tree().paused, scene().name])
@@ -412,7 +469,7 @@ func test_enemies() -> void:
 	f.player.sim_aim = Vector2.ZERO
 	check(not is_instance_valid(pr), "根须射手的子弹可以被普攻打消")
 	# poise：甲虫 30 poise，一下 10 不硬直
-	var sb: EnemyBase = f.spawn_enemy("shellbug", f.player.global_position + Vector2(300, 0), -1)
+	var sb: EnemyBase = f.spawn_enemy("shellbug", f.player.global_position + Vector2(300, 0))
 	await frames(2)
 	var src := Src.new()
 	f.add_child(src)
@@ -421,15 +478,13 @@ func test_enemies() -> void:
 	sb.take_hit(10, src, Vector2.ZERO)
 	sb.take_hit(10, src, Vector2.ZERO)
 	check(no_stagger and sb.state == EnemyBase.S.HURT, "硬壳甲虫 poise 30：累计 30 伤害才硬直")
-	var mu: EnemyBase = f.spawn_enemy("mushling", f.player.global_position + Vector2(-300, 0), -1)
+	var mu: EnemyBase = f.spawn_enemy("mushling", f.player.global_position + Vector2(-300, 0))
 	await frames(2)
 	mu.take_hit(1, src, Vector2.ZERO)
 	check(mu.state == EnemyBase.S.HURT, "普通怪 poise 0：一下就硬直")
 	check(Game.enemies.mushling.max_hp == 30 and roundi(30 * Game.floors[2].hp_scale()) == 47 and roundi(12 * Game.floors[2].dmg_scale()) == 15, "楼层成长：小鬼 HP 30→第 3 层 47，甲虫伤害 12→15")
 	for e in get_tree().get_nodes_in_group("enemies"):
 		e.queue_free()
-	for rid in saved_cleared:
-		f.rooms_state[rid].cleared = saved_cleared[rid]
 	check(not get_tree().paused, "T4 结束时游戏没有被弹窗暂停")
 
 # ---------------- T5 层守 + T6 撤离 + T14 线索 2 ----------------
@@ -449,8 +504,21 @@ func test_guards_and_exit() -> void:
 	check(Game.floors[0].guard.affixes.size() == 2, "勾选“狂暴”后第 1 层层守 = 硬壳 + 狂暴")
 	DP.set_guard_affix(Game.floors[0].guard, Game.affixes.frenzy, false)
 	f.debug_guard()
+	await frames(3)
+	check(f.guard == null and not f.fence_up() and f.player.global_position.distance_to(f.layout.campfire_pos) < 1.0, "“传送到层守区”把主角放在入口外侧篝火旁，层守还没出现")
+	f.debug_enter_guard_zone()
 	await secs(0.5)
-	check(f.guard != null and f.doors_locked(f.layout.guard), "进层守房：门锁上，层守出现")
+	check(f.guard != null and f.fence_up(), "OM2 走进层守区入口线：开口升起能量栅栏，层守出现")
+	var ent: Dictionary = f.layout.guard_entrances[0]
+	var fence_r: Rect2 = ent.gap
+	f.player.global_position = fence_r.get_center() - Vector2(ent.dir) * 80.0
+	f.player.sim_move = Vector2(ent.dir)
+	await secs(1.5)
+	f.player.sim_move = Vector2.ZERO
+	var dpos: float = (f.player.global_position - fence_r.get_center()).dot(Vector2(ent.dir))
+	check(dpos < 0.0 and f.guard_rect.has_point(f.player.global_position), "OM2-3 层守战期间栅栏不能穿过（朝外走 1.5 秒，主角停在栅栏内侧 %.0f px）" % -dpos)
+	f.player.global_position = f.guard_entry_pos(true)
+	await frames(2)
 	check(f.guard.max_hp == 400 and f.guard.damage == 10 and f.guard.poise == 60.0 and is_equal_approx(f.guard.back_mult, 1.5), "第 1 层层守：HP 400、伤害 10、poise 60（硬壳 +100%）、背后 ×1.5")
 	check(not f.exit_active and f.nearest_interactable().get("id", "") != "exit", "层守没死时撤离点不能互动")
 	f.player.global_position = f.exit_pos
@@ -470,13 +538,14 @@ func test_guards_and_exit() -> void:
 	f.choose_exit(true)
 	check(await wait_scene(Game.SCN_FLOOR) and Game.run.depth == 2, "下潜：进入第 2 层")
 	f = scene()
-	check(f.layout.rooms.all(func(r): return r.type != "exit") and f.depth == 2, "第 2 层没有回第 1 层的路（下潜后无法返回）")
-	f.debug_guard()
+	check(f.depth == 2 and f.interactables.all(func(it): return it.id != "exit" or not it.enabled.call()), "第 2 层没有回第 1 层的路（下潜后无法返回）")
+	f.debug_enter_guard_zone()
 	await secs(0.5)
 	check(f.guard.has_affix("summon") and f.guard.gdata.base_enemy.id == "rootshot", "第 2 层层守：射手 + 召唤")
 	f.guard.summon_t = 9.99
 	await secs(0.2)
-	check(f.enemies_in_room(f.layout.guard).filter(func(e): return e != f.guard).size() == 2, "召唤：一次召 2 只菌菇小鬼")
+	var sums: Array = f.guard_zone_enemies()
+	check(sums.size() == 2 and sums.all(func(e): return f.guard_rect.has_point(e.home_pos) and e.home_pos.distance_to(f.player.global_position) >= 159.0), "召唤：一次召 2 只菌菇小鬼，刷在层守区内、离主角 ≥ 160px")
 	Game.clues.log_repeat_chance = 0.0
 	await kill_guard(f)
 	await frames(1)
@@ -485,7 +554,7 @@ func test_guards_and_exit() -> void:
 	f.choose_exit(true)
 	await wait_scene(Game.SCN_FLOOR)
 	f = scene()
-	f.debug_guard()
+	f.debug_enter_guard_zone()
 	await secs(0.5)
 	var g: Guard = f.guard
 	check(g.max_hp == 1200 and g.damage == 9 and absf(g.windup - 1.35) < 0.001 and is_equal_approx(g.gdata.summon_every_mult, 1.5) and g.has_affix("hardshell") and g.has_affix("frenzy") and absf(g.effective_interval() - 1.5) < 0.01, "第 3 层层守：HP 1200、伤害 9、前摇 1.35 秒、召唤间隔 ×1.5、硬壳 + 狂暴、出手间隔 %.2f 秒" % g.effective_interval())
@@ -690,11 +759,12 @@ func test_death_flow() -> void:
 	for it in f.interactables:
 		if it.id == "corpse":
 			corpse_it = it
-	check(not corpse_it.is_empty(), "到达同一层时入口房有前任尸体")
+	check(not corpse_it.is_empty() and f.layout.chunks[MapGen.chunk_at(f.layout, corpse_it.pos)].type == "start", "到达同一层时起点区块有前任尸体")
 	f.player.global_position = corpse_it.pos
 	await frames(2)
 	f.interact()
 	check(Game.run.equipped.any(func(s): return s.item.id == "trinket_atk") and Game.run.shards_carried == 1 and Lineage.corpse.is_empty(), "回收到前任的装备和碎片，尸体消失")
+	check(not f.interact() and f.nearest_interactable().get("id", "") != "corpse", "OM2-2 尸体只能回收一次")
 
 # ---------------- T1 全流程（键盘 / 手柄） ----------------
 func press(ev: InputEvent) -> void:
@@ -755,7 +825,7 @@ func test_full_flow_input() -> void:
 		await press(key(KEY_SPACE) if dev == "kb" else joy(JOY_BUTTON_A))
 		check(f.player.state == Player.S.DASH, "%s冲刺" % ("空格 " if dev == "kb" else "手柄 A "))
 		await secs(0.4)
-		f.debug_guard()
+		f.debug_enter_guard_zone()
 		await secs(0.4)
 		await kill_guard(f)
 		await until(func(): return not (not f.exit_active))
@@ -792,7 +862,7 @@ func test_csv() -> void:
 	var e: EnemyBase = f.spawn_enemy("mushling", f.player.global_position + Vector2(60, 0))
 	e.cooldown = 0.0
 	await secs(1.5)
-	f.debug_guard()
+	f.debug_enter_guard_zone()
 	await secs(0.5)
 	await kill_guard(f)
 	await until(func(): return not (not f.exit_active))
@@ -817,48 +887,348 @@ func test_csv() -> void:
 	check(ds.size() == 2 and ds[0] == Log.HEADERS.deaths, "deaths.csv 有数据：%s" % (ds[1] if ds.size() > 1 else ""))
 	check(Log.download_all() == 3, "三张表都可下载（网页版逐个下载）")
 
-# ---------------- T6 战斗房 / 篝火 / 宝箱 ----------------
-func test_rooms() -> void:
-	print("== T6 战斗房波次 / 篝火 / 宝箱 ==")
+# ---------------- OM2 开放地图互动：篝火 / 宝箱 / 资源点 / 神龛 / 营地神龛 ----------------
+func hold_interact(sec: float) -> void:
+	Input.action_press("interact")
+	await secs(sec)
+	Input.action_release("interact")
+	await frames(2)
+
+func find_it(f: Node, key: String) -> Dictionary:
+	for it in f.interactables:
+		if it.key == key:
+			return it
+	return {}
+
+func test_open_map() -> void:
+	print("== OM2 开放地图：篝火 / 宝箱 / 资源点 / 神龛 / 营地 ==")
 	Lineage.wipe()
 	plain()
 	Game.auto_pick = 0
+	Game.god_mode = true
+	Game.start_run()
+	await wait_scene(Game.SCN_FLOOR)
+	var f := scene()
+	var L: Dictionary = f.layout
+	check(f.layout.chunks.size() == 30 and f.player.global_position.distance_to(L.start_pos) < 1.0 and L.chunks[MapGen.chunk_at(L, f.player.global_position)].type == "start", "第 1 层是 6×5 区块的开放地图，主角在起点区块中心")
+	check(f.get_node_or_null("Nav") is NavigationRegion2D and f.nav_ready and f.wall_rects.size() == MapGen.all_solids(L).size(), "floor.tscn 有 NavigationRegion2D，烘焙成功；墙和障碍全部生成（%d 个实心矩形）" % f.wall_rects.size())
+	var st: Dictionary = f.map_stats()
+	var on_map := get_tree().get_nodes_in_group("enemies")
+	check(on_map.size() == st.patrol_enemies + st.camp_enemies and on_map.all(func(e): var k := MapGen.chunk_at(L, e.global_position); return k != L.start_chunk and k != L.guard_chunk), "OM4-2 开局刷出巡逻 %d + 营地 %d 只，起点区块和层守区里没有普通怪" % [st.patrol_enemies, st.camp_enemies])
+	check(on_map.all(func(e): return e.rules != null and e.state == EnemyBase.S.IDLE), "开局所有普通怪原地待机（离起点都超过 600px）")
+	# 篝火
+	f.player.hp = 40
+	f.player.global_position = L.campfire_pos + Vector2(0, 30)
+	await frames(2)
+	var fire_ok: bool = f.interact()
+	check(fire_ok and f.player.hp == 40 + roundi(f.player.max_hp * 0.3) and not f.interact(), "篝火（层守区入口外侧）回复 30%%（40 → %d），只能用一次" % f.player.hp)
+	check(not f.guard_rect.has_point(L.campfire_pos) and L.campfire_pos.distance_to(f.guard_entry_pos(false)) < 80.0, "篝火在层守区入口外侧约 200px")
+	# 宝箱：长按 0.6 秒
+	var ch: Dictionary = find_it(f, "chest_0")
+	f.player.global_position = ch.pos + Vector2(0, 30)
+	await frames(2)
+	var moss0: int = Game.run.count_of("moss")
+	check(not f.interact() and "长按" in f.hud.prompt.text, "宝箱要长按，按一下打不开（提示：%s）" % f.hud.prompt.text)
+	Input.action_press("interact")
+	await secs(0.35)
+	var mid: bool = f.used.has("chest_0")
+	await secs(0.4)
+	Input.action_release("interact")
+	await frames(2)
+	check(not mid and f.used.has("chest_0") and Game.run.count_of("moss") - moss0 >= 3, "长按 0.6 秒打开宝箱（0.35 秒时还没开），萤苔 +%d" % (Game.run.count_of("moss") - moss0))
+	var moss1: int = Game.run.count_of("moss")
+	await hold_interact(0.8)
+	check(Game.run.count_of("moss") == moss1 and f.nearest_interactable().get("key", "") != "chest_0", "同一个宝箱只能开一次")
+	# 资源点：长按 1.0 秒，萤苔 ×1
+	var nd: Dictionary = find_it(f, "node_0")
+	f.player.global_position = nd.pos + Vector2(0, 30)
+	await frames(2)
+	Input.action_press("interact")
+	await secs(0.7)
+	var nmid: bool = f.used.has("node_0")
+	await secs(0.45)
+	Input.action_release("interact")
+	await frames(2)
+	check(not nmid and f.used.has("node_0") and Game.run.count_of("moss") - moss1 == 1, "资源点长按 1.0 秒采集（0.7 秒时还没好），萤苔 ×%d" % (Game.run.count_of("moss") - moss1))
+	await hold_interact(1.2)
+	check(Game.run.count_of("moss") - moss1 == 1, "同一个资源点只能采一次")
+	# 强化神龛
+	var sh: Dictionary = find_it(f, "shrine_0")
+	f.player.global_position = sh.pos + Vector2(0, 30)
+	await frames(2)
+	var b0: int = Game.run.boons.size()
+	f.interact()
+	await frames(4)
+	check(Game.run.boons.size() == b0 + 1 and not f.interact(), "强化神龛 3 选 1，只能用一次")
+	# 营地神龛：清空营地才点亮
+	var cid: int = L.camps[0]
+	var cs: Dictionary = find_it(f, "camp_shrine_%d" % cid)
+	f.player.global_position = cs.pos + Vector2(0, 30)
+	await frames(2)
+	check(f.nearest_interactable().get("key", "") != cs.key and not f.camps_state[cid].cleared, "营地没清空时营地神龛不能用")
+	var src := Src.new()
+	f.add_child(src)
+	var members: Array = f.enemies_in_group("c%d" % cid)
+	check(members.size() == f.camps_state[cid].total and members.size() >= f.fd.camp_size_min, "营地 %s 有 %d 只怪（同组 meta group / camp）" % [f.chunk_label(cid), members.size()])
+	for e in members:
+		e.take_hit(99999, src, Vector2.ZERO)
+	await frames(3)
+	check(f.camps_state[cid].cleared and f.nearest_interactable().get("key", "") == cs.key, "营地清空后营地神龛点亮")
+	b0 = Game.run.boons.size()
+	f.interact()
+	await frames(4)
+	check(Game.run.boons.size() == b0 + 1 and not f.interact(), "营地神龛 3 选 1，只能用一次")
+	check(not get_tree().paused, "互动结束后游戏没有被暂停")
+	# 地图统计 / 区块网格（F1）
+	DP.show_chunks = true
+	await frames(2)
+	var labels: Array = f.chunk_overlay.find_children("*", "Label", true, false)
+	check(f.chunk_overlay.visible and labels.size() == 30 and labels.any(func(l): return "层守区" in l.text) and labels.any(func(l): return "营地" in l.text), "F1“显示区块网格”：显示区块编号和类型（%s …）" % labels[0].text)
+	DP.show_chunks = false
+	var txt: String = DP.map_stats_text()
+	check("巡逻组" in txt and "宝箱 3，资源点 6，强化神龛 1，营地神龛 2" in txt, "F1“地图统计”：%s" % txt.replace("\n", " / "))
+	var fd1: FloorData = Game.floors[0]
+	check(DP.find_editor(fd1, "patrol_chance") != null and DP.find_editor(fd1, "chunk_px") != null and DP.find_editor(fd1, "gap_px") != null and is_equal_approx(Game.floors[1].patrol_chance, 0.6), "新 FloorData 字段在 F1“楼层”分组可调；第 2 层 patrol_chance = 0.60")
+	Game.auto_pick = -1
+	Game.god_mode = false
+
+# ---------------- M1 临时仇恨规则 ----------------
+func clear_enemies() -> void:
+	for e in get_tree().get_nodes_in_group("enemies"):
+		e.queue_free()
+	await frames(2)
+
+func test_temp_aggro() -> void:
+	print("== M1 临时仇恨：600px 开追 / 离出生点 1100px 回去 ==")
+	var f := scene()
+	Game.god_mode = true
+	await clear_enemies()
+	var R: AggroRules = f.aggro
+	check(is_equal_approx(R.chase_radius, 600.0) and is_equal_approx(R.leash_px, 1100.0) and DP.find_editor(R, "chase_radius") != null and DP.find_editor(R, "leash_px") != null, "aggro_rules.tres：chase_radius 600、leash_px 1100，都在 F1“仇恨”分组可调")
+	var E: Vector2 = f.layout.start_pos
+	f.player.global_position = E + Vector2(700, 0)
+	var e: EnemyBase = f._map_enemy("mushling", E, "t")
+	await secs(0.5)
+	check(e.state == EnemyBase.S.IDLE, "主角在 700px：敌人原地待机")
+	R.chase_radius = 800.0
+	await frames(3)
+	check(e.state != EnemyBase.S.IDLE, "面板把 chase_radius 改成 800 → 700px 立即开追")
+	R.chase_radius = 600.0
+	e.queue_free()
+	await frames(2)
+	e = f._map_enemy("mushling", E, "t")
+	await secs(0.3)
+	f.player.global_position = E + Vector2(500, 0)
+	await secs(0.2)
+	check(e.state != EnemyBase.S.IDLE, "主角进入 500px（< 600）：敌人开追")
+	# 拖出 1100px → 回出生点
+	Game.base_time_scale = 4.0
+	var far := E + Vector2(1150, 0)
+	e.global_position = far
+	f.player.global_position = far + Vector2(0, 80)
+	await frames(3)
+	var went_return: bool = e.state == EnemyBase.S.RETURN
+	var chased_back := false
+	var t0 := Time.get_ticks_msec()
+	while e.state == EnemyBase.S.RETURN and Time.get_ticks_msec() - t0 < 6000:
+		await frames(1)
+	chased_back = e.state != EnemyBase.S.IDLE
+	await secs(1.0)
+	Game.base_time_scale = 1.0
+	check(went_return and not chased_back and e.state == EnemyBase.S.IDLE and e.global_position.distance_to(E) <= R.home_arrive_px + 2.0, "离出生点 > 1100px：转回归，途中不理主角，走回出生点后待机（离出生点 %.0f px）" % e.global_position.distance_to(E))
+	e.queue_free()
+	# 层守区：主角在里面时普通怪不追
+	var gin: Vector2 = f.guard_entry_pos(true)
+	f.player.global_position = gin
+	var e2: EnemyBase = f._map_enemy("mushling", f.guard_entry_pos(false), "t")
+	await secs(0.5)
+	check(e2.state == EnemyBase.S.IDLE and gin.distance_to(e2.global_position) < 600.0, "主角在层守区里：入口外 %.0f px 的普通怪不追" % gin.distance_to(e2.global_position))
+	f.player.global_position = f.guard_entry_pos(false) + Vector2(0, 100)
+	await secs(0.2)
+	var chasing: bool = e2.state != EnemyBase.S.IDLE
+	f.player.global_position = gin
+	await frames(3)
+	check(chasing and e2.state == EnemyBase.S.RETURN, "追击中主角进入层守区 → 普通怪回归")
+	f.guard_trigger.monitoring = false ## 上面进出层守区不算开战
+	await clear_enemies()
+	f.player.global_position = f.layout.start_pos
+	await frames(2)
+	Game.god_mode = false
+
+func nav_path(f: Node, from: Vector2, to: Vector2) -> PackedVector2Array:
+	var nm: RID = f.get_world_2d().navigation_map
+	var path := PackedVector2Array()
+	for i in 30:
+		path = NavigationServer2D.map_get_path(nm, from, to, true)
+		if path.size() >= 2:
+			break
+		await frames(1)
+	return path
+
+# ---------------- OM3 导航追击 / 烘焙 / 弹道撞墙 ----------------
+func test_nav_chase() -> void:
+	print("== OM3 导航与追击 ==")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 777
+	for depth in [1, 2, 3]:
+		DP.jump_floor(depth)
+		await frames(1)
+		check(await wait_scene(Game.SCN_FLOOR), "跳到第 %d 层" % depth)
+		var f := scene()
+		check(f.nav_ready and f.bake_ms <= 200.0 and f.gen_ms <= 100.0, "OM3-2 第 %d 层：生成 %.1f ms（≤100）、导航烘焙 %.1f ms（≤200，桌面）" % [depth, f.gen_ms, f.bake_ms])
+		var goal: Vector2 = f.guard_entry_pos(true)
+		var path := await nav_path(f, f.layout.start_pos, goal)
+		check(path.size() >= 2 and path[-1].distance_to(goal) < 30.0, "OM2-1 第 %d 层导航路径：起点 → 层守区入口内侧，%d 个路点" % [depth, path.size()])
+		Game.god_mode = true
+		await clear_enemies()
+		var L: Dictionary = f.layout
+		var solids := MapGen.all_solids(L)
+		var obs: Array = []
+		for c in L.chunks:
+			if MapGen.NORMAL.has(c.type) or c.type == "camp":
+				obs += c.obstacles
+		for i in obs.size():
+			var j := rng.randi_range(i, obs.size() - 1)
+			var t = obs[i]; obs[i] = obs[j]; obs[j] = t
+		var trials := 0
+		var reached := 0
+		var stuck := 0
+		var tmax := 0.0
+		Game.base_time_scale = 4.0
+		var space: PhysicsDirectSpaceState2D = f.get_world_2d().direct_space_state
+		for o in obs:
+			if trials >= 20:
+				break
+			var axis := Vector2(1, 0) if trials % 2 == 0 else Vector2(0, 1)
+			var half: float = (o.size.x if axis.x > 0 else o.size.y) / 2.0
+			var pp: Vector2 = o.get_center() + axis * (half + 90.0)
+			var ep: Vector2 = o.get_center() - axis * (half + 90.0)
+			if not MapGen.is_free(pp, solids, 40.0) or not MapGen.is_free(ep, solids, 40.0):
+				continue
+			if space.intersect_ray(PhysicsRayQueryParameters2D.create(ep, pp, 1)).is_empty():
+				continue
+			trials += 1
+			f.player.global_position = pp
+			var e: EnemyBase = f.spawn_enemy("mushling", ep)
+			await frames(2)
+			var gt := 0.0
+			var win_t := 0.0
+			var win_p := ep
+			var ok := false
+			var was_stuck := false
+			while gt < 12.0:
+				await frames(1)
+				var dt := Engine.time_scale / Engine.physics_ticks_per_second
+				gt += dt
+				win_t += dt
+				if not is_instance_valid(e):
+					break
+				if e.global_position.distance_to(pp) <= e.data.attack_range + 8.0:
+					ok = true
+					break
+				if win_t >= 1.0:
+					if e.global_position.distance_to(win_p) < 10.0 and e.state == EnemyBase.S.CHASE:
+						was_stuck = true
+					win_t = 0.0
+					win_p = e.global_position
+			if ok:
+				reached += 1
+				tmax = maxf(tmax, gt)
+			if was_stuck:
+				stuck += 1
+			if is_instance_valid(e):
+				e.queue_free()
+			await frames(2)
+		Game.base_time_scale = 1.0
+		check(trials == 20 and reached == 20 and stuck == 0, "OM3-1 第 %d 层：隔着障碍物 %d 次，绕路追到 %d 次，卡住 >1 秒 %d 次（最慢 %.1f 秒）" % [depth, trials, reached, stuck, tmax])
+		if depth == 1:
+			# 射手子弹撞墙消失：朝外圈墙（x = 0）射
+			var y: float = f.layout.start_pos.y + 300.0
+			var pr := Projectile.new()
+			pr.position = Vector2(120, y)
+			pr.velocity = Vector2(-320, 0)
+			f.world.add_child(pr)
+			var min_x := 999.0
+			var gone := false
+			for i in 60:
+				await frames(1)
+				if not is_instance_valid(pr):
+					gone = true
+					break
+				min_x = minf(min_x, pr.global_position.x)
+			check(gone and min_x > -20.0, "OM3-3 子弹撞墙消失（物理层 1 射线检测，最远到 x = %.0f）" % min_x)
+			# 真射手：隔墙射击的子弹被墙挡住
+			var rs: EnemyBase = f.spawn_enemy("rootshot", Vector2(200, y))
+			rs.cooldown = 99.0
+			await frames(2)
+			rs._shoot(Vector2.LEFT)
+			await secs(0.6)
+			check(get_tree().get_nodes_in_group("projectiles").is_empty(), "根须射手朝墙开火，子弹在墙上消失")
+			rs.queue_free()
+		Game.god_mode = false
+	await frames(2)
+
+# ---------------- M1 冒烟：自动打完第 1 层（上帝模式 + 沿导航走 / 传送） ----------------
+func test_walk_floor1() -> void:
+	print("== M1 冒烟：沿导航从起点走到层守区，打败层守，撤离 ==")
+	Lineage.wipe()
+	plain()
+	Lineage.flags["opening_seen"] = true
+	Game.god_mode = true
 	Game.start_run()
 	await wait_scene(Game.SCN_FLOOR)
 	var f := scene()
 	var src := Src.new()
 	f.add_child(src)
-	var cid: int = f.layout.first_combat
-	f.player.global_position = FloorGen.room_center(f.layout.rooms[cid])
-	await frames(3)
-	var n1: int = f.enemies_in_room(cid).size()
-	check(f.doors_locked(cid) and n1 >= 3 and n1 <= 5, "进战斗房：门锁上，第 1 波 %d 只（3~5）" % n1)
-	for e in f.enemies_in_room(cid):
-		e.take_hit(9999, src, Vector2.ZERO)
-	await secs(1.0)
-	check(f.doors_locked(cid) and f.enemies_in_room(cid).is_empty(), "第 1 波清完：门仍锁着，等第 2 波")
-	await secs(1.3)
-	var n2: int = f.enemies_in_room(cid).size()
-	check(n2 >= 3 and n2 <= 5 and f.rooms_state[cid].wave == 2, "清完 2 秒后刷出第 2 波 %d 只" % n2)
-	for e in f.enemies_in_room(cid):
-		e.take_hit(9999, src, Vector2.ZERO)
-	await secs(0.5)
-	check(not f.doors_locked(cid) and f.rooms_state[cid].cleared, "2 波都清完：门打开")
-	check(Game.run.boons.size() == 1, "第 1 个战斗房奖励 3 选 1：%s" % (Game.run.boons[0].display_name if Game.run.boons.size() else "无"))
-	f.player.global_position = FloorGen.room_center(f.layout.rooms[0])
-	await frames(3)
-	check(f.room_at(f.player.global_position) == 0, "本层房间可以回头走（回到入口）")
-	for r in f.layout.rooms:
-		if r.type == "campfire":
-			f.player.hp = 40
-			f.player.global_position = FloorGen.room_center(r) + Vector2(0, 40)
-			await frames(2)
-			f.interact()
-			check(f.player.hp == 40 + roundi(f.player.max_hp * 0.3) and f.nearest_interactable().is_empty(), "篝火回复 30%%（40 → %d），只能用一次" % f.player.hp)
-		if r.type == "chest":
-			var before: int = Game.run.count_of("moss")
-			f.player.global_position = FloorGen.room_center(r) + Vector2(0, 40)
-			await frames(2)
-			f.interact()
-			check(Game.run.count_of("moss") - before >= 3, "宝箱掉材料 3~5")
-	Game.auto_pick = -1
+	var goal: Vector2 = f.guard_entry_pos(true)
+	var path := await nav_path(f, f.player.global_position, goal)
+	Game.base_time_scale = 3.0
+	var t_real := Time.get_ticks_msec()
+	var gt := 0.0
+	var kills0: int = Game.run.kills
+	var chunks_seen := {}
+	var i := 1
+	var stuck_t := 0.0
+	var last: Vector2 = f.player.global_position
+	var fail := ""
+	while i < path.size() and f.guard == null:
+		var to: Vector2 = path[i] - f.player.global_position
+		if to.length() < 24.0:
+			i += 1
+			continue
+		f.player.sim_move = to.normalized()
+		await frames(1)
+		var dt := Engine.time_scale / Engine.physics_ticks_per_second
+		gt += dt
+		chunks_seen[MapGen.chunk_at(f.layout, f.player.global_position)] = true
+		for e in get_tree().get_nodes_in_group("enemies"):
+			if e.global_position.distance_to(f.player.global_position) < 220.0:
+				e.take_hit(99999, src, Vector2.ZERO)
+		if f.player.global_position.distance_to(last) < 1.0:
+			stuck_t += dt
+			if stuck_t > 2.0:
+				fail = "卡在 %s" % str(f.player.global_position)
+				break
+		else:
+			stuck_t = 0.0
+		last = f.player.global_position
+		if gt > 120.0:
+			fail = "超时"
+			break
+	f.player.sim_move = Vector2.ZERO
+	await secs(0.3)
+	check(fail == "" and f.guard != null and f.fence_up(), "第 1 层：沿导航走 %.0f 秒（游戏时间）经过 %d 个区块，路上清掉 %d 只怪，走进层守区触发栅栏和层守 %s" % [gt, chunks_seen.size(), Game.run.kills - kills0, fail])
+	Game.base_time_scale = 1.0
+	await kill_guard(f)
+	await until(func(): return not (not f.exit_active))
+	check(f.exit_active and not f.fence_up() and f.exit_activated_at - f.guard_killed_at <= 1.0, "层守死后 %.2f 秒撤离点亮起，栅栏撤掉" % (f.exit_activated_at - f.guard_killed_at))
+	f.player.global_position = f.exit_pos
+	await frames(2)
+	check(f.nearest_interactable().get("id", "") == "exit", "走到撤离点可以互动")
+	f.choose_exit(false)
+	check(await wait_scene(Game.SCN_EXTRACT), "撤离 → 结算")
+	var fl := Log.rows("floors")
+	check(fl.size() >= 2 and "extract" in fl[-1], "floors.csv 记了这一层：%s" % fl[-1])
+	scene().finish()
+	await wait_scene(Game.SCN_VILLAGE)
+	Game.god_mode = false

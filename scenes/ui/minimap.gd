@@ -1,26 +1,27 @@
 class_name Minimap
 extends Control
-## 小地图（右上角，规格 3.3）：地形格每 4×4 合成 1 个像素块来画，不画区块网格。
-## 没去过的地方盖暗色，主角周围 reveal_px 内的像素块点亮；主角白点；层主区从开局就标出，主角旁边画指向层主区的箭头。
+## 圆形小地图（右上角）。地形仍按 4×4 格合成一块来画，不画区块网格。
+## 没去过的地方盖暗色，箭头指向撤离点。层主区用一个小点标出。
 
 var floor_node: Node
 var tex: ImageTexture
 var fog_img: Image
 var fog_tex: ImageTexture
 var scale_f := 1.0
-var block_px := 256.0 ## 1 个像素块 = 4 个地形格
+var block_px := 256.0
 var revealed := 0
 var _t := 0.0
-const W := 260.0
+const SIDE := 248.0
 const REVEAL_PX := 640.0
+var _disc: Control
 
 func setup(f: Node) -> void:
 	floor_node = f
 	var L: Dictionary = f.layout
 	var b: Rect2 = L.bounds
-	scale_f = W / b.size.x
-	size = Vector2(W, b.size.y * scale_f)
-	position = Vector2(1920 - W - 30, 40)
+	scale_f = SIDE / b.size.x
+	size = Vector2(SIDE, SIDE)
+	position = Vector2(1920 - SIDE - 28, 108)
 	var T: Dictionary = L.terrain
 	block_px = T.cell * 4.0
 	var imgs := MapGen.terrain_images(L)
@@ -28,15 +29,22 @@ func setup(f: Node) -> void:
 	g.blend_rect(imgs[1], Rect2i(Vector2i.ZERO, g.get_size()), Vector2i.ZERO)
 	var bw := int(ceil(T.nx / 4.0))
 	var bh := int(ceil(T.ny / 4.0))
-	g.resize(bw, bh, Image.INTERPOLATE_BILINEAR) ## 4×4 格合成 1 块
+	g.resize(bw, bh, Image.INTERPOLATE_BILINEAR)
 	tex = ImageTexture.create_from_image(g)
 	fog_img = Image.create(bw, bh, false, Image.FORMAT_RGBA8)
-	fog_img.fill(Color(0, 0, 0, 0.65))
+	fog_img.fill(Color(0, 0, 0, 0.5))
 	fog_tex = ImageTexture.create_from_image(fog_img)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_disc = _MapDisc.new()
+	_disc.size = size
+	_disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_disc.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_disc.set("map_tex", tex)
+	_disc.set("fog", fog_tex)
+	_disc.z_index = -1
+	add_child(_disc)
 
-## 点亮 pos 周围 REVEAL_PX 内的像素块
 func reveal(pos: Vector2) -> void:
 	var changed := false
 	var r := int(ceil(REVEAL_PX / block_px))
@@ -75,7 +83,6 @@ func _prof_process(d: float) -> void:
 		_t = 0.25
 		reveal(floor_node.player.global_position)
 		_dirty = true
-	# 性能：只在主角在小地图上移动 ≥ 0.5 像素或有新探索时重画
 	if floor_node and floor_node.player and is_instance_valid(floor_node.player):
 		var pp := to_map(floor_node.player.global_position)
 		if pp.distance_squared_to(_last_pp) >= 0.25:
@@ -83,10 +90,15 @@ func _prof_process(d: float) -> void:
 			_dirty = true
 	if _dirty:
 		_dirty = false
+		if _disc:
+			_disc.queue_redraw()
 		queue_redraw()
 
 func to_map(p: Vector2) -> Vector2:
-	return p * scale_f
+	if floor_node == null:
+		return p * scale_f
+	var b: Rect2 = floor_node.layout.bounds
+	return Vector2(p.x * size.x / b.size.x, p.y * size.y / b.size.y)
 
 func _draw() -> void:
 	var _p := Prof.t0()
@@ -96,18 +108,46 @@ func _draw() -> void:
 func _prof_draw() -> void:
 	if floor_node == null:
 		return
-	draw_rect(Rect2(Vector2(-4, -4), size + Vector2(8, 8)), Color(0, 0, 0, 0.6))
-	draw_texture_rect(tex, Rect2(Vector2.ZERO, size), false)
-	draw_texture_rect(fog_tex, Rect2(Vector2.ZERO, size), false)
+	var c := size * 0.5
+	var rad := size.x * 0.5 - 2.0
+	draw_arc(c, rad, 0, TAU, 48, Color(0.9, 0.86, 0.76, 0.95), 3.0, true)
 	var gr: Rect2 = floor_node.guard_rect
-	draw_rect(Rect2(to_map(gr.position), gr.size * scale_f), Color(0.95, 0.3, 0.9, 0.9), false, 3)
-	var gc := to_map(gr.get_center())
-	draw_circle(gc, 6, Color(0.95, 0.3, 0.9))
+	var gc := _clamp_ring(to_map(gr.get_center()), c, rad - 10.0)
+	draw_circle(gc, 5, Color(0.9, 0.35, 0.4, 0.95))
 	if floor_node.player and is_instance_valid(floor_node.player):
-		var pp := to_map(floor_node.player.global_position)
-		draw_circle(pp, 5, Color(1, 1, 1))
-		var d := gc - pp
-		if d.length() > 14:
+		var pp := _clamp_ring(to_map(floor_node.player.global_position), c, rad - 16.0)
+		draw_circle(pp, 5, Color(1, 0.95, 0.85))
+		var ep := to_map(floor_node.exit_pos)
+		var d := ep - pp
+		if d.length() > 12.0:
 			var u := d.normalized()
-			var tip := pp + u * 22
-			draw_colored_polygon(PackedVector2Array([tip, pp + u * 10 + u.orthogonal() * 7, pp + u * 10 - u.orthogonal() * 7]), Color(0.95, 0.3, 0.9))
+			var tip := _clamp_ring(pp + u * 20.0, c, rad - 8.0)
+			draw_colored_polygon(PackedVector2Array([tip, tip - u * 12.0 + u.orthogonal() * 6.0, tip - u * 12.0 - u.orthogonal() * 6.0]), Color(0.25, 0.95, 0.92))
+
+func _clamp_ring(p: Vector2, c: Vector2, rad: float) -> Vector2:
+	var d := p - c
+	if d.length() > rad:
+		return c + d.normalized() * rad
+	return p
+
+class _MapDisc extends Control:
+	var map_tex: Texture2D
+	var fog: Texture2D
+
+	func _draw() -> void:
+		var pts := PackedVector2Array()
+		var uvs := PackedVector2Array()
+		var cols := PackedColorArray()
+		var n := 36
+		var c := size * 0.5
+		var rad := size.x * 0.5 - 1.0
+		for i in n:
+			var a := TAU * float(i) / float(n)
+			var o := Vector2(cos(a), sin(a))
+			pts.append(c + o * rad)
+			uvs.append(Vector2(0.5, 0.5) + o * 0.5)
+			cols.append(Color.WHITE)
+		if map_tex:
+			draw_polygon(pts, cols, uvs, map_tex)
+		if fog:
+			draw_polygon(pts, cols, uvs, fog)

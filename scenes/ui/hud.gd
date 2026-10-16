@@ -1,14 +1,27 @@
 class_name Hud
 extends CanvasLayer
-## 局内 HUD：HP、等级/XP、冲刺充能、技能冷却、层数、背包计数、强化、互动提示、层主血条
+## 局内 HUD：左上头像 / HP / MP / SP / 等级，右上层数、背包、碎片、暂停和圆形小地图，
+## 右下是攻击键和围着它的一圈按钮，左下一格消耗品。MP、SP、重攻击、第二技能、消耗品还没有对应系统，显示占位。
+
+const BAG_SLOTS := 12 ## 画面上的容量。灰盒背包还没有这个上限
+const CREAM := Color(0.9, 0.86, 0.76)
+const INK := Color(0.08, 0.07, 0.06, 0.82)
+const HP_COLOR := Color(0.78, 0.16, 0.18)
+const MP_COLOR := Color(0.22, 0.45, 0.86)
+const SP_COLOR := Color(0.86, 0.62, 0.16)
 
 var player: Player
 var hp_bar: ColorRect
 var hp_back: ColorRect
 var hp_text: Label
+var mp_bar: ColorRect
+var sp_bar: ColorRect
+var level_label: Label
+var floor_label: Label
+var bag_label: Label
+var shard_label: Label
 var info: Label
-var dash_pips: Array = []
-var skill_box: ColorRect
+var skill_box: Control
 var skill_label: Label
 var prompt: Label
 var toast: Label
@@ -17,26 +30,163 @@ var boss_bar: ColorRect
 var boss_name: Label
 var boons_label: Label
 var channel_label: Label
+var attack_btn: Button
+var heavy_btn: Button
+var dash_btn: Button
+var skill2_btn: Button
+var pause_dim: ColorRect
+var pause_label: Label
 var _toast_t := 0.0
+var _we_paused := false
 
 func _ready() -> void:
 	layer = 10
-	hp_back = UI.rect(self, Vector2(40, 990), Vector2(420, 30), Color(0.2, 0.1, 0.1))
-	hp_bar = UI.rect(self, Vector2(40, 990), Vector2(420, 30), Color(0.85, 0.2, 0.25))
-	hp_text = UI.label(self, "", Vector2(50, 950), 26)
-	info = UI.label(self, "", Vector2(40, 40), 26)
-	for i in 4:
-		dash_pips.append(UI.rect(self, Vector2(480 + i * 34, 994), Vector2(26, 22), Color(0.4, 0.8, 1)))
-	skill_box = UI.rect(self, Vector2(640, 976), Vector2(60, 60), Color(0.4, 0.75, 0.35))
-	skill_label = UI.label(self, "", Vector2(710, 988), 26)
-	prompt = UI.label(self, "", Vector2(760, 860), 30, Color(1, 0.95, 0.6))
-	toast = UI.label(self, "", Vector2(640, 160), 34, Color(0.8, 1, 0.8))
-	boss_back = UI.rect(self, Vector2(560, 60), Vector2(800, 24), Color(0.2, 0.1, 0.1))
-	boss_bar = UI.rect(self, Vector2(560, 60), Vector2(800, 24), Color(0.9, 0.3, 0.2))
-	boss_name = UI.label(self, "", Vector2(560, 90), 26)
-	boons_label = UI.label(self, "", Vector2(1500, 300), 22, Color(0.85, 0.85, 1))
-	channel_label = UI.label(self, "", Vector2(700, 800), 28, Color(0.65, 0.9, 1))
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	_build_status()
+	_build_actions()
+	prompt = UI.label(self, "", Vector2(560, 800), 30, Color(1, 0.95, 0.7))
+	toast = UI.label(self, "", Vector2(640, 180), 34, Color(0.9, 1, 0.86))
+	boss_back = UI.rect(self, Vector2(560, 28), Vector2(640, 18), Color(0.15, 0.08, 0.08, 0.85))
+	boss_bar = UI.rect(self, Vector2(560, 28), Vector2(640, 18), HP_COLOR)
+	boss_name = UI.label(self, "", Vector2(560, 50), 24, CREAM)
+	boons_label = UI.label(self, "", Vector2(36, 150), 20, Color(0.86, 0.84, 0.78))
+	channel_label = UI.label(self, "", Vector2(620, 740), 26, Color(0.55, 0.95, 0.9))
+	info = UI.label(self, "", Vector2(0, 0), 8)
+	info.visible = false
 	show_boss(null)
+
+func _build_status() -> void:
+	var portrait := TextureRect.new()
+	portrait.texture = Art.portrait()
+	portrait.position = Vector2(24, 18)
+	portrait.size = Vector2(96, 96)
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(portrait)
+	var badge := _Badge.new()
+	badge.position = Vector2(12, 8)
+	badge.size = Vector2(36, 36)
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(badge)
+	level_label = UI.label(badge, "1", Vector2.ZERO, 18, CREAM)
+	level_label.size = badge.size
+	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hp_back = UI.rect(self, Vector2(136, 22), Vector2(280, 24), Color(0.18, 0.08, 0.08, 0.9))
+	hp_bar = UI.rect(self, Vector2(136, 22), Vector2(280, 24), HP_COLOR)
+	hp_text = UI.label(self, "HP", Vector2(144, 22), 18, CREAM)
+	UI.rect(self, Vector2(136, 52), Vector2(280, 18), Color(0.08, 0.1, 0.16, 0.9))
+	mp_bar = UI.rect(self, Vector2(136, 52), Vector2(280, 18), MP_COLOR)
+	UI.label(self, "MP  100 / 100", Vector2(144, 50), 14, CREAM)
+	UI.rect(self, Vector2(136, 76), Vector2(280, 18), Color(0.16, 0.12, 0.06, 0.9))
+	sp_bar = UI.rect(self, Vector2(136, 76), Vector2(224, 18), SP_COLOR)
+	UI.label(self, "SP  80 / 100", Vector2(144, 74), 14, CREAM)
+	floor_label = UI.label(self, "", Vector2(1360, 24), 28, CREAM)
+	_icon(self, "bag", Vector2(1508, 22), 36)
+	bag_label = UI.label(self, "0/12", Vector2(1548, 26), 24, CREAM)
+	_icon(self, "shard", Vector2(1660, 22), 36)
+	shard_label = UI.label(self, "0", Vector2(1700, 26), 24, CREAM)
+	var pause_b := _btn(Vector2(1828, 16), Vector2(64, 64), "pause", _toggle_pause)
+	pause_dim = ColorRect.new()
+	pause_dim.color = Color(0, 0, 0, 0.45)
+	pause_dim.position = Vector2.ZERO
+	pause_dim.size = Vector2(1920, 1080)
+	pause_dim.visible = false
+	pause_dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(pause_dim)
+	pause_label = UI.label(self, "暂停\nP / Start 继续", Vector2(820, 480), 40, CREAM)
+	pause_label.visible = false
+	pause_b.z_index = 2
+	pause_label.z_index = 2
+
+func _build_actions() -> void:
+	var pot := _btn(Vector2(28, 948), Vector2(104, 104), "potion", func(): show_toast("还没有消耗品"))
+	pot.text = ""
+	var count := UI.label(pot, "0", Vector2(64, 64), 22, CREAM)
+	count.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	heavy_btn = _btn(Vector2(1564, 948), Vector2(86, 86), "heavy", func(): show_toast("还没有重攻击"))
+	dash_btn = _btn(Vector2(1584, 828), Vector2(86, 86), "dash", _press_dash)
+	skill_box = _btn(Vector2(1704, 728), Vector2(96, 96), "skill", _press_skill)
+	skill2_btn = _btn(Vector2(1836, 768), Vector2(96, 96), "skill2", func(): show_toast("还没有第二个技能"))
+	attack_btn = _btn(Vector2(1736, 868), Vector2(156, 156), "attack", _press_attack)
+	skill_label = UI.label(self, "", Vector2(1488, 688), 20, CREAM)
+
+func _icon(parent: Node, name: String, pos: Vector2, px: float) -> TextureRect:
+	var t := TextureRect.new()
+	t.texture = Art.icon(name)
+	t.position = pos
+	t.size = Vector2(px, px)
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(t)
+	return t
+
+func _btn(pos: Vector2, sz: Vector2, icon_name: String, cb: Callable) -> Button:
+	var b := Button.new()
+	b.position = pos
+	b.custom_minimum_size = sz
+	b.size = sz
+	b.focus_mode = Control.FOCUS_NONE
+	b.icon = Art.icon(icon_name)
+	b.expand_icon = true
+	b.add_theme_constant_override("icon_max_width", int(sz.x * 0.62))
+	var radius := int(sz.x / 2)
+	for st in ["normal", "hover", "pressed", "focus", "disabled"]:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = INK
+		sb.corner_radius_top_left = radius
+		sb.corner_radius_top_right = radius
+		sb.corner_radius_bottom_left = radius
+		sb.corner_radius_bottom_right = radius
+		sb.set_border_width_all(2)
+		sb.border_color = CREAM
+		match st:
+			"hover": sb.bg_color = INK.lightened(0.15)
+			"pressed": sb.bg_color = INK.lightened(0.28)
+			"disabled": sb.bg_color = Color(0.05, 0.05, 0.05, 0.7)
+		b.add_theme_stylebox_override(st, sb)
+	b.pressed.connect(cb)
+	add_child(b)
+	return b
+
+func _popup_blocking() -> bool:
+	var f := get_parent()
+	return f != null and bool(f.get("popup_open"))
+
+func _toggle_pause() -> void:
+	if _popup_blocking():
+		return
+	if _we_paused:
+		get_tree().paused = false
+		_we_paused = false
+	elif get_tree().paused:
+		return
+	else:
+		get_tree().paused = true
+		_we_paused = true
+	pause_dim.visible = _we_paused
+	pause_label.visible = _we_paused
+
+func _unhandled_input(e: InputEvent) -> void:
+	if e.is_action_pressed("pause"):
+		_toggle_pause()
+
+func _press_attack() -> void:
+	if _we_paused or player == null:
+		return
+	player.try_attack()
+
+func _press_dash() -> void:
+	if _we_paused or player == null:
+		return
+	player.try_dash()
+
+func _press_skill() -> void:
+	if _we_paused or player == null:
+		return
+	player.try_skill()
 
 func show_boss(g: Node) -> void:
 	var on := g != null and is_instance_valid(g)
@@ -45,7 +195,7 @@ func show_boss(g: Node) -> void:
 	boss_name.visible = on
 	if on:
 		boss_name.text = g.gdata.display_name + ("（二阶段）" if g.phase == 2 else "")
-		boss_bar.size.x = 800.0 * g.hp / maxf(1, g.max_hp)
+		boss_bar.size.x = 640.0 * g.hp / maxf(1, g.max_hp)
 
 func show_toast(t: String) -> void:
 	toast.text = t
@@ -61,26 +211,29 @@ func _prof_process(delta: float) -> void:
 	toast.visible = _toast_t > 0.0
 	if player == null or not is_instance_valid(player):
 		return
-	hp_bar.size.x = 420.0 * player.hp / maxf(1, player.max_hp)
+	hp_bar.size.x = 280.0 * player.hp / maxf(1, player.max_hp)
 	hp_text.text = "HP %d / %d" % [player.hp, player.max_hp]
+	level_label.text = str(Game.level())
+	var cd := player.skill_cd_left
+	skill_label.text = "根须横扫 " + ("就绪" if cd <= 0.0 else "%.1f 秒" % cd)
+	if skill_box is CanvasItem:
+		skill_box.modulate = Color.WHITE if cd <= 0.0 else Color(0.55, 0.55, 0.55)
+	if dash_btn:
+		dash_btn.modulate = Color.WHITE if player.charges_ready() > 0 else Color(0.45, 0.45, 0.45)
 	var r := Game.run
 	if r:
-		var ps := Game.player_stats
-		var lv := Game.level()
-		var nxt := ps.xp_for_level(lv + 1) if lv < ps.level_cap else r.xp
-		info.text = "第 %d 层   %s  Lv%d（XP %d/%d）   萤苔 %d  萤苔精 %d  记忆碎片 %d   击杀 %d" % [r.depth, Lineage.current().name, lv, r.xp, nxt, r.count_of("moss"), r.count_of("moss_essence"), r.shards_carried, r.kills]
+		floor_label.text = "第 %d 层" % r.depth
+		bag_label.text = "%d/%d" % [r.bag.size(), BAG_SLOTS]
+		shard_label.text = str(r.shards_carried)
 		var names := r.boons.map(func(b): return "· " + b.display_name)
 		for st in r.equipped:
 			names.append("◆ " + st.item.display_name)
-		boons_label.text = "强化 / 装备\n" + "\n".join(names)
-	var n := player.dash_cd.size()
-	for i in dash_pips.size():
-		dash_pips[i].visible = i < n
-		if i < n:
-			dash_pips[i].color = Color(0.4, 0.8, 1) if player.dash_cd[i] <= 0.0 else Color(0.25, 0.3, 0.4)
-	var cd := player.skill_cd_left
-	skill_box.color = Color(0.4, 0.75, 0.35) if cd <= 0.0 else Color(0.25, 0.3, 0.25)
-	skill_label.text = "根须横扫 " + ("就绪" if cd <= 0.0 else "%.1f 秒" % cd)
+		boons_label.text = "\n".join(names)
 
 func skill_text() -> String:
 	return skill_label.text
+
+class _Badge extends Control:
+	func _draw() -> void:
+		draw_circle(size * 0.5, size.x * 0.5 - 1.0, Color(0.1, 0.09, 0.08, 0.94))
+		draw_arc(size * 0.5, size.x * 0.5 - 1.5, 0, TAU, 24, Color(0.9, 0.86, 0.76), 2.0, true)

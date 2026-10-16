@@ -269,6 +269,7 @@ func _setup_input() -> void:
 	_action("interact", [KEY_E, KEY_F], [JOY_BUTTON_B])
 	_action("recall", [KEY_R], [JOY_BUTTON_RIGHT_SHOULDER])
 	_action("debug_toggle", [KEY_F1, KEY_QUOTELEFT], [JOY_BUTTON_BACK])
+	_action("pause", [KEY_P], [JOY_BUTTON_START])
 
 func _action(name: String, keys: Array, buttons: Array, axis := -1, axis_val := 0.0, mouse := -1) -> void:
 	if not InputMap.has_action(name):

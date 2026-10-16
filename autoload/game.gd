@@ -303,11 +303,14 @@ func _setup_web() -> void:
 	var cb_dl = JavaScriptBridge.create_callback(func(_a): Log.download_all())
 	var cb_row = JavaScriptBridge.create_callback(func(_a): Log.write("floors", ["selftest", 0, 0, "selftest", 0, 0, 0, 0, 0, 0, 0, "", 1, 1, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0]))
 	var cb_run = JavaScriptBridge.create_callback(func(_a): start_run())
-	var cb_perf = JavaScriptBridge.create_callback(func(_a):
+	var cb_perf = JavaScriptBridge.create_callback(func(a):
 		var sc := get_tree().current_scene
 		if sc and sc.has_method("debug_perf_ring"):
 			god_mode = true
-			sc.debug_perf_ring(12))
+			var n := 12
+			if a.size() > 0 and int(a[0]) > 0:
+				n = int(a[0])
+			sc.debug_perf_ring(n))
 	var cb_prof_on = JavaScriptBridge.create_callback(func(a):
 		Prof.on = bool(a[0]) if a.size() > 0 else true
 		Prof.frames.clear())

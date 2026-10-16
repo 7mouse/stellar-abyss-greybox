@@ -1182,12 +1182,13 @@ func test_aggro() -> void:
 			if pairs.has(kind):
 				continue
 			var o: Rect2 = c.obstacles[i]
-			for ax in [Vector2(1, 0), Vector2(0, 1)]:
+			for axo in [[Vector2(1, 0), 100.0], [Vector2(0, 1), 100.0], [Vector2(1, 0), 70.0], [Vector2(0, 1), 70.0], [Vector2(1, 0), 140.0], [Vector2(0, 1), 140.0]]:
+				var ax: Vector2 = axo[0]
 				var half: float = (o.size.x if ax.x > 0 else o.size.y) / 2.0
-				if half * 2.0 > 300.0:
+				if half * 2.0 > 300.0 or pairs.has(kind):
 					continue
-				var ep: Vector2 = o.get_center() - ax * (half + 100)
-				var pp: Vector2 = o.get_center() + ax * (half + 100)
+				var ep: Vector2 = o.get_center() - ax * (half + axo[1])
+				var pp: Vector2 = o.get_center() + ax * (half + axo[1])
 				if not MapGen.is_free(ep, solids, 40) or not MapGen.is_free(pp, solids, 40) or f.guard_rect.grow(300).has_point(ep) or ep.distance_to(pp) > 480.0:
 					continue
 				if space.intersect_ray(PhysicsRayQueryParameters2D.create(ep, pp, 1)).is_empty():
@@ -2079,6 +2080,15 @@ func test_m4_designer() -> void:
 		if w < mn:
 			mn = w
 			worst = sd
+	var fd1: FloorData = Game.floors[0]
+	var mn1 := 1e9
+	var ws1: Array = []
+	for i in 50:
+		var w1 := MapGen.passage_width(MapGen.generate(424242 + i * 7919, 1, fd1))
+		ws1.append(w1)
+		mn1 = minf(mn1, w1)
+	ws1.sort()
+	check(mn1 >= 160.0 and is_equal_approx(fd1.path_min_r, 112.0) and is_zero_approx(Game.floors[2].path_min_r), "第 1 层 50 个种子：最窄通道 %.0f px（≥ 160），中位 %.0f px（path_min_r 112；第 3 层仍为 0）" % [mn1, ws1[25]])
 	check(mn >= 160.0, "(e) 第 2 层 50 个种子：起点 → 层主区篝火最窄通道 %.0f px（种子 %d，≥ 160；cliff_th %.2f，path_min_r %.0f）" % [mn, worst, fd2.ecology.cliff_th, fd2.path_min_r])
 
 func _col_close(a: Color, b: Color) -> bool:

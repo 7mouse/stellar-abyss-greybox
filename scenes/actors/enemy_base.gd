@@ -29,6 +29,7 @@ var target: Node2D
 var hurtbox: Hurtbox
 var hitbox: Hitbox
 var body: ColorRect
+var visual: Sprite2D
 var warn: Label
 var aim_line: Line2D
 var size := Vector2(40, 48)
@@ -75,7 +76,18 @@ func _ready() -> void:
 	body.position = Vector2(-size.x / 2, -size.y + 10)
 	body.color = tint
 	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body.visible = false
 	add_child(body)
+	visual = Sprite2D.new()
+	visual.centered = true
+	visual.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	visual.texture = Art.enemy(data.id)
+	var vh := Art.visual_h(data.id) * (size.y / maxf(1.0, data.size.y))
+	if visual.texture:
+		visual.scale = Vector2.ONE * (vh / visual.texture.get_height())
+	visual.position = Vector2(0, 10 - vh * 0.5)
+	add_child(visual)
+	_sync_visual()
 	warn = Label.new()
 	warn.text = "!"
 	warn.add_theme_font_size_override("font_size", 48)
@@ -114,7 +126,15 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	var _p := Prof.t0()
 	_prof_physics_process(delta)
+	_sync_visual()
 	Prof.add("enemy", _p)
+
+func _sync_visual() -> void:
+	if visual == null:
+		return
+	visual.modulate = body.color * body.modulate
+	if absf(facing.x) > 0.2:
+		visual.flip_h = facing.x < 0.0
 
 func _prof_physics_process(delta: float) -> void:
 	if state == S.DEAD:

@@ -169,7 +169,7 @@ func _build_map() -> void:
 	UI.rect(self, fp - Vector2(30, 30), Vector2(60, 60), Color(1, 0.55, 0.15)).z_index = -5
 	_add_interact(fp, "篝火：回复 %d%% HP" % roundi(fd.campfire_heal * 100), _use_campfire.bind("campfire"), func(): return not used.has("campfire"), "campfire", "campfire")
 	exit_pos = layout.exit_pos
-	exit_rect = UI.rect(self, exit_pos - Vector2(50, 50), Vector2(100, 100), Color(0.3, 0.3, 0.35))
+	exit_rect = UI.rect(self, exit_pos - Vector2(70, 70), Vector2(140, 140), Color(0.12, 0.28, 0.32, 0.55))
 	exit_rect.z_index = -5
 	_add_interact(exit_pos, "撤离点", _use_exit, func(): return exit_active, "exit", "exit")
 	# 前任尸体（起点区块）
@@ -482,7 +482,7 @@ func _prof_physics_process(delta: float) -> void:
 	else:
 		hud.prompt.text = "【E / 手柄B】" + it.text
 	if exit_rect:
-		exit_rect.color = Color(0.4, 1, 0.6) if exit_active else Color(0.3, 0.3, 0.35)
+		exit_rect.color = Color(0.3, 0.95, 0.88, 0.92) if exit_active else Color(0.12, 0.28, 0.32, 0.55)
 	if chunk_overlay and Game.debug_panel and "show_chunks" in Game.debug_panel:
 		chunk_overlay.visible = Game.debug_panel.show_chunks
 	_thicket_t -= delta

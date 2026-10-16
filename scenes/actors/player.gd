@@ -44,6 +44,7 @@ var input_enabled := true
 var sim_move := Vector2.ZERO ## 测试注入
 var sim_aim := Vector2.ZERO
 var body_rect: ColorRect
+var sprite: Sprite2D
 var depth := 1
 
 func _ready() -> void:
@@ -60,7 +61,17 @@ func _ready() -> void:
 	body_rect.position = Vector2(-SIZE.x / 2, -SIZE.y + 8)
 	body_rect.color = Color(0.3, 0.6, 1.0)
 	body_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body_rect.visible = false
 	add_child(body_rect)
+	sprite = Sprite2D.new()
+	sprite.texture = Art.hero()
+	sprite.centered = true
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	var vh := Art.HERO_WORLD_H
+	if sprite.texture:
+		sprite.scale = Vector2.ONE * (vh / sprite.texture.get_height())
+	sprite.position = Vector2(0, 8 - vh * 0.5)
+	add_child(sprite)
 	hurtbox = Hurtbox.new()
 	hurtbox.team = "player"
 	hurtbox.owner_actor = self
@@ -292,6 +303,14 @@ func _prof_physics_process(delta: float) -> void:
 	flash_t += delta
 	body_rect.modulate.a = 0.35 if (iframe_left > 0.0 and state != S.DASH and int(flash_t * 20) % 2 == 0) else 1.0
 	body_rect.color = Color(0.55, 0.8, 1.0) if state == S.DASH else Color(0.3, 0.6, 1.0)
+	if sprite:
+		var tint := Color(0.75, 0.9, 1.2) if state == S.DASH else Color.WHITE
+		if state == S.DEAD:
+			tint = Color(0.4, 0.4, 0.45)
+		sprite.modulate = tint
+		sprite.modulate.a = body_rect.modulate.a
+		if absf(facing.x) > 0.2:
+			sprite.flip_h = facing.x < 0.0
 
 func _tick_attack(delta: float) -> void:
 	phase_t += delta

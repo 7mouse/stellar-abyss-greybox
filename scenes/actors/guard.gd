@@ -70,6 +70,7 @@ func _physics_process(delta: float) -> void:
 	if phase2_t >= 0.0:
 		state_t += delta
 		_tick_extra(delta)
+		_sync_visual()
 		return
 	super._physics_process(delta)
 

@@ -8,6 +8,9 @@ var _shake := 0.0
 
 func _ready() -> void:
 	process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
+	# 主角占位高 Art.HERO_WORLD_H，放大到视口高度的 1/8。不改移动和碰撞。
+	var z := (1080.0 / 8.0) / Art.HERO_WORLD_H
+	zoom = Vector2(z, z)
 
 func snap() -> void:
 	if target:

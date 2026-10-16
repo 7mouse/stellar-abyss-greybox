@@ -795,10 +795,10 @@ static func biome_at(T: Dictionary, p: Vector2) -> float:
 	return T.biome[y * T.nx + x]
 
 const HAZARD_ROUTE_DIST := 150.0 ## 机关离巡逻路线点（§8.1）
-const KIND_COLORS := [Color(0, 0, 0, 0), Color(0.16, 0.36, 0.18), Color(0.42, 0.4, 0.37), Color(0.3, 0.24, 0.2), Color(0.16, 0.3, 0.48), Color(0.5, 0.45, 0.38), Color(0.42, 0.3, 0.18)]
-const GROUND_WOOD := Color(0.13, 0.2, 0.13)
-const GROUND_WILD := Color(0.2, 0.2, 0.14)
-const GROUND_RUIN := Color(0.2, 0.18, 0.17)
+const KIND_COLORS := [Color(0, 0, 0, 0), Color(0.22, 0.4, 0.18), Color(0.5, 0.48, 0.44), Color(0.36, 0.34, 0.31), Color(0.2, 0.4, 0.46), Color(0.55, 0.48, 0.4), Color(0.48, 0.34, 0.2)]
+const GROUND_WOOD := Color(0.3, 0.42, 0.22)
+const GROUND_WILD := Color(0.52, 0.46, 0.26)
+const GROUND_RUIN := Color(0.5, 0.47, 0.42)
 
 ## 地面颜色：群系值连续混合（林地 ↔ 野地 ↔ 废墟），没有区块边界
 static func ground_color(bv: float) -> Color:

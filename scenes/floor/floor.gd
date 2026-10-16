@@ -89,16 +89,23 @@ func _ready() -> void:
 # ---------- 构建 ----------
 func _build_map() -> void:
 	var cp: float = layout.chunk_px
-	for c in layout.chunks:
-		var rc := MapGen.chunk_rect(c, cp)
-		UI.rect(self, rc.position, rc.size, TYPE_COLORS[c.type]).z_index = -10
+	# 地面与障碍：整张图两张贴图（每地形格 1 像素，线性过滤放大），看不到区块
+	var imgs := MapGen.terrain_images(layout)
+	for i in 2:
+		var spr := Sprite2D.new()
+		spr.texture = ImageTexture.create_from_image(imgs[i])
+		spr.centered = false
+		spr.scale = Vector2.ONE * MapGen.TCELL
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		spr.z_index = -10 if i == 0 else -4
+		add_child(spr)
 	for r in layout.border:
 		_solid(r, Color(0.22, 0.19, 0.16))
 	for c in layout.chunks:
 		for r in MapGen.chunk_walls(c):
-			_solid(r, Color(0.32, 0.27, 0.22))
+			_solid(r, MapGen.KIND_COLORS[MapGen.T_RUIN])
 		for r in MapGen.chunk_obstacles(c):
-			_solid(r, Color(0.3, 0.33, 0.25))
+			_solid(r, Color(0, 0, 0, 0))
 	# 层守区：入口栅栏 + 入口线触发器
 	guard_rect = MapGen.chunk_rect(layout.chunks[layout.guard_chunk], cp)
 	for e in layout.guard_entrances:
@@ -323,9 +330,9 @@ func _physics_process(delta: float) -> void:
 		if e.state != EnemyBase.S.IDLE and e.state != EnemyBase.S.RETURN:
 			fighting = true
 			break
-	if fighting:
+	if fighting and Game.run.floor_stats.has("combat_sec"):
 		Game.run.floor_stats.combat_sec += delta
-	if guard_t0 >= 0.0 and not guard_dead:
+	if guard_t0 >= 0.0 and not guard_dead and Game.run.floor_stats.has("guard_sec"):
 		Game.run.floor_stats.guard_sec += delta
 	if guard and is_instance_valid(guard):
 		hud.show_boss(guard)

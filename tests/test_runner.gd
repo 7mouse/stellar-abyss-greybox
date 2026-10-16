@@ -1043,7 +1043,7 @@ func test_temp_aggro() -> void:
 	var e2: EnemyBase = f._map_enemy("mushling", f.guard_entry_pos(false), "t")
 	await secs(0.5)
 	check(e2.state == EnemyBase.S.IDLE and gin.distance_to(e2.global_position) < 600.0, "主角在层守区里：入口外 %.0f px 的普通怪不追" % gin.distance_to(e2.global_position))
-	f.player.global_position = f.guard_entry_pos(false) + Vector2(0, 100)
+	f.player.global_position = f.guard_entry_pos(false) + Vector2(f.layout.guard_entrances[0].dir) * 250.0 ## 沿入口方向再往外，离敌人 250px（攻击距离外）
 	await secs(0.2)
 	var chasing: bool = e2.state != EnemyBase.S.IDLE
 	f.player.global_position = gin
@@ -1096,16 +1096,31 @@ func test_nav_chase() -> void:
 		var tmax := 0.0
 		Game.base_time_scale = 4.0
 		var space: PhysicsDirectSpaceState2D = f.get_world_2d().direct_space_state
+		# 有机地形：障碍矩形是团块的一部分，在矩形两侧不同距离找空地，要求两点之间被障碍挡住
+		var cands: Array = []
 		for o in obs:
+			for axis in [Vector2(1, 0), Vector2(0, 1)]:
+				for off in [90.0, 150.0]:
+					var half: float = (o.size.x if axis.x > 0 else o.size.y) / 2.0
+					cands.append([o.get_center() + axis * (half + off), o.get_center() - axis * (half + off)])
+		for cand in cands:
 			if trials >= 20:
 				break
-			var axis := Vector2(1, 0) if trials % 2 == 0 else Vector2(0, 1)
-			var half: float = (o.size.x if axis.x > 0 else o.size.y) / 2.0
-			var pp: Vector2 = o.get_center() + axis * (half + 90.0)
-			var ep: Vector2 = o.get_center() - axis * (half + 90.0)
+			var pp: Vector2 = cand[0]
+			var ep: Vector2 = cand[1]
 			if not MapGen.is_free(pp, solids, 40.0) or not MapGen.is_free(ep, solids, 40.0):
 				continue
+			if f.guard_rect.grow(200.0).has_point(pp) or f.guard_rect.grow(200.0).has_point(ep):
+				continue ## 主角进层守区会升起栅栏，不算地形绕路
 			if space.intersect_ray(PhysicsRayQueryParameters2D.create(ep, pp, 1)).is_empty():
+				continue
+			var np := await nav_path(f, ep, pp)
+			if np.size() < 2 or np[-1].distance_to(pp) > 30.0:
+				continue
+			var plen := 0.0
+			for pi in range(1, np.size()):
+				plen += np[pi - 1].distance_to(np[pi])
+			if plen > 900.0: ## 只测绕开一个障碍团块的局部绕路（大团块整圈绕行不算这条）
 				continue
 			trials += 1
 			f.player.global_position = pp
@@ -1134,6 +1149,8 @@ func test_nav_chase() -> void:
 			if ok:
 				reached += 1
 				tmax = maxf(tmax, gt)
+			if was_stuck or not ok:
+				print("    [诊断] ep=%s pp=%s ok=%s stuck=%s 敌人停在 %s" % [ep, pp, ok, was_stuck, e.global_position if is_instance_valid(e) else "-"])
 			if was_stuck:
 				stuck += 1
 			if is_instance_valid(e):

@@ -2,8 +2,10 @@ class_name MapGen
 extends RefCounted
 ## 开放地图生成（取代房间制 FloorGen）：grid_w × grid_h 个区块拼成一整张打通的平层地图。
 ## 1. 随机 DFS 生成树保证全连通，再按 loop_chance 给相邻区块额外打通（环路）；层守区只开 1~2 个口。
-## 2. 打通的区块边留 gap_px 宽开口（边中段 ±25% 随机），不通的边是矮墙；外圈 map_border_px 实心墙。
-## 3. 区块模板：障碍物是区块内 0..1 归一化矩形，只放在四个象限里，十字通道 x∈[0.38,0.62]、y∈[0.36,0.64] 永远畅通。
+## 2. 区块只是生成/摆放的内部单位，区块之间没有墙。只有层守区有残垣围墙，入口宽 gap_px；外圈 map_border_px 实心墙。
+## 3. 地形：64px 地形格，噪声定初始密度 → 元胞自动机平滑成团块（灌木/岩石/断崖/水/残垣），
+##    沿区块图的打通边挖蜿蜒小路（宽度随噪声变化 → 隘口），区块中心挖空地；走不到的小洞填实。
+##    地面群系（林地/野地/废墟）由低频噪声连续混合，普通区块的类型取区块中心的群系。
 ## 4. 摆放约束：起点在第 0 列、层守区在最后一列；营地距起点 ≥2、两两 ≥2、至少 1 个在最短路径 ±1 区块内；神龛不贴起点。
 ## 5. 40px 栅格 BFS 走通检查，不满足就换子种子重生（最多重试 5 次）。区块间距离一律按切比雪夫距离（含斜向）算。
 
@@ -15,29 +17,6 @@ const PATROL_OBS_MARGIN := 90.0 ## 巡逻路线点离障碍/墙 ≥ 60px（取 9
 const SAFE_START_PX := 720.0 ## 巡逻点离主角出生点的最小距离（> 临时追击半径 600，开局不被立刻追）
 const FIRE_SAFE_PX := 400.0 ## 巡逻点离篝火的最小距离（篝火旁不站巡逻）
 const LOOT_ROUTE_DIST := 150.0 ## 宝箱/资源点离路线点 ≥ 150px
-
-## 模板：每项 [x, y, w, h]（区块内归一化），共 14 个
-const TEMPLATES := {
-	"start": [[], [[0.1, 0.1, 0.1, 0.1], [0.8, 0.8, 0.1, 0.1]]],
-	"guard": [[], [[0.1, 0.1, 0.08, 0.08], [0.82, 0.1, 0.08, 0.08], [0.1, 0.82, 0.08, 0.08], [0.82, 0.82, 0.08, 0.08]]],
-	"camp": [
-		[[0.08, 0.08, 0.14, 0.1], [0.78, 0.82, 0.14, 0.1]],
-		[[0.1, 0.1, 0.08, 0.18], [0.82, 0.72, 0.08, 0.18], [0.72, 0.1, 0.18, 0.08]],
-	],
-	"shrine": [[], [[0.15, 0.15, 0.1, 0.1], [0.75, 0.75, 0.1, 0.1]]],
-	"field": [
-		[[0.15, 0.15, 0.12, 0.12], [0.73, 0.15, 0.12, 0.12], [0.15, 0.73, 0.12, 0.12], [0.73, 0.73, 0.12, 0.12]],
-		[[0.1, 0.12, 0.22, 0.08], [0.68, 0.8, 0.22, 0.08]],
-	],
-	"grove": [
-		[[0.2, 0.2, 0.08, 0.14], [0.72, 0.66, 0.08, 0.14], [0.08, 0.7, 0.14, 0.1]],
-		[[0.12, 0.12, 0.06, 0.06], [0.24, 0.2, 0.06, 0.06], [0.7, 0.14, 0.06, 0.06], [0.8, 0.24, 0.06, 0.06], [0.14, 0.78, 0.06, 0.06], [0.76, 0.76, 0.08, 0.08]],
-	],
-	"ruin": [
-		[[0.1, 0.1, 0.24, 0.06], [0.1, 0.1, 0.06, 0.22], [0.66, 0.84, 0.24, 0.06], [0.84, 0.68, 0.06, 0.22]],
-		[[0.66, 0.1, 0.24, 0.06], [0.84, 0.1, 0.06, 0.22], [0.1, 0.84, 0.24, 0.06], [0.1, 0.68, 0.06, 0.22]],
-	],
-}
 
 static func generate(seed: int, depth: int, fd: FloorData) -> Dictionary:
 	var L := {}
@@ -110,7 +89,7 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 	var chunks: Array = []
 	for y in H:
 		for x in W:
-			chunks.append({"id": y * W + x, "cell": Vector2i(x, y), "type": "", "template": 0, "obstacles": [], "open_edges": {}, "walls": []})
+			chunks.append({"id": y * W + x, "cell": Vector2i(x, y), "type": "", "template": 0, "obstacles": [], "obstacle_kinds": [], "open_edges": {}, "walls": []})
 	var cid := func(c: Vector2i) -> int: return c.y * W + c.x
 	var L := {"ok": true, "chunks": chunks, "grid_w": W, "grid_h": H, "chunk_px": cp,
 		"start_chunk": cid.call(start), "guard_chunk": cid.call(gcell), "open": open}
@@ -118,7 +97,7 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 	L["path"] = path
 	if path.size() - 1 < fd.min_start_guard_dist:
 		L.ok = false
-	# 2. 类型
+	# 2. 类型（普通区块的类型在地形生成后按群系定）
 	var path_cells: Array = path.map(func(i): return chunks[i].cell)
 	var guard_adj := func(c: Vector2i) -> bool: return cheb(c, gcell) <= 1
 	var cand: Array = []
@@ -156,56 +135,52 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 		elif c == gcell: ch.type = "guard"
 		elif camps.has(c): ch.type = "camp"
 		elif shrines.has(c): ch.type = "shrine"
-		else: ch.type = NORMAL[rng.randi_range(0, NORMAL.size() - 1)]
-		var ts: Array = TEMPLATES[ch.type]
-		ch.template = rng.randi_range(0, ts.size() - 1)
-		var rc := chunk_rect_cell(c, cp)
-		var obs: Array = []
-		for o in ts[ch.template]:
-			obs.append(Rect2(rc.position + Vector2(o[0], o[1]) * cp, Vector2(o[2], o[3]) * cp))
-		ch.obstacles = obs
 	L["camps"] = camps.map(func(c): return cid.call(c))
 	L["shrine"] = cid.call(shrines[0]) if not shrines.is_empty() else -1
 	L["shrines"] = shrines.map(func(c): return cid.call(c))
-	# 3. 墙与开口
-	for ch in chunks:
-		var c: Vector2i = ch.cell
-		var rc := chunk_rect_cell(c, cp)
-		for d in DIRS:
-			var n: Vector2i = c + d
-			if not inside.call(n):
-				continue
-			var k := _ekey(c, n)
-			var horizontal: bool = d.y != 0 ## 上下边（墙是横的）
-			var side: Rect2
-			if d == Vector2i(1, 0): side = Rect2(rc.end.x - WALL / 2, rc.position.y, WALL, cp)
-			elif d == Vector2i(-1, 0): side = Rect2(rc.position.x - WALL / 2, rc.position.y, WALL, cp)
-			elif d == Vector2i(0, -1): side = Rect2(rc.position.x, rc.position.y - WALL / 2, cp, WALL)
-			else: side = Rect2(rc.position.x, rc.end.y - WALL / 2, cp, WALL)
-			var own: bool = d == Vector2i(1, 0) or d == Vector2i(0, 1) ## 共享边只由左/上区块持有墙体
-			if open.has(k):
-				var off: float = open[k]
-				var g0 := off - fd.gap_px / 2
-				var gap: Rect2
-				if horizontal:
-					gap = Rect2(side.position + Vector2(g0, 0), Vector2(fd.gap_px, WALL))
-					if own:
-						ch.walls.append(Rect2(side.position, Vector2(g0, WALL)))
-						ch.walls.append(Rect2(Vector2(gap.end.x, side.position.y), Vector2(side.end.x - gap.end.x, WALL)))
-				else:
-					gap = Rect2(side.position + Vector2(0, g0), Vector2(WALL, fd.gap_px))
-					if own:
-						ch.walls.append(Rect2(side.position, Vector2(WALL, g0)))
-						ch.walls.append(Rect2(Vector2(side.position.x, gap.end.y), Vector2(WALL, side.end.y - gap.end.y)))
-				ch.open_edges[d] = gap
-			elif own:
-				ch.walls.append(side)
 	var bounds := Rect2(0, 0, W * cp, H * cp)
 	L["bounds"] = bounds
 	var b := fd.map_border_px
 	L["border"] = [Rect2(-b, -b, bounds.size.x + 2 * b, b), Rect2(-b, bounds.size.y, bounds.size.x + 2 * b, b),
 		Rect2(-b, 0, b, bounds.size.y), Rect2(bounds.size.x, 0, b, bounds.size.y)]
-	# 4. 层守区、篝火、撤离点
+	# 3. 层守区围墙（全图唯一的墙：残垣围成的场地，入口 1~2 个）
+	var grc := chunk_rect_cell(gcell, cp)
+	var gch0: Dictionary = chunks[cid.call(gcell)]
+	for d in DIRS:
+		var n: Vector2i = gcell + d
+		if not inside.call(n):
+			continue
+		var side: Rect2
+		if d == Vector2i(1, 0): side = Rect2(grc.end.x - WALL / 2, grc.position.y, WALL, cp)
+		elif d == Vector2i(-1, 0): side = Rect2(grc.position.x - WALL / 2, grc.position.y, WALL, cp)
+		elif d == Vector2i(0, -1): side = Rect2(grc.position.x, grc.position.y - WALL / 2, cp, WALL)
+		else: side = Rect2(grc.position.x, grc.end.y - WALL / 2, cp, WALL)
+		var k := _ekey(gcell, n)
+		if open.has(k):
+			var g0: float = open[k] - fd.gap_px / 2
+			var gap: Rect2
+			if d.y != 0:
+				gap = Rect2(side.position + Vector2(g0, 0), Vector2(fd.gap_px, WALL))
+				gch0.walls.append(Rect2(side.position, Vector2(g0, WALL)))
+				gch0.walls.append(Rect2(Vector2(gap.end.x, side.position.y), Vector2(side.end.x - gap.end.x, WALL)))
+			else:
+				gap = Rect2(side.position + Vector2(0, g0), Vector2(WALL, fd.gap_px))
+				gch0.walls.append(Rect2(side.position, Vector2(WALL, g0)))
+				gch0.walls.append(Rect2(Vector2(side.position.x, gap.end.y), Vector2(WALL, side.end.y - gap.end.y)))
+			gch0.open_edges[d] = gap
+		else:
+			gch0.walls.append(side)
+	# 4. 有机地形（噪声 + 元胞自动机），区块之间没有墙
+	var T := _terrain(rng, L, fd)
+	var grid: Dictionary = T._grid
+	T.erase("_grid")
+	L["terrain"] = T
+	for ch in chunks:
+		if ch.type == "":
+			var bv: float = biome_at(T, chunk_rect(ch, cp).get_center())
+			ch.type = "grove" if bv < -0.12 else ("ruin" if bv > 0.18 else "field")
+	var solids := all_solids(L)
+	# 层守区入口、篝火、撤离点
 	var gch: Dictionary = chunks[cid.call(gcell)]
 	var gc := chunk_rect(gch, cp).get_center()
 	var ents: Array = []
@@ -214,7 +189,6 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 		ents.append({"dir": d, "gap": gch.open_edges[d], "chunk": cid.call(n)})
 	L["guard_entrances"] = ents
 	var d0 := Vector2(ents[0].dir)
-	var solids := all_solids(L)
 	var gap0: Rect2 = ents[0].gap
 	var fire := gap0.get_center() + d0 * 200.0
 	var along := Vector2(d0.y, d0.x).abs()
@@ -237,11 +211,11 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 		var rc := chunk_rect(ch, cp).grow(-110)
 		var pts: Array = []
 		var want := rng.randi_range(2, 4)
-		for t in 80:
+		for t in 300:
 			if pts.size() >= want:
 				break
 			var p := Vector2(rng.randf_range(rc.position.x, rc.end.x), rng.randf_range(rc.position.y, rc.end.y))
-			if is_free(p, solids, PATROL_OBS_MARGIN) and p.distance_to(start_pos) >= SAFE_START_PX and p.distance_to(fire) >= FIRE_SAFE_PX and pts.all(func(q): return q.distance_to(p) >= 160.0):
+			if point_reachable(grid, p) and is_free(p, solids, PATROL_OBS_MARGIN) and p.distance_to(start_pos) >= SAFE_START_PX and p.distance_to(fire) >= FIRE_SAFE_PX and pts.all(func(q): return q.distance_to(p) >= 160.0):
 				pts.append(p)
 		if pts.size() < 2:
 			continue
@@ -254,22 +228,21 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 	for kind in ["chest", "node"]:
 		var n_want: int = fd.chests if kind == "chest" else fd.resource_nodes
 		for i in n_want:
-			var p := _loot_point(rng, chunks, loot_chunks, routes, taken, solids, cp)
+			var p := _loot_point(rng, chunks, loot_chunks, routes, taken, solids, cp, grid)
 			taken.append(p)
 			spawn[kind].append(p)
 	L["spawn_points"] = spawn
 	return L
 
-static func _loot_point(rng: RandomNumberGenerator, chunks: Array, loot_chunks: Array, routes: Dictionary, taken: Array, solids: Array, cp: float) -> Vector2:
+static func _loot_point(rng: RandomNumberGenerator, chunks: Array, loot_chunks: Array, routes: Dictionary, taken: Array, solids: Array, cp: float, grid: Dictionary) -> Vector2:
 	var last := Vector2.ZERO
 	for t in 120:
 		var ch: Dictionary = chunks[loot_chunks[rng.randi_range(0, loot_chunks.size() - 1)]]
 		var rc := chunk_rect(ch, cp)
-		var corner := Vector2(rng.randi_range(0, 1), rng.randi_range(0, 1))
-		var inset := Vector2(rng.randf_range(90, 220), rng.randf_range(90, 220))
-		var p := rc.position + corner * rc.size + (Vector2.ONE - corner * 2) * inset
+		var ir := rc.grow(-90)
+		var p := Vector2(rng.randf_range(ir.position.x, ir.end.x), rng.randf_range(ir.position.y, ir.end.y))
 		last = p
-		if not is_free(p, solids, 50.0):
+		if not point_reachable(grid, p) or not is_free(p, solids, 50.0):
 			continue
 		if routes.get(ch.id, []).any(func(q): return q.distance_to(p) < LOOT_ROUTE_DIST):
 			continue
@@ -428,3 +401,269 @@ static func stats(layout: Dictionary) -> Dictionary:
 	return {"chunks": layout.chunks.size(), "normal_chunks": normal, "patrol_groups": sp.patrol.size(), "patrol_enemies": patrol_enemies,
 		"camps": sp.camp.size(), "camp_enemies": camp_enemies, "chests": sp.chest.size(), "nodes": sp.node.size(),
 		"shrines": layout.shrines.size(), "path_len": layout.path.size() - 1}
+
+# ---------- 有机地形 ----------
+static var debug_nofill := false
+const TCELL := 64.0
+enum { T_OPEN, T_THICKET, T_ROCK, T_CLIFF, T_WATER, T_RUIN }
+const KIND_NAMES := ["空地", "灌木", "岩石", "断崖", "水", "残垣"]
+
+static func _noise(rng: RandomNumberGenerator, freq: float, oct := 3) -> FastNoiseLite:
+	var n := FastNoiseLite.new()
+	n.seed = rng.randi()
+	n.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	n.frequency = freq
+	n.fractal_octaves = oct
+	return n
+
+static func _terrain(rng: RandomNumberGenerator, L: Dictionary, fd: FloorData) -> Dictionary:
+	var cp: float = L.chunk_px
+	var nx := int(L.grid_w * cp / TCELL)
+	var ny := int(L.grid_h * cp / TCELL)
+	var n_den := _noise(rng, 1.0 / 900.0)
+	var n_bio := _noise(rng, 1.0 / 2600.0, 2)
+	var n_wat := _noise(rng, 1.0 / 1500.0, 2)
+	var n_cli := _noise(rng, 1.0 / 1100.0, 2)
+	var n_wid := _noise(rng, 1.0 / 700.0, 1)
+	var g := PackedByteArray(); g.resize(nx * ny)
+	var biome := PackedFloat32Array(); biome.resize(nx * ny)
+	for y in ny:
+		for x in nx:
+			var px := (x + 0.5) * TCELL
+			var py := (y + 0.5) * TCELL
+			var i := y * nx + x
+			biome[i] = n_bio.get_noise_2d(px, py)
+			var dens := 0.53 + 0.2 * n_den.get_noise_2d(px, py)
+			g[i] = 1 if rng.randf() < dens else 0
+	# 元胞自动机 4-5 规则（3 轮），地图外算实心；用带 1 格实心外框的数组 + 行累加加速
+	var px_w := nx + 2
+	for it in 3:
+		var pad := PackedInt32Array(); pad.resize(px_w * (ny + 2)); pad.fill(1)
+		for y in ny:
+			for x in nx:
+				pad[(y + 1) * px_w + x + 1] = g[y * nx + x]
+		var hs := PackedInt32Array(); hs.resize(px_w * (ny + 2))
+		for y in ny + 2:
+			var row := y * px_w
+			for x in range(1, nx + 1):
+				hs[row + x] = pad[row + x - 1] + pad[row + x] + pad[row + x + 1]
+		for y in ny:
+			var r0 := y * px_w
+			for x in nx:
+				var cnt := hs[r0 + x + 1] + hs[r0 + px_w + x + 1] + hs[r0 + 2 * px_w + x + 1]
+				g[y * nx + x] = 1 if cnt >= 5 else 0
+	# 废墟群系：散落的断墙段（1 格厚）
+	for t in int(nx * ny / 90):
+		var x := rng.randi_range(1, nx - 2)
+		var y := rng.randi_range(1, ny - 2)
+		if biome[y * nx + x] <= 0.18:
+			continue
+		var horiz := rng.randf() < 0.5
+		var seg_n := rng.randi_range(3, 6)
+		for k in seg_n:
+			var xx := x + (k if horiz else 0)
+			var yy := y + (0 if horiz else k)
+			if xx < nx and yy < ny:
+				g[yy * nx + xx] = 2 ## 临时标记：残垣
+	var circles: Array = [] ## 先收集要挖空的圆，最后统一挖（lambda 捕获的 PackedByteArray 是副本）
+	var carve := func(c: Vector2, r: float) -> void: circles.append([c, r])
+	# 区块中心空地（大小不一的开阔地）
+	var gcell: Vector2i = L.chunks[L.guard_chunk].cell
+	var grc := chunk_rect_cell(gcell, cp)
+	for ch in L.chunks:
+		var c := chunk_rect(ch, cp).get_center()
+		var r := rng.randf_range(170.0, 300.0)
+		match ch.type:
+			"start", "camp": r = 320.0
+			"shrine": r = 260.0
+			"guard": r = 0.0
+		if r > 0:
+			for k in 3: ## 三个错位圆拼成不规则空地
+				carve.call(c + Vector2(rng.randf_range(-90, 90), rng.randf_range(-90, 90)), r * rng.randf_range(0.7, 1.0))
+	# 沿打通边挖蜿蜒小路：中心 → 共享边上的开口点 → 中心，路线被横向噪声推歪，宽度随噪声 80~190px 半径
+	for k in L.open:
+		var parts: PackedStringArray = k.split("|")
+		var a := Vector2i(int(parts[0].split(",")[0]), int(parts[0].split(",")[1]))
+		var b := Vector2i(int(parts[1].split(",")[0]), int(parts[1].split(",")[1]))
+		var off: float = L.open[k]
+		var touches_guard := a == gcell or b == gcell
+		var ra := chunk_rect_cell(a, cp)
+		var mid := Vector2(ra.end.x, ra.position.y + off) if b.x > a.x else Vector2(ra.position.x + off, ra.end.y)
+		for seg in [[chunk_rect_cell(a, cp).get_center(), mid], [mid, chunk_rect_cell(b, cp).get_center()]]:
+			var p0: Vector2 = seg[0]
+			var p1: Vector2 = seg[1]
+			var nrm := (p1 - p0).normalized().orthogonal()
+			var steps := int(p0.distance_to(p1) / 32.0)
+			for s in steps + 1:
+				var t := float(s) / steps
+				var bend := sin(t * PI) * 260.0 * n_wid.get_noise_2d(p0.x + p1.x, p0.y + p1.y + t * 900.0)
+				var q := p0.lerp(p1, t) + nrm * bend
+				if not touches_guard and grc.grow(220.0).has_point(q):
+					q = p0.lerp(p1, t) ## 不让别的小路拐进层守区围墙
+
+				var w := 125.0 + 45.0 * n_wid.get_noise_2d(q.x, q.y)
+				carve.call(q, w)
+	# 层守区入口外侧：篝火所在的空地
+	var gch: Dictionary = L.chunks[L.guard_chunk]
+	for d in gch.open_edges:
+		var gp: Rect2 = gch.open_edges[d]
+		for t in 8:
+			carve.call(gp.get_center() + Vector2(d) * (40.0 * t), 190.0)
+	for cr in circles:
+		var c: Vector2 = cr[0]
+		var r: float = cr[1]
+		var x0 := int((c.x - r) / TCELL); var x1 := int((c.x + r) / TCELL)
+		var y0 := int((c.y - r) / TCELL); var y1 := int((c.y + r) / TCELL)
+		for yy in range(maxi(0, y0), mini(ny - 1, y1) + 1):
+			for xx in range(maxi(0, x0), mini(nx - 1, x1) + 1):
+				if Vector2((xx + 0.5) * TCELL, (yy + 0.5) * TCELL).distance_squared_to(c) <= r * r:
+					g[yy * nx + xx] = 0
+	# 层守区内部清空（只留几根柱子）
+	for yy in range(int(grc.position.y / TCELL), int(grc.end.y / TCELL)):
+		for xx in range(int(grc.position.x / TCELL), int(grc.end.x / TCELL)):
+			var cc := Vector2((xx + 0.5) * TCELL, (yy + 0.5) * TCELL)
+			var lc := (cc - grc.position) / cp
+			var pillar := (absf(lc.x - 0.2) < 0.04 or absf(lc.x - 0.8) < 0.04) and (absf(lc.y - 0.2) < 0.04 or absf(lc.y - 0.8) < 0.04)
+			g[yy * nx + xx] = 2 if pillar else 0
+	# 种类：水（低洼）、断崖、灌木（林地）、岩石（野地）、残垣（废墟）
+	for i in nx * ny:
+		if g[i] == 0:
+			continue
+		var px := (i % nx + 0.5) * TCELL
+		var py := (i / nx + 0.5) * TCELL
+		if g[i] == 2:
+			g[i] = T_RUIN
+		elif n_wat.get_noise_2d(px, py) > 0.32:
+			g[i] = T_WATER
+		elif biome[i] < -0.12:
+			g[i] = T_THICKET
+		elif n_cli.get_noise_2d(px, py) > 0.25:
+			g[i] = T_CLIFF
+		elif biome[i] > 0.18:
+			g[i] = T_RUIN if rng.randf() < 0.3 else T_ROCK
+		else:
+			g[i] = T_ROCK
+	var T := {"nx": nx, "ny": ny, "cell": TCELL, "cells": g, "biome": biome}
+	# 修补：区块中心走不到时，从它到相邻的可达区块中心挖一条直路（最多 4 轮）
+	var repairs := 0
+	var rg := {}
+	for rr in 4:
+		T.cells = g
+		_apply_obstacles(L, T)
+		rg = reach_grid(L)
+		var bad: Array = L.chunks.filter(func(c): return not point_reachable(rg, chunk_rect(c, cp).get_center()))
+		if bad.is_empty():
+			break
+		for c in bad:
+			if c.type == "guard":
+				continue
+			for d in DIRS:
+				var n: Vector2i = c.cell + d
+				if n.x < 0 or n.y < 0 or n.x >= L.grid_w or n.y >= L.grid_h or n == gcell:
+					continue
+				var nc := chunk_rect_cell(n, cp).get_center()
+				if point_reachable(rg, nc):
+					g = _carve_line(g, nx, ny, chunk_rect(c, cp).get_center(), nc, 150.0)
+					repairs += 1
+					break
+	T["repairs"] = repairs
+	# 走不到的空地填实（按真实连通检查：40px 栅格、半径 24），再重建障碍矩形
+	var grid := rg
+	var filled := 0
+	for i in nx * ny:
+		if debug_nofill or g[i] != 0:
+			continue
+		var c0 := Vector2((i % nx) * TCELL, (i / nx) * TCELL)
+		if point_reachable(grid, c0 + Vector2(32, 32)):
+			continue
+		var any := false
+		for sy in [4.0, 24.0, 44.0, 60.0]:
+			for sx in [4.0, 24.0, 44.0, 60.0]:
+				if point_reachable(grid, c0 + Vector2(sx, sy)):
+					any = true
+		if not any and not grc.has_point(c0 + Vector2(32, 32)):
+			g[i] = T_ROCK if biome[i] >= -0.12 else T_THICKET
+			filled += 1
+	T.cells = g
+	T["filled"] = filled
+	if filled > 0:
+		_apply_obstacles(L, T)
+	T["_grid"] = grid ## 填实只动了走不到的格，可达栅格不变，给摆放复用
+	return T
+
+## 同种类相邻地形格合并成矩形（行内连续段，向下延伸），按矩形中心归到区块
+static func _apply_obstacles(L: Dictionary, T: Dictionary) -> void:
+	for ch in L.chunks:
+		ch.obstacles = []
+		ch.obstacle_kinds = []
+	var nx: int = T.nx
+	var ny: int = T.ny
+	var g: PackedByteArray = T.cells
+	var used := PackedByteArray(); used.resize(nx * ny)
+	for y in ny:
+		var x := 0
+		while x < nx:
+			var k := g[y * nx + x]
+			if k == 0 or used[y * nx + x] == 1:
+				x += 1
+				continue
+			var x1 := x
+			while x1 + 1 < nx and g[y * nx + x1 + 1] == k and used[y * nx + x1 + 1] == 0:
+				x1 += 1
+			var y1 := y
+			while y1 + 1 < ny:
+				var okrow := true
+				for xx in range(x, x1 + 1):
+					if g[(y1 + 1) * nx + xx] != k or used[(y1 + 1) * nx + xx] == 1:
+						okrow = false
+						break
+				if not okrow:
+					break
+				y1 += 1
+			for yy in range(y, y1 + 1):
+				for xx in range(x, x1 + 1):
+					used[yy * nx + xx] = 1
+			var r := Rect2(x * TCELL, y * TCELL, (x1 - x + 1) * TCELL, (y1 - y + 1) * TCELL)
+			var cid := chunk_at(L, r.get_center())
+			L.chunks[cid].obstacles.append(r)
+			L.chunks[cid].obstacle_kinds.append(k)
+			x = x1 + 1
+
+static func biome_at(T: Dictionary, p: Vector2) -> float:
+	var x := clampi(int(p.x / T.cell), 0, T.nx - 1)
+	var y := clampi(int(p.y / T.cell), 0, T.ny - 1)
+	return T.biome[y * T.nx + x]
+
+const KIND_COLORS := [Color(0, 0, 0, 0), Color(0.16, 0.36, 0.18), Color(0.42, 0.4, 0.37), Color(0.3, 0.24, 0.2), Color(0.16, 0.3, 0.48), Color(0.5, 0.45, 0.38)]
+const GROUND_WOOD := Color(0.13, 0.2, 0.13)
+const GROUND_WILD := Color(0.2, 0.2, 0.14)
+const GROUND_RUIN := Color(0.2, 0.18, 0.17)
+
+## 地面颜色：群系值连续混合（林地 ↔ 野地 ↔ 废墟），没有区块边界
+static func ground_color(bv: float) -> Color:
+	if bv < 0.03:
+		return GROUND_WOOD.lerp(GROUND_WILD, smoothstep(-0.3, 0.03, bv))
+	return GROUND_WILD.lerp(GROUND_RUIN, smoothstep(0.03, 0.33, bv))
+
+## 地面 + 障碍图（每地形格 1 像素；显示时放大 TCELL 倍、线性过滤，边缘自然柔和）
+static func terrain_images(L: Dictionary) -> Array:
+	var T: Dictionary = L.terrain
+	var ground := Image.create(T.nx, T.ny, false, Image.FORMAT_RGBA8)
+	var obs := Image.create(T.nx, T.ny, false, Image.FORMAT_RGBA8)
+	for y in T.ny:
+		for x in T.nx:
+			var i: int = y * T.nx + x
+			ground.set_pixel(x, y, ground_color(T.biome[i]))
+			var k: int = T.cells[i]
+			obs.set_pixel(x, y, KIND_COLORS[k] if k != 0 else Color(ground_color(T.biome[i]), 0.0))
+	return [ground, obs]
+
+static func _carve_line(g: PackedByteArray, nx: int, ny: int, a: Vector2, b: Vector2, r: float) -> PackedByteArray:
+	var steps := int(a.distance_to(b) / 32.0) + 1
+	for s in steps + 1:
+		var c := a.lerp(b, float(s) / steps)
+		for yy in range(maxi(0, int((c.y - r) / TCELL)), mini(ny - 1, int((c.y + r) / TCELL)) + 1):
+			for xx in range(maxi(0, int((c.x - r) / TCELL)), mini(nx - 1, int((c.x + r) / TCELL)) + 1):
+				if Vector2((xx + 0.5) * TCELL, (yy + 0.5) * TCELL).distance_squared_to(c) <= r * r:
+					g[yy * nx + xx] = 0
+	return g

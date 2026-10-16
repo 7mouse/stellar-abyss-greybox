@@ -91,6 +91,8 @@ func _run() -> void:
 	await test_full_flow_input()
 	await test_csv()
 	await test_recall_charm()
+	await test_hit_feel()
+	await test_tutorial()
 	print("\n结果：%d 通过，%d 失败" % [passes, fails])
 	Lineage.wipe()
 	Log.clear()
@@ -2309,6 +2311,8 @@ func test_recall_charm() -> void:
 	check(not f.recall_blocked() and f.try_recall() and f.channeling and not f.player.input_enabled, "起点可以开始引导，引导中不能操作")
 	await secs(0.2)
 	var hp_before: int = f.player.hp
+	f.player.iframe_left = 0.0
+	f.player.dash_iframe_left = 0.0
 	f.player.take_hit(1, src, Vector2.ZERO)
 	await frames(2)
 	check(not f.channeling and f.player.input_enabled and rules.carrying() and f.player.hp == hp_before - 1 and int(Game.run.floor_stats.get("charm_interrupted", 0)) >= 1, "受击打断引导，回村符不消耗（HP %d → %d）" % [hp_before, f.player.hp])
@@ -2524,3 +2528,218 @@ func test_recall_charm() -> void:
 	Game.god_mode = false
 	Game.run = null
 	Lineage.wipe()
+
+# ---------------- T1 打击感 ----------------
+func test_hit_feel() -> void:
+	print("== T1 打击感 ==")
+	var saved_shake := Settings.camera_shake
+	var saved_hs := Settings.hitstop_enabled
+	Settings.set_camera_shake(100)
+	Settings.set_hitstop_enabled(true)
+	Game.clear_hitstop()
+	Game._slowmo_until = 0
+	var expect := {
+		"light_1": [40, 0.0, 0, 20.0, 60, -1],
+		"light_2": [40, 0.0, 0, 20.0, 60, -1],
+		"light_3": [80, 4.0, 120, 140.0, 80, -1],
+		"skill_1": [100, 6.0, 160, 60.0, 80, -1],
+		"skill_2": [90, 5.0, 140, 100.0, 80, -1],
+		"armor_break": [80, 4.0, 120, -1.0, 120, -1],
+		"dash": [0, 0.0, 0, 0.0, -1, 220],
+		"player_hurt": [60, 5.0, 150, 120.0, 100, 600],
+		"kill_normal": [60, 3.0, 100, 60.0, 100, -1],
+		"kill_elite": [120, 8.0, 220, 100.0, 120, 300],
+		"boss_heavy": [120, 8.0, 200, 0.0, 100, -1],
+		"boss_phase": [0, 10.0, 1200, 160.0, -1, 1200],
+		"boss_death": [250, 14.0, 600, 0.0, 200, 1500],
+	}
+	var feel_ok := true
+	for ev in HitFeel.EVENTS:
+		var row: Array = expect[ev]
+		var got: Array = [Game.hit_feel.hitstop_ms(ev), Game.hit_feel.shake_px(ev), Game.hit_feel.shake_ms(ev), Game.hit_feel.knockback_px(ev), Game.hit_feel.flash_ms(ev), Game.hit_feel.iframe_ms(ev)]
+		var same := true
+		for i in row.size():
+			same = same and is_equal_approx(float(got[i]), float(row[i]))
+		feel_ok = feel_ok and same and DP.find_editor(Game.hit_feel, ev + "_hitstop_ms") != null
+		if not same:
+			printerr("    ", ev, " 读到 ", got, " 期望 ", row)
+	check(feel_ok and is_equal_approx(Game.hit_feel.boss_death_slowmo_scale, 0.3) and Game.hit_feel.boss_death_slowmo_ms == 800, "第 4 节每个事件的顿帧、震屏、击退、闪白、无敌都从 hit_feel.tres 读出，层主死亡 0.3 倍速 800 ms")
+	var ed: SpinBox = DP.find_editor(Game.hit_feel, "light_1_hitstop_ms")
+	var old := Game.hit_feel.light_1_hitstop_ms
+	ed.value = 77
+	HitFeedback.end_swing()
+	Game.clear_hitstop()
+	HitFeedback.play("light_1")
+	check(Game.hit_feel.hitstop_ms("light_1") == 77 and Game.hitstop_left_ms() <= 77 and Game.hitstop_left_ms() > 40, "F1 把 light_1 顿帧改成 77 后立刻生效（剩余 %d ms）" % Game.hitstop_left_ms())
+	ed.value = old
+	Game.clear_hitstop()
+	var pulses := HitFeedback.global_pulses
+	HitFeedback.begin_swing()
+	HitFeedback.note_hit("light_1", null)
+	HitFeedback.note_hit("light_2", null)
+	var after_one := HitFeedback.global_pulses
+	var left_light := Game.hitstop_left_ms()
+	HitFeedback.note_hit("light_3", null)
+	check(after_one == pulses + 1 and HitFeedback.global_pulses == pulses + 1 and left_light <= 40 and Game.hitstop_left_ms() > 50, "同一次攻击打中多个目标只顿一次，顿帧取更大的 80 ms")
+	HitFeedback.end_swing()
+	Game.clear_hitstop()
+	await make_arena()
+	var cam := FollowCam.new()
+	arena.add_child(cam)
+	cam.make_current()
+	Settings.set_camera_shake(0)
+	cam.shake(12, 400)
+	await frames(4)
+	check(cam.offset == Vector2.ZERO and cam.shake_ratio() == 0.0, "镜头震动 0% 时 offset 保持 0")
+	var dummy := Node2D.new()
+	arena.add_child(dummy)
+	HitFeedback.on_boss_phase(dummy)
+	check(HitFeedback.vignette_on(), "震动 0% 时层主阶段变化改成边缘暗角")
+	Settings.set_camera_shake(100)
+	cam.shake(8, 200)
+	await frames(1)
+	var r0 := cam.shake_ratio()
+	await frames(5)
+	var r1 := cam.shake_ratio()
+	check(r0 > 0.8 and r1 < r0 and r1 > 0.3, "震屏按时长线性衰减（%.2f → %.2f）" % [r0, r1])
+	await secs(0.25)
+	check(cam.offset == Vector2.ZERO and cam.shake_ratio() == 0.0, "震屏时长结束后 offset 回到 0")
+	Settings.set_hitstop_enabled(false)
+	HitFeedback.play("boss_heavy")
+	await frames(2)
+	check(Game.hitstop_left_ms() == 0 and Engine.time_scale > 0.5, "关掉顿帧后 hitstop 为 0，时间缩放不被压到 0.02")
+	Settings.set_hitstop_enabled(true)
+	Game.clear_hitstop()
+	Game._slowmo_until = 0
+	HitFeedback.play("boss_death")
+	check(is_equal_approx(Game._slowmo_scale, 0.3) and Game._slowmo_until > Time.get_ticks_msec(), "层主死亡进入 0.3 倍慢动作")
+	Game._slowmo_until = 0
+	Game.clear_hitstop()
+	var p := await make_player()
+	p.facing = Vector2.RIGHT
+	p.sim_aim = Vector2.RIGHT
+	var e := await make_enemy("mushling", Vector2(60, 0), 500)
+	e.aggro = false
+	e.set_physics_process(false)
+	p.try_attack()
+	check(await until(func(): return e.hp < 500), "普攻打中菌菇小鬼")
+	check(absf(e.velocity.length() - 100.0) < 1.0 and e.feel_flash_t > 0.0, "普攻 1 击退 20px（速度 %.1f）、受击闪白 %.0f ms" % [e.velocity.length(), e.feel_flash_t * 1000.0])
+	Settings.set_camera_shake(saved_shake)
+	Settings.set_hitstop_enabled(saved_hs)
+	Game.clear_hitstop()
+	Game._slowmo_until = 0
+	Engine.time_scale = Game.base_time_scale
+
+# ---------------- T8 新手引导 ----------------
+func test_tutorial() -> void:
+	print("== T8 新手引导 ==")
+	var old_path := Tutorial.path
+	Tutorial.path = "user://test_profile.cfg"
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	InputGlyph.device = "kb"
+	Tutorial.debug_setup({"on_floor": true, "floor_t": 2.0, "moved": 0.0, "near_fight": false, "fight_cleared": false})
+	check(Tutorial.prompts_shown("move") == 1 and "WASD" in Tutorial.hint_text() and "先站起来" in Tutorial.hint_text(), "进层 1.5 秒没移动就提示站起来：%s" % Tutorial.hint_text())
+	Tutorial.debug_advance(0.2)
+	check(Tutorial.prompts_shown("move") == 1, "条件还在时不会把同一步再计一次")
+	InputGlyph.device = "pad"
+	Tutorial.debug_advance(0.01)
+	check("左摇杆" in Tutorial.hint_text() and not ("WASD" in Tutorial.hint_text()), "提示按当前设备换成左摇杆：%s" % Tutorial.hint_text())
+	InputGlyph.device = "kb"
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"on_floor": true, "floor_t": 0.2, "moved": 120.0})
+	check(Tutorial.is_done("move") and Tutorial.prompts_shown("move") == 0 and Tutorial.hint_text() == "", "先移动满 120px 的步骤不提示")
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"on_floor": true, "floor_t": 2.0, "moved": 0.0})
+	check(Tutorial.prompts_shown("move") == 1, "重置后移动提示会再出现")
+	Tutorial.notify("run_ended")
+	Tutorial.debug_setup({"on_floor": true, "floor_t": 3.0, "moved": 0.0, "near_fight": true, "threat": true, "near_loot": true, "near_fire": true, "boss_zone": true, "guard_dead": true, "charm": true})
+	check(Tutorial.is_sealed() and Tutorial.hint_text() == "" and Tutorial.banner_text() == "" and Tutorial.prompts_shown("move") == 1, "这一局结束后第二局一步都不触发")
+	Tutorial.reset_progress()
+	check(not Tutorial.is_sealed(), "重置教学后恢复")
+	Tutorial.hold_world = true
+	InputGlyph.device = "kb"
+	Tutorial.debug_setup({"near_fight": true, "combo": true, "fight_cleared": false, "on_floor": true, "moved": 200.0})
+	check(Tutorial.is_done("attack") and Tutorial.prompts_shown("attack") == 0, "先打出三连，攻击步骤不提示")
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"near_fight": true, "combo": false, "fight_cleared": false, "on_floor": true, "floor_t": 0.0, "moved": 0.0})
+	check(Tutorial.prompts_shown("attack") == 1 and "拔刀" in Tutorial.hint_text() and "J" in Tutorial.hint_text(), "靠近第一战 400px 提示拔刀：%s" % Tutorial.hint_text())
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"dash_count": 3, "threat": true, "moved": 200.0, "on_floor": true})
+	check(Tutorial.is_done("dash") and Tutorial.prompts_shown("dash") == 0, "先冲刺 3 次，冲刺步骤不提示")
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"threat": true, "dash_count": 0, "on_floor": true, "floor_t": 0.0, "moved": 0.0})
+	check("空格" in Tutorial.hint_text() and "冲过去" in Tutorial.hint_text(), "敌人近身前摇时提示冲刺：%s" % Tutorial.hint_text())
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"looted": true, "near_loot": true, "moved": 200.0, "on_floor": true})
+	check(Tutorial.is_done("loot") and Tutorial.prompts_shown("loot") == 0, "先捡过东西，拾取步骤不提示")
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"near_loot": true, "looted": false, "moved": 200.0, "on_floor": true, "fight_cleared": false})
+	check("捡起来" in Tutorial.hint_text() and "E" in Tutorial.hint_text(), "掉落物 200px 内提示拾取：%s" % Tutorial.hint_text())
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"chased": true, "spotted": true, "moved": 200.0, "on_floor": true})
+	check(Tutorial.is_done("stealth") and Tutorial.prompts_shown("stealth") == 0, "已经被追击就不再教隐蔽")
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"spotted": true, "chased": false, "moved": 200.0, "on_floor": true})
+	check("躲到树后面" in Tutorial.hint_text(), "进入视野还没确认时提示隐蔽：%s" % Tutorial.hint_text())
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"near_fire": true, "hp_full": true, "moved": 200.0, "on_floor": true})
+	check(Tutorial.is_done("fire") and "前面就是这层的主人" in Tutorial.hint_text() and not ("坐一会儿" in Tutorial.hint_text()), "满血靠近篝火改文案并直接完成：%s" % Tutorial.hint_text())
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"near_fire": true, "hp_full": false, "moved": 200.0, "on_floor": true})
+	check("篝火" in Tutorial.hint_text() and "坐一会儿" in Tutorial.hint_text(), "篝火 300px 提示休息：%s" % Tutorial.hint_text())
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"boss_zone": true, "moved": 200.0, "on_floor": true})
+	check(Tutorial.banner_text() == "苔冠王野猪" and Tutorial.hint_text() == "", "进层主区只出名条，没有底部提示")
+	var line := Line2D.new()
+	line.modulate.a = 1.0
+	Tutorial.notify("boss_first_telegraph", line)
+	check(Tutorial.telegraph_played() and Tutorial._flash_n == 2, "第一次冲撞预警会闪 2 下；T4 调用 hook_charge_telegraph")
+	Tutorial.notify("boss_first_telegraph", line)
+	check(Tutorial._flash_n == 2, "第二次冲撞预警不再闪")
+	Tutorial.notify("boss_charge_dodged")
+	check(Tutorial.is_done("boss"), "躲开冲撞后层主步骤完成")
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"guard_dead": true, "moved": 200.0, "on_floor": true})
+	check("出口开了" in Tutorial.hint_text() and Tutorial.wants_exit_marker(), "层主死后提示撤离并标小地图")
+	Tutorial.notify("extract")
+	check(Tutorial.is_done("extract") and not Tutorial.wants_exit_marker(), "撤离或下潜完成撤离步骤")
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.notify("death")
+	check(Tutorial.death_line == "林 #07 的记录到此为止。" and Tutorial.prompts_shown("death") == 1, "第一次死亡给出记录到此为止")
+	Tutorial.notify("village")
+	check(Tutorial.is_done("death") and Tutorial.death_line == "" and Tutorial.take_epitaph_flash(), "回到村落完成死亡步骤，墓志铭墙闪一次")
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"charm": true, "moved": 200.0, "on_floor": true})
+	check(Tutorial.is_done("charm") and "紧急回村符" in Tutorial.hint_text(), "第一次捡到回村符，显示完即完成")
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	Tutorial.debug_setup({"on_floor": true, "floor_t": 2.0, "moved": 0.0})
+	Tutorial.debug_advance(8.1)
+	check(Tutorial.hint_text() == "" and Tutorial.prompts_shown("move") == 1 and not Tutorial.is_done("move"), "提示 8 秒后淡出，还没完成")
+	Tutorial.debug_advance(20.0)
+	check(Tutorial.prompts_shown("move") == 2 and "先站起来" in Tutorial.hint_text(), "20 秒后第二次提示")
+	Tutorial.debug_advance(8.1)
+	Tutorial.debug_advance(20.0)
+	check(Tutorial.prompts_shown("move") == 2 and Tutorial.hint_text() == "", "最多提示 2 次")
+	check(DP.find_editor(Tutorial.rules, "hint_sec") != null and DP.find_editor(Tutorial.rules, "fire_px") != null, "教学时长和距离在 F1 里可调")
+	Tutorial.hold_world = false
+	Tutorial.path = old_path
+	Tutorial.reset_progress()
+	InputGlyph.device = "kb"
+

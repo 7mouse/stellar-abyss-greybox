@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/rigs/hero_s.tscn" id="1_side"]
+
+[node name="hero_l" type="Node2D"]
+scale = Vector2(-1, 1)
+
+[node name="Side" parent="." instance=ExtResource("1_side")]

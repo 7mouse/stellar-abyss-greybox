@@ -1,0 +1,144 @@
+{
+ "src_psd2x": "art_src/rigs/hero/hero_parts_f_v1_src2x.psd",
+ "src_pivots": "art_src/rigs/hero/hero_parts_f_v1_pivots.json",
+ "out_dir": "art_src/rigs/hero",
+ "base": "hero_parts_f_v2_1",
+ "scale": 2,
+ "line_rgb": [
+  40,
+  28,
+  21
+ ],
+ "ops": [
+  {
+   "op": "translate",
+   "parts": [
+    "arm_upper_r_f",
+    "forearm_r_f"
+   ],
+   "d": [
+    10,
+    0
+   ],
+   "pivots": [
+    "shoulder_r",
+    "elbow_r",
+    "wrist_r"
+   ],
+   "why": "right shoulder point was ~10px outside the torso"
+  },
+  {
+   "op": "align_x",
+   "part": "scarf_f_mesh",
+   "top_band": 12,
+   "to_pivot": "neck",
+   "why": "collar centred on neck"
+  },
+  {
+   "op": "cut_above_curve",
+   "part": "scarf_f_mesh",
+   "ellipse": [
+    118,
+    80,
+    16,
+    9
+   ],
+   "why": "free the mouth (mouth y84-86); scarf now starts 3px under the mouth"
+  }
+ ],
+ "joints": [
+  {
+   "pivot": "neck",
+   "parent": "torso_f_mesh",
+   "child": "head_f",
+   "child_cls": "big",
+   "child_cap_r": 7,
+   "note": "neck stub under the chin, hidden by the scarf",
+   "parent_cls": "big",
+   "parent_hide_under": [
+    "head_f"
+   ],
+   "parent_cap_w": 13,
+   "parent_erase_cut": false,
+   "v21": "item 3: torso collar grows up only under the head (invisible), 13px wide, fills the head-side gaps at +-30"
+  },
+  {
+   "pivot": "shoulder_r",
+   "parent": "torso_f_mesh",
+   "child": "arm_upper_r_f",
+   "child_cls": "big",
+   "child_from": "elbow_r",
+   "parent_cls": "big",
+   "parent_hide_under": [
+    "arm_upper_r_f"
+   ],
+   "parent_erase_cut": false,
+   "v21": "torso grows under the upper arm only (invisible) so +-30 leaves no hole at the shoulder side"
+  },
+  {
+   "pivot": "elbow_r",
+   "parent": "arm_upper_r_f",
+   "child": "forearm_r_f",
+   "child_cls": "small",
+   "child_from": "wrist_r",
+   "parent_cls": "small",
+   "parent_from": "shoulder_r"
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "torso_f_mesh",
+   "child": "thigh_r_f",
+   "child_cls": "big",
+   "child_from": "knee_r"
+  },
+  {
+   "pivot": "knee_r",
+   "parent": "thigh_r_f",
+   "child": "shin_r_f",
+   "child_cls": "small",
+   "child_from": "ankle_r",
+   "parent_cls": "small",
+   "parent_from": "hip_r"
+  },
+  {
+   "pivot": "shoulder_l",
+   "parent": "torso_f_mesh",
+   "child": "arm_upper_l_f",
+   "child_cls": "big",
+   "child_from": "elbow_l",
+   "parent_cls": "big",
+   "parent_hide_under": [
+    "arm_upper_l_f"
+   ],
+   "parent_erase_cut": false,
+   "v21": "torso grows under the upper arm only (invisible) so +-30 leaves no hole at the shoulder side"
+  },
+  {
+   "pivot": "elbow_l",
+   "parent": "arm_upper_l_f",
+   "child": "forearm_l_f",
+   "child_cls": "small",
+   "child_from": "wrist_l",
+   "parent_cls": "small",
+   "parent_from": "shoulder_l"
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "torso_f_mesh",
+   "child": "thigh_l_f",
+   "child_cls": "big",
+   "child_from": "knee_l"
+  },
+  {
+   "pivot": "knee_l",
+   "parent": "thigh_l_f",
+   "child": "shin_l_f",
+   "child_cls": "small",
+   "child_from": "ankle_l",
+   "parent_cls": "small",
+   "parent_from": "hip_l"
+  }
+ ],
+ "parts_dir": "parts_v2_1",
+ "cap_version": 2
+}

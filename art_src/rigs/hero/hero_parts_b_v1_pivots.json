@@ -1,0 +1,131 @@
+{
+ "canvas": [
+  256,
+  256
+ ],
+ "unit": "px@1:1",
+ "pivots": {
+  "neck": [
+   134.4,
+   91.2
+  ],
+  "shoulder_r": [
+   167.9,
+   113.6
+  ],
+  "elbow_r": [
+   174.3,
+   143.1
+  ],
+  "wrist_r": [
+   180.7,
+   171.1
+  ],
+  "shoulder_l": [
+   98.5,
+   113.6
+  ],
+  "elbow_l": [
+   92.9,
+   143.1
+  ],
+  "wrist_l": [
+   89.7,
+   171.1
+  ],
+  "hip_r": [
+   150.4,
+   175.1
+  ],
+  "knee_r": [
+   152.7,
+   204.6
+  ],
+  "ankle_r": [
+   156.7,
+   238.9
+  ],
+  "hip_l": [
+   118.4,
+   175.1
+  ],
+  "knee_l": [
+   114.4,
+   204.6
+  ],
+  "ankle_l": [
+   112.0,
+   238.9
+  ],
+  "scarf_root": [
+   134.4,
+   95.2
+  ],
+  "backpack_anchor": [
+   132.8,
+   115.2
+  ],
+  "sword_grip": [
+   89.7,
+   171.1
+  ],
+  "root": [
+   134.4,
+   247.7
+  ]
+ },
+ "parts": {
+  "head_b": {
+   "pick_component": 5,
+   "scale": 1.129
+  },
+  "torso_b_mesh": {
+   "pick_component": 7,
+   "scale": 1.266
+  },
+  "scarf_b_mesh": {
+   "pick_component": 8,
+   "scale": 1.167
+  },
+  "backpack_b": {
+   "pick_component": 9,
+   "scale": 1.02
+  },
+  "arm_upper_r_b": {
+   "pick_component": 12,
+   "scale": 0.85
+  },
+  "forearm_r_b": {
+   "pick_component": 14,
+   "scale": 0.798
+  },
+  "arm_upper_l_b": {
+   "pick_component": 13,
+   "scale": 0.82
+  },
+  "forearm_l_b": {
+   "pick_component": 15,
+   "scale": 0.724
+  },
+  "thigh_r_b": {
+   "pick_component": 10,
+   "scale": 0.86
+  },
+  "thigh_l_b": {
+   "pick_component": 11,
+   "scale": 0.893
+  },
+  "shin_r_b": {
+   "pick_component": 16,
+   "scale": 0.853
+  },
+  "shin_l_b": {
+   "pick_component": 17,
+   "scale": 0.811
+  },
+  "sword_b": {
+   "pick_component": 3,
+   "scale": 0.642
+  }
+ }
+}

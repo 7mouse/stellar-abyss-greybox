@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """AI partsheet -> layered rig deliverable (rig-parts-spec §11/§12).
-usage: cut_partsheet.py config.json
+usage: cut_partsheet.py config.json [--no-caps]
 config: source, out_dir, base, canvas2x, disp_scale, parts[{name,pick,box,rotate,erase_red,empty}],
-order (bottom->top), pivots{name:[x,y]} (pick/box/pivots in display coords = real/disp_scale)."""
+order (bottom->top), pivots{name:[x,y]} (pick/box/pivots in display coords = real/disp_scale).
+v2 (2026-10-21): optional joint post-processing, same keys as rig_patch.py:
+  "joints":[{"pivot","parent","child","child_cls":"small|big","parent_cls",...}], "ops":[...],
+  "fill_holes":[...], "defringe":true, "line_rgb":[r,g,b]
+  If "joints" is present the raw cut is written as <base>_raw*.psd and rig_patch.py turns it into <base>
+  (round overlapping joint heads, re-outlined, cleaned edges, updated _pivots). --no-caps skips that."""
 import json,sys,time,os
 import numpy as np
 from PIL import Image,ImageDraw
@@ -11,6 +16,11 @@ from psd_tools import PSDImage
 from psd_tools.api.layers import PixelLayer
 def T(m):print(time.strftime('%H:%M:%S'),m,flush=True)
 c=json.load(open(sys.argv[1]));ds=c['disp_scale'];C=c['canvas2x'];out=c['out_dir'];base=c['base']
+CAPS=('joints' in c) and ('--no-caps' not in sys.argv)
+final_base=base
+if CAPS: base=base+'_raw'
+for p_ in c['parts']:
+  if p_.get('source') and p_['source']!=c['source']: print('note: per-part source',p_['name'],'(handled by caller)')
 os.makedirs(out+'/parts',exist_ok=True)
 T('step1 bg removal start')
 rgb=np.array(Image.open(c['source']).convert('RGB')).astype(int)
@@ -86,3 +96,12 @@ ref=Image.fromarray(rgba).crop([int(v*ds) for v in pose]);ref.thumbnail((C//2,C/
 sh=Image.new('RGBA',(C//2*3,C//2),(128,128,128,255));sh.alpha_composite(ref,(0,0));sh.alpha_composite(pre,(C//2,0))
 pp=pre.copy();pp.alpha_composite(pl);sh.alpha_composite(pp,(C,0));sh.save(f'{out}/{base}_check.png')
 T('step5 end')
+if CAPS:
+  T('step6 joint caps start')
+  sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
+  import rig_patch
+  fix={k:c[k] for k in ('joints','ops','fill_holes','fill_holes_opts','defringe','line_rgb','line_w') if k in c}
+  fix.update(parts_dir='parts',src_psd2x=f'{out}/{base}_src2x.psd',src_pivots=f'{out}/{base}_pivots.json',out_dir=out,base=final_base,scale=2)
+  json.dump(fix,open(f'{out}/{final_base}_fix.json','w'),ensure_ascii=False,indent=1)
+  rig_patch.run(f'{out}/{final_base}_fix.json')
+  T('step6 end')

@@ -1,0 +1,206 @@
+{
+ "source": "art_src/src/terrain_floor1_set_gen1.jpg",
+ "out_dir": "art_src/terrain/floor1_v1",
+ "disp_scale": 1.25,
+ "seam_ok": 1.6,
+ "items": [
+  {
+   "name": "s01_ground_moss",
+   "group": "tiles",
+   "tile": [
+    127,
+    12,
+    310,
+    122
+   ],
+   "wrap": "xy",
+   "size": 512,
+   "spec": "S01 moss"
+  },
+  {
+   "name": "s01_ground_roots",
+   "group": "tiles",
+   "tile": [
+    336,
+    10,
+    520,
+    122
+   ],
+   "wrap": "xy",
+   "size": 512,
+   "spec": "S01 extra (roots/earth; not the autumn tile)"
+  },
+  {
+   "name": "s01_ground_stone",
+   "group": "tiles",
+   "tile": [
+    548,
+    11,
+    730,
+    122
+   ],
+   "wrap": "xy",
+   "size": 512,
+   "spec": "S01 grey stone (wet cobbles)"
+  },
+  {
+   "name": "s01_water",
+   "group": "tiles",
+   "tile": [
+    762,
+    140,
+    891,
+    236
+   ],
+   "wrap": "xy",
+   "size": 512,
+   "spec": "S01 water"
+  },
+  {
+   "name": "s02_edge_moss_stone",
+   "group": "edges",
+   "tile": [
+    121,
+    136,
+    739,
+    186
+   ],
+   "wrap": "x",
+   "size": 512,
+   "spec": "S02 straight edge moss/stone wall"
+  },
+  {
+   "name": "s02_edge_moss_roots",
+   "group": "edges",
+   "tile": [
+    121,
+    195,
+    739,
+    243
+   ],
+   "wrap": "x",
+   "size": 512,
+   "spec": "S02 straight edge moss/roots"
+  },
+  {
+   "name": "stump_a",
+   "group": "props",
+   "rect": [
+    116,
+    246,
+    298,
+    360
+   ],
+   "soft": false,
+   "spec": "deco (stump; not S03 tree)"
+  },
+  {
+   "name": "s04_bush_a",
+   "group": "props",
+   "rect": [
+    306,
+    240,
+    456,
+    356
+   ],
+   "soft": false,
+   "spec": "S04"
+  },
+  {
+   "name": "stump_b",
+   "group": "props",
+   "rect": [
+    472,
+    247,
+    645,
+    366
+   ],
+   "soft": false,
+   "spec": "deco (stump)"
+  },
+  {
+   "name": "s04_bush_b",
+   "group": "props",
+   "rect": [
+    650,
+    240,
+    808,
+    362
+   ],
+   "soft": false,
+   "spec": "S04"
+  },
+  {
+   "name": "s06_ruin_pillars",
+   "group": "props",
+   "rect": [
+    118,
+    350,
+    272,
+    452
+   ],
+   "soft": false,
+   "spec": "S06"
+  },
+  {
+   "name": "s06_ruin_block",
+   "group": "props",
+   "rect": [
+    290,
+    354,
+    410,
+    455
+   ],
+   "soft": false,
+   "spec": "S06"
+  },
+  {
+   "name": "s18_glow_mushrooms",
+   "group": "props",
+   "rect": [
+    118,
+    452,
+    282,
+    568
+   ],
+   "soft": false,
+   "spec": "S18 mushroom ring cluster"
+  },
+  {
+   "name": "s04_shrub_patch",
+   "group": "props",
+   "rect": [
+    318,
+    447,
+    531,
+    572
+   ],
+   "soft": false,
+   "spec": "S04"
+  },
+  {
+   "name": "s07_moss_decal",
+   "group": "decals",
+   "rect": [
+    545,
+    452,
+    718,
+    565
+   ],
+   "soft": true,
+   "spec": "S07 moss patch decal (soft edge)"
+  },
+  {
+   "name": "s05_rock_mound",
+   "group": "props",
+   "rect": [
+    729,
+    432,
+    903,
+    564
+   ],
+   "soft": false,
+   "spec": "S05 big rock"
+  }
+ ]
+}

@@ -8,6 +8,7 @@
    "top": 8,
    "bottom": 6
   },
+  "paper": "centre fill carries the paper grain, periodic on the centre size: use TILE (or stretch) for the centre",
   "size": [
    480,
    32
@@ -32,6 +33,7 @@
    "top": 7,
    "bottom": 6
   },
+  "paper": "centre fill carries the paper grain, periodic on the centre size: use TILE (or stretch) for the centre",
   "size": [
    960,
    48
@@ -54,6 +56,7 @@
    "top": 13,
    "bottom": 12
   },
+  "paper": "centre fill carries the paper grain, periodic on the centre size: use TILE (or stretch) for the centre",
   "size": [
    160,
    160
@@ -68,6 +71,7 @@
    "top": 13,
    "bottom": 13
   },
+  "paper": "centre fill carries the paper grain, periodic on the centre size: use TILE (or stretch) for the centre",
   "tints": {
    "grey": "#8C8A84",
    "moss": "#7E9468",
@@ -97,6 +101,7 @@
    "top": 14,
    "bottom": 14
   },
+  "paper": "centre fill carries the paper grain, periodic on the centre size: use TILE (or stretch) for the centre",
   "size": [
    515,
    300
@@ -111,6 +116,7 @@
    "top": 11,
    "bottom": 11
   },
+  "paper": "centre fill carries the paper grain, periodic on the centre size: use TILE (or stretch) for the centre",
   "size": [
    442,
    80
@@ -125,6 +131,7 @@
    "top": 12,
    "bottom": 12
   },
+  "paper": "centre fill carries the paper grain, periodic on the centre size: use TILE (or stretch) for the centre",
   "size": [
    152,
    62
@@ -139,6 +146,7 @@
    "top": 11,
    "bottom": 12
   },
+  "paper": "centre fill carries the paper grain, periodic on the centre size: use TILE (or stretch) for the centre",
   "size": [
    152,
    62
@@ -153,6 +161,7 @@
    "top": 14,
    "bottom": 14
   },
+  "paper": "centre fill carries the paper grain, periodic on the centre size: use TILE (or stretch) for the centre",
   "feature_at": [
    133,
    32,

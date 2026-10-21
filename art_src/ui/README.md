@@ -1,3 +1,10 @@
+# HUD v2 · 21e 风格修正（2026-10-21e，现行）
+- **纸纹**：`make_ui_v2.py` 的 `paper`（`hud_v2.json` 里 0.08）给九宫件的中间区和固定件的深色部分叠一层很淡的纸纹（低频斑 + 横向细纤维）。纸纹按中间区尺寸做成**周期**的（FFT 噪声），所以引擎里中间区用 TILE 模式铺开不会出缝；用 STRETCH 也行，只是纹理会被拉开。四个角和边都不动，九宫边距不变（见下）。另出 `panels/ui_paper_grain_tile_256.png`（256 无缝灰度纹理），需要的话程序可以自己用 multiply 叠到任何面板上。U08 小图标不加纸纹。
+- 渲染到别的尺寸（U11–U13、mock）时用 `nine(..., tile_center=True)`，中间区平铺而不是拉伸。
+- **U16 物品图标 gen2**：9 个按同一张图重新生成（`src/ui_v2/u16_icons_gen2.jpg`），统一深色描边、Q 版手绘、平涂加少量明暗，没有光晕；`u16_icons_gen1_unused.jpg` 是 21d 的水彩版。切图 `cut_sprites.py art_src/ui/u16_icons_cut.json`（7 个按点选 pick，戒指加了 `open_holes` 把中间白底挖空；萤苔、獠牙按格子），然后 `style_fix_v3.py` 收 1 px 白边、居中放进 128×128（留 6 px）。
+
+---
+
 # HUD v2 细边框（hud_v2，2026-10-21d，现行）
 原图在 `art_src/src/ui_v2/`，用 GenerateImage 生成，按 ui_style_v1 定稿 v2 写提示词：细线、炭黑底、米白线，少量绯红和青；不要钉子、宝石、金属斜面、厚花边。
 生成和切图：`python3 art_src/tools/make_ui_v2.py art_src/ui/hud_v2.json`，图标 `cut_sprites.py art_src/ui/u16_icons_cut.json`，冷却 / 按下态 `make_ui_states.py art_src/ui/hud_v2/hud/u06_heavy.png art_src/ui/hud_v2/states`，整屏 `make_ui_screens.py art_src/ui/hud_v2 art_src/ui/hud_v2/screens`。清单和九宫边距在 `hud_v2/manifest_v2.json`。

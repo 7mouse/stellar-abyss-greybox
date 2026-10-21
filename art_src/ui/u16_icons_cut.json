@@ -1,115 +1,95 @@
 {
- "source": "art_src/src/ui_v2/u16_icons_gen1.jpg",
+ "source": "art_src/src/ui_v2/u16_icons_gen2.jpg",
  "out_dir": "art_src/ui/hud_v2/icons_u16",
  "disp_scale": 1.0,
  "items": [
   {
    "name": "u16_glowmoss",
    "rect": [
-    6.0,
-    6.0,
-    335.3333333333333,
-    335.3333333333333
+    4.0,
+    4.0,
+    337.3333333333333,
+    337.3333333333333
    ],
    "soft": false,
    "max": 128,
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)"
   },
   {
    "name": "u16_glowmoss_essence",
-   "rect": [
-    347.3333333333333,
-    6.0,
-    676.6666666666666,
-    335.3333333333333
-   ],
-   "soft": false,
    "max": 128,
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    510,
+    170
+   ]
   },
   {
    "name": "u16_shard",
-   "rect": [
-    688.6666666666666,
-    6.0,
-    1018.0,
-    335.3333333333333
-   ],
-   "soft": false,
    "max": 128,
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    820,
+    190
+   ]
   },
   {
    "name": "u16_trinket_ring",
-   "rect": [
-    6.0,
-    347.3333333333333,
-    335.3333333333333,
-    620
-   ],
-   "soft": false,
    "max": 128,
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    200,
+    500
+   ],
+   "open_holes": true
   },
   {
    "name": "u16_trinket_amulet",
-   "rect": [
-    347.3333333333333,
-    347.3333333333333,
-    676.6666666666666,
-    640
-   ],
-   "soft": false,
    "max": 128,
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    480,
+    480
+   ]
   },
   {
    "name": "u16_trinket_charm",
-   "rect": [
-    688.6666666666666,
-    347.3333333333333,
-    1018.0,
-    676.6666666666666
-   ],
-   "soft": false,
    "max": 128,
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    810,
+    500
+   ]
   },
   {
    "name": "u16_return_talisman",
-   "rect": [
-    6.0,
-    688.6666666666666,
-    335.3333333333333,
-    1018.0
-   ],
-   "soft": false,
    "max": 128,
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    185,
+    790
+   ]
   },
   {
    "name": "u16_heal_potion",
-   "rect": [
-    347.3333333333333,
-    688.6666666666666,
-    676.6666666666666,
-    1018.0
-   ],
-   "soft": false,
    "max": 128,
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    500,
+    820
+   ]
   },
   {
    "name": "u16_mosscrown_tusk",
    "rect": [
-    688.6666666666666,
-    688.6666666666666,
-    1018.0,
-    1018.0
+    686.6666666666666,
+    686.6666666666666,
+    1020.0,
+    1020.0
    ],
    "soft": false,
    "max": 128,
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)"
   }
  ]
 }

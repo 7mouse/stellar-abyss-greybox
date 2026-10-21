@@ -322,7 +322,8 @@
    ],
    "kind": "fixed",
    "fit": 128,
-   "spec": "U08"
+   "spec": "U08",
+   "paper": false
   },
   {
    "name": "u08_shard",
@@ -334,7 +335,8 @@
    ],
    "kind": "fixed",
    "fit": 128,
-   "spec": "U08"
+   "spec": "U08",
+   "paper": false
   },
   {
    "name": "u08_pause",
@@ -348,7 +350,9 @@
    ],
    "kind": "fixed",
    "fit": 128,
-   "spec": "U08"
+   "spec": "U08",
+   "paper": false
   }
- ]
+ ],
+ "paper": 0.08
 }

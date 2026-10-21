@@ -1,140 +1,149 @@
 {
- "source": "art_src/src/ui_v2/u16_icons_gen1.jpg",
+ "source": "art_src/src/ui_v2/u16_icons_gen2.jpg",
  "items": {
   "u16_glowmoss": {
    "rect_src": [
-    6,
-    6,
-    335,
-    335
+    4,
+    4,
+    337,
+    337
    ],
-   "scale": 0.489,
+   "scale": 0.469,
    "size": [
-    120,
+    128,
     128
    ],
    "file": "u16_glowmoss.png",
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "post": "style_fix_v3: 1 px alpha erode + rim pulled to outline colour, fit 116 centred on 128"
   },
   "u16_glowmoss_essence": {
    "rect_src": [
-    347,
-    6,
-    676,
-    335
+    429,
+    45,
+    601,
+    307
    ],
    "scale": 0.489,
    "size": [
-    69,
+    128,
     128
    ],
    "file": "u16_glowmoss_essence.png",
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "post": "style_fix_v3: 1 px alpha erode + rim pulled to outline colour, fit 116 centred on 128"
   },
   "u16_shard": {
    "rect_src": [
-    688,
-    6,
-    1018,
-    335
+    742,
+    80,
+    899,
+    305
    ],
-   "scale": 0.502,
+   "scale": 0.569,
    "size": [
-    82,
+    128,
     128
    ],
    "file": "u16_shard.png",
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "post": "style_fix_v3: 1 px alpha erode + rim pulled to outline colour, fit 116 centred on 128"
   },
   "u16_trinket_ring": {
    "rect_src": [
-    6,
-    347,
-    335,
-    620
+    104,
+    389,
+    293,
+    581
    ],
-   "scale": 0.688,
+   "scale": 0.667,
    "size": [
-    125,
+    128,
     128
    ],
    "file": "u16_trinket_ring.png",
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "post": "style_fix_v3: 1 px alpha erode + rim pulled to outline colour, fit 116 centred on 128"
   },
   "u16_trinket_amulet": {
    "rect_src": [
-    347,
-    347,
-    676,
-    640
+    414,
+    346,
+    651,
+    602
    ],
-   "scale": 0.465,
+   "scale": 0.5,
    "size": [
-    78,
+    128,
     128
    ],
    "file": "u16_trinket_amulet.png",
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "post": "style_fix_v3: 1 px alpha erode + rim pulled to outline colour, fit 116 centred on 128"
   },
   "u16_trinket_charm": {
    "rect_src": [
-    688,
-    347,
-    1018,
-    676
+    721,
+    339,
+    909,
+    618
    ],
-   "scale": 0.437,
+   "scale": 0.459,
    "size": [
-    79,
+    128,
     128
    ],
    "file": "u16_trinket_charm.png",
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "post": "style_fix_v3: 1 px alpha erode + rim pulled to outline colour, fit 116 centred on 128"
   },
   "u16_return_talisman": {
    "rect_src": [
-    6,
-    688,
-    335,
-    1018
+    74,
+    649,
+    297,
+    935
    ],
-   "scale": 0.476,
+   "scale": 0.448,
    "size": [
-    100,
+    128,
     128
    ],
    "file": "u16_return_talisman.png",
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "post": "style_fix_v3: 1 px alpha erode + rim pulled to outline colour, fit 116 centred on 128"
   },
   "u16_heal_potion": {
    "rect_src": [
-    347,
-    688,
-    676,
-    1018
+    398,
+    648,
+    601,
+    927
    ],
-   "scale": 0.536,
+   "scale": 0.459,
    "size": [
-    87,
+    128,
     128
    ],
    "file": "u16_heal_potion.png",
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "post": "style_fix_v3: 1 px alpha erode + rim pulled to outline colour, fit 116 centred on 128"
   },
   "u16_mosscrown_tusk": {
    "rect_src": [
-    688,
-    688,
-    1018,
-    1018
+    686,
+    686,
+    1020,
+    1020
    ],
-   "scale": 0.471,
+   "scale": 0.529,
    "size": [
     128,
-    106
+    128
    ],
    "file": "u16_mosscrown_tusk.png",
-   "spec": "U16"
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "post": "style_fix_v3: 1 px alpha erode + rim pulled to outline colour, fit 116 centred on 128"
   }
  }
 }

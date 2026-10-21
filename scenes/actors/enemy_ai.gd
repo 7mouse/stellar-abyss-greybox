@@ -280,7 +280,7 @@ func start_return(reason: String) -> void:
 	release()
 	e.hitbox.end()
 	e.warn.visible = false
-	e.aim_line.visible = false
+	e.dismiss_telegraph()
 	e.body.color = e.tint
 	_regen_acc = 0.0
 	e._go(EnemyBase.S.RETURN)

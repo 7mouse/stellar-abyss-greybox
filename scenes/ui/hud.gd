@@ -38,6 +38,7 @@ var skill2_btn: Button
 var pause_dim: ColorRect
 var pause_label: Label
 var pause_box: VBoxContainer
+var quality_frame: ColorRect
 var _toast_t := 0.0
 var _we_paused := false
 
@@ -55,6 +56,14 @@ func _ready() -> void:
 	channel_label = UI.label(self, "", Vector2(620, 740), 26, Color(0.55, 0.95, 0.9))
 	info = UI.label(self, "", Vector2(0, 0), 8)
 	info.visible = false
+	quality_frame = ColorRect.new()
+	quality_frame.name = "quality_frame"
+	quality_frame.position = Vector2(1508, 68)
+	quality_frame.size = Vector2(48, 48)
+	quality_frame.color = Color(0.93, 0.74, 0.28, 1)
+	quality_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	quality_frame.visible = false
+	add_child(quality_frame)
 	show_boss(null)
 
 func _build_status() -> void:
@@ -255,6 +264,12 @@ func _prof_process(delta: float) -> void:
 		for st in r.equipped:
 			names.append("◆ " + st.item.display_name)
 		boons_label.text = "\n".join(names)
+	if quality_frame:
+		var carry := Game.recall != null and Game.recall.carrying()
+		quality_frame.visible = carry
+		if carry:
+			var qmat := QualityFrame.apply(quality_frame, "gold")
+			qmat.set_shader_parameter("time_sec", Time.get_ticks_msec() / 1000.0)
 
 func skill_text() -> String:
 	return skill_label.text

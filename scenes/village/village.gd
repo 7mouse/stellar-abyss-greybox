@@ -49,6 +49,7 @@ var _intro_visit := false
 var _settings: CanvasLayer
 
 func _ready() -> void:
+	y_sort_enabled = true
 	layout = load(LAYOUT_PATH)
 	var map_size := Vector2(layout.map_w, layout.map_h)
 	UI.rect(self, Vector2.ZERO, map_size, Color(0.16, 0.19, 0.15)).z_index = -10
@@ -62,6 +63,7 @@ func _ready() -> void:
 	if mid:
 		for id in MID_IDS:
 			_place(id, true)
+	_standing_tree()
 	player = Player.new()
 	player.position = Vector2(layout.mid_spawn_x, layout.mid_spawn_y) if mid else Vector2(layout.spawn_x, layout.spawn_y)
 	add_child(player)
@@ -92,6 +94,7 @@ func _ready() -> void:
 		_recall_facilities()
 	if not Lineage.flags.get("opening_seen", false):
 		play_opening(false)
+	_refresh_title()
 
 func _wall(r: Rect2) -> void:
 	var sb := StaticBody2D.new()
@@ -152,12 +155,33 @@ func _callback(id: String) -> Callable:
 			return func(): pass
 
 func _fac(id: String, n: String, pos: Vector2, size: Vector2, color: Color, cb: Callable, blocked := false, reason := "") -> void:
-	var rect := UI.rect(self, pos - size / 2, size, color)
-	rect.z_index = -5
+	var foot := Node2D.new()
+	foot.position = Vector2(pos.x, pos.y + size.y * 0.5)
+	add_child(foot)
+	var rect := UI.rect(foot, Vector2(-size.x * 0.5, -size.y), size, color)
 	if blocked:
 		rect.modulate = Color(0.4, 0.4, 0.4)
-	UI.label(self, n, pos + Vector2(-size.x / 2, -size.y / 2 - 40), 24)
+	var tag := UI.label(self, n, pos + Vector2(-size.x / 2, -size.y / 2 - 40), 24)
+	tag.z_index = 30
+	tag.z_as_relative = false
+	var crown_h := size.y * 0.62
+	var crown_w := size.x * 1.05
+	var crown_rect := Rect2(pos.x - crown_w * 0.5, pos.y - size.y * 0.5 - crown_h * 0.45, crown_w, crown_h)
+	var crown := CrownOccluder.new()
+	add_child(crown)
+	crown.setup(crown_rect, color.lightened(0.12))
 	facilities.append({"id": id, "name": n, "pos": pos, "size": size, "cb": cb, "rect": rect, "blocked": blocked, "reason": reason})
+
+func _standing_tree() -> void:
+	var pos := Vector2(220, 200)
+	var base_size := Vector2(72, 28)
+	var foot := Node2D.new()
+	foot.position = Vector2(pos.x, pos.y + base_size.y * 0.5)
+	add_child(foot)
+	UI.rect(foot, Vector2(-base_size.x * 0.5, -base_size.y), base_size, Color(0.32, 0.2, 0.1))
+	var crown := CrownOccluder.new()
+	add_child(crown)
+	crown.setup(Rect2(pos.x - 52, pos.y - 150, 104, 132), Color(0.2, 0.48, 0.18, 0.92))
 
 func facility(id: String) -> Dictionary:
 	for f in facilities:
@@ -180,12 +204,17 @@ func _dist_to_rect(p: Vector2, r: Rect2) -> float:
 	var q := Vector2(clampf(p.x, r.position.x, r.end.x), clampf(p.y, r.position.y, r.end.y))
 	return p.distance_to(q)
 
-func _process(delta: float) -> void:
+func _refresh_title() -> void:
+	if title_label == null:
+		return
 	var ind := Lineage.current()
 	var head := "起程村"
 	if Game.run and Game.run.suspended:
 		head = layout.mid_title % Game.run.depth
 	title_label.text = "%s　%s　Lv%d　萤苔 %d　萤苔精 %d　记忆碎片 %d　保险箱 %d/%d" % [head, ind.name, ind.level, Lineage.mats.moss, Lineage.mats.moss_essence, Lineage.shards_bank, Lineage.vault.size(), Lineage.vault_capacity()]
+
+func _process(delta: float) -> void:
+	_refresh_title()
 	var f := nearest()
 	prompt.text = ("【%s】%s" % [InputGlyph.interact(), f.name]) if not f.is_empty() and panel_open == null and opening == null else ""
 	_toast_t -= delta

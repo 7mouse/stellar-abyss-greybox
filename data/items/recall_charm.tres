@@ -7,5 +7,6 @@ script = ExtResource("s")
 id = "recall_charm"
 display_name = "紧急回村符"
 category = "key_item"
+quality = "gold"
 color = Color(0.95, 0.78, 0.35, 1)
 stat_mods = {}

@@ -468,8 +468,15 @@ func _draw_landmark(lm: Dictionary) -> void:
 		"lm_fallen_tree":
 			if lm.has("bar"):
 				var bar: Rect2 = lm.bar
-				var r := UI.rect(self, bar.position, bar.size, Color(0.28, 0.16, 0.08))
-				r.z_index = -6
+				var foot := Node2D.new()
+				foot.position = Vector2(bar.position.x + bar.size.x * 0.5, bar.position.y + bar.size.y)
+				world.add_child(foot)
+				UI.rect(foot, Vector2(-bar.size.x * 0.5, -bar.size.y), bar.size, Color(0.28, 0.16, 0.08))
+				var crown_h := maxf(64.0, bar.size.y * 1.6)
+				var crown_w := maxf(80.0, bar.size.x * 0.55)
+				var crown := CrownOccluder.new()
+				world.add_child(crown)
+				crown.setup(Rect2(bar.get_center().x - crown_w * 0.5, bar.position.y - crown_h * 0.8, crown_w, crown_h), Color(0.22, 0.48, 0.18, 0.9))
 			for b in lm.get("bushes", []):
 				var bush := UI.rect(self, b - Vector2(16, 12), Vector2(32, 24), Color(0.18, 0.42, 0.16))
 				bush.z_index = -6

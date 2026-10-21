@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Presentation" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/presentation.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+occluder_alpha = 0.5
+occluder_fade_sec = 0.15
+rim_ramp_sec = 0.3
+flow_speed = 0.25

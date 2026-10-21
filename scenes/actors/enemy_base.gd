@@ -32,6 +32,9 @@ var body: ColorRect
 var visual: Sprite2D
 var warn: Label
 var aim_line: Line2D
+var attack_tele: TelegraphShape
+var col_shape: ConvexPolygonShape2D
+var _tele_strike_frame := -1
 var size := Vector2(40, 48)
 var tint := Color.WHITE
 var last_windup_sec := -1.0 ## 测试：上一次前摇实际时长
@@ -88,9 +91,9 @@ func _ready() -> void:
 	collision_layer = 4
 	collision_mask = 1
 	var cs := CollisionShape2D.new()
-	var sh := CircleShape2D.new()
-	sh.radius = size.x * 0.4
-	cs.shape = sh
+	col_shape = ConvexPolygonShape2D.new()
+	col_shape.points = ellipse_points(size)
+	cs.shape = col_shape
 	add_child(cs)
 	body = ColorRect.new()
 	body.size = size
@@ -121,6 +124,9 @@ func _ready() -> void:
 	aim_line.default_color = Color(1, 0.3, 0.3, 0.7)
 	aim_line.visible = false
 	add_child(aim_line)
+	attack_tele = TelegraphShape.new()
+	attack_tele.visible = false
+	add_child(attack_tele)
 	hurtbox = Hurtbox.new()
 	hurtbox.team = "enemy"
 	hurtbox.rx = size.x * 0.5
@@ -165,6 +171,13 @@ func feel_flash(ms: int, moss := false, _redwhite := false) -> void:
 	feel_moss = moss
 
 func _prof_physics_process(delta: float) -> void:
+	if _tele_strike_frame >= 0 and Engine.get_physics_frames() > _tele_strike_frame:
+		_tele_strike_frame = -1
+		if attack_tele:
+			attack_tele.visible = false
+	if bounce_ring != null and bounce_ring.strike_frame >= 0 and Engine.get_physics_frames() > bounce_ring.strike_frame and _bounce_phase != "air":
+		bounce_ring.strike_frame = -1
+		bounce_ring.visible = false
 	feel_flash_t = maxf(0.0, feel_flash_t - delta)
 	if state == S.DEAD:
 		return
@@ -201,15 +214,20 @@ func _prof_physics_process(delta: float) -> void:
 			velocity = Vector2.ZERO
 			warn.visible = state_t >= telegraph_delay
 			body.color = tint.lerp(Color(1, 0.25, 0.2), 0.6)
+			var striking := state_t >= windup - 0.0001
+			if _uses_body_telegraph():
+				_sync_attack_tele(striking)
+			elif attack_tele:
+				attack_tele.visible = false
 			_sync_bounce_ring()
-			if data.id == "rootshot":
-				aim_line.visible = true
-				aim_line.points = PackedVector2Array([Vector2.ZERO, attack_dir * 900])
-			if state_t >= windup - 0.0001:
+			if striking:
 				last_windup_sec = state_t
 				warn.visible = false
-				aim_line.visible = false
+				if aim_line:
+					aim_line.visible = false
 				body.color = tint
+				if _uses_body_telegraph():
+					_tele_strike_frame = Engine.get_physics_frames()
 				_begin_attack()
 		S.ATTACK:
 			_tick_attack(delta)
@@ -422,7 +440,7 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		poise_acc = 0.0
 		hitbox.end()
 		warn.visible = false
-		aim_line.visible = false
+		dismiss_telegraph()
 		body.color = tint
 		_hurt_len = maxf(data.hurt_sec, stagger)
 		velocity = knockback / 0.2
@@ -585,7 +603,9 @@ func _sync_bounce_ring() -> void:
 	var at := _land_pos if _bounce_phase == "air" else _bounce_aim()
 	bounce_ring.global_position = at
 	bounce_ring.radius = elite_affix.bounce_radius
+	bounce_ring.windup = elite_affix.bounce_windup
 	bounce_ring.fill = 1.0 if _bounce_phase == "air" else clampf(state_t / maxf(0.01, windup), 0.0, 1.0)
+	bounce_ring.strike_frame = -1
 	bounce_ring.queue_redraw()
 
 func _tick_bounce(delta: float) -> void:
@@ -611,7 +631,7 @@ func _bounce_land() -> void:
 	_bounce_phase = "limp"
 	_limp_left = elite_affix.bounce_recover
 	if bounce_ring:
-		bounce_ring.visible = false
+		bounce_ring.flash_strike()
 	var dmg := bounce_damage()
 	for p in get_tree().get_nodes_in_group("player"):
 		if not is_instance_valid(p):
@@ -622,11 +642,73 @@ func _bounce_land() -> void:
 				away = attack_dir
 			p.take_hit(dmg, self, away.normalized() * 140.0)
 
+static func ellipse_points(sz: Vector2) -> PackedVector2Array:
+	var hw := sz.x * 0.9 * 0.5
+	var hh := hw * 0.6
+	var pts := PackedVector2Array()
+	for i in 12:
+		var ang := TAU * float(i) / 12.0
+		pts.append(Vector2(cos(ang) * hw, sin(ang) * hh))
+	return pts
+
+func _uses_body_telegraph() -> bool:
+	return not _bouncing
+
+func dismiss_telegraph() -> void:
+	_tele_strike_frame = -1
+	if aim_line:
+		aim_line.visible = false
+	if attack_tele:
+		attack_tele.visible = false
+
+func _sync_attack_tele(strike: bool) -> void:
+	if attack_tele == null or data == null:
+		return
+	var prog := clampf(state_t / maxf(0.01, windup), 0.0, 1.0)
+	attack_tele.visible = true
+	attack_tele.fill = prog
+	var ramp := Presentation.data().rim_ramp_sec
+	attack_tele.rim_alpha = 1.0 if strike else TelegraphShape.rim_from_fill(prog, windup, ramp, false)
+	if data.id == "rootshot":
+		attack_tele.kind = "line"
+		attack_tele.length = 900.0
+		attack_tele.width = 16.0
+		attack_tele.rotation = attack_dir.angle()
+	else:
+		attack_tele.kind = "circle"
+		attack_tele.rotation = 0.0
+		if data.id == "mushling":
+			attack_tele.radius = size.x * 0.5 + 14.0
+		else:
+			attack_tele.radius = data.attack_range + 20.0
+	if aim_line:
+		aim_line.visible = false
+	attack_tele.refresh()
+
 class BounceRing extends Node2D:
 	var radius := 100.0
 	var fill := 0.0
+	var windup := 0.8
+	var strike_frame := -1
+	var shape: TelegraphShape
+
+	func _ready() -> void:
+		shape = TelegraphShape.new()
+		add_child(shape)
+
+	func flash_strike() -> void:
+		visible = true
+		fill = 1.0
+		strike_frame = Engine.get_physics_frames()
+		queue_redraw()
 
 	func _draw() -> void:
-		var a := 0.18 + 0.17 * clampf(fill, 0.0, 1.0)
-		draw_circle(Vector2.ZERO, radius, Color(0.478, 0.165, 0.165, a))
-		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 40, Color(0.784, 0.345, 0.29, 0.4 + 0.45 * clampf(fill, 0.0, 1.0)), 3.0)
+		if shape == null:
+			return
+		shape.kind = "circle"
+		shape.radius = radius
+		shape.fill = fill
+		var ramp := Presentation.data().rim_ramp_sec
+		var striking := strike_frame >= 0 and Engine.get_physics_frames() <= strike_frame
+		shape.rim_alpha = 1.0 if striking else TelegraphShape.rim_from_fill(fill, windup, ramp, false)
+		shape.refresh()

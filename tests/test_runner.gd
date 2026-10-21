@@ -100,6 +100,7 @@ func _run() -> void:
 	await test_hit_feel()
 	await test_tutorial()
 	await test_epitaph_0000()
+	await test_presentation()
 	print("\n结果：%d 通过，%d 失败" % [passes, fails])
 	Lineage.wipe()
 	Log.clear()
@@ -2275,6 +2276,7 @@ func test_nav_chase() -> void:
 			await frames(2)
 			rs._shoot(Vector2.LEFT)
 			await secs(0.6)
+			await frames(1)
 			check(get_tree().get_nodes_in_group("projectiles").is_empty(), "根须孢子菇朝墙开火，子弹在墙上消失")
 			rs.queue_free()
 		Game.god_mode = false
@@ -3513,5 +3515,137 @@ func test_epitaph_0000() -> void:
 	check(wall.blank_0000 != null and wall.blank_0000.text == lore.slot_text, "读过后墙上有 #0000 空位")
 	wall.close()
 	await frames(2)
+	Game.god_mode = false
+
+# ---------------- T11 遮挡、预警、品质 ----------------
+func test_presentation() -> void:
+	print("== T11 遮挡和预警 ==")
+	var pres: Presentation = load("res://data/presentation.tres")
+	check(is_equal_approx(pres.occluder_alpha, 0.5) and is_equal_approx(pres.occluder_fade_sec, 0.15) and is_equal_approx(pres.rim_ramp_sec, 0.3) and is_equal_approx(pres.flow_speed, 0.25), "顶冠 0.5、渐隐 0.15 秒，边缘 0.3 秒，金流光 0.25")
+	check(DP.find_editor(pres, "occluder_alpha") != null and DP.find_editor(pres, "flow_speed") != null, "顶冠和流光在 F1 可调")
+	check(is_equal_approx(TelegraphShape.rim_from_fill(0.0, 0.8, 0.3, false), 0.4), "前摇前段边缘光 0.4")
+	check(is_equal_approx(TelegraphShape.rim_from_fill(1.0, 0.8, 0.3, false), 0.85), "前摇结束边缘光 0.85")
+	check(is_equal_approx(TelegraphShape.rim_from_fill(1.0, 0.8, 0.3, true), 1.0), "出手帧边缘光 1.0")
+	await make_arena()
+	var e := await make_enemy("mushling", Vector2(480, 0), 50)
+	var hw := e.size.x * 0.9 * 0.5
+	var hh := hw * 0.6
+	var max_x := 0.0
+	var max_y := 0.0
+	for pt in e.col_shape.points:
+		max_x = maxf(max_x, absf(pt.x))
+		max_y = maxf(max_y, absf(pt.y))
+	check(e.col_shape.points.size() == 12 and is_equal_approx(max_x, hw) and is_equal_approx(max_y, hh), "碰撞椭圆宽 %.1f（体型宽 ×0.9），高是宽的 0.6" % (hw * 2.0))
+	check(is_equal_approx(e.nav.radius, e.size.x * 0.4), "寻路半径仍是体型宽 ×0.4")
+	var shape := TelegraphShape.new()
+	arena.add_child(shape)
+	await frames(1)
+	shape.fill = 1.0
+	shape.kind = "line"
+	shape.length = 900.0
+	shape.rim_alpha = 0.85
+	shape.refresh()
+	var base_c: Color = shape.mat.get_shader_parameter("base_color")
+	var rim_c: Color = shape.mat.get_shader_parameter("rim_color")
+	check(absf(base_c.r - 122.0 / 255.0) < 0.002 and absf(base_c.g - 42.0 / 255.0) < 0.002 and is_equal_approx(base_c.a, 0.35), "预警底色 #7A2A2A，填满时透明度 0.35")
+	check(absf(rim_c.r - 200.0 / 255.0) < 0.002 and absf(rim_c.b - 74.0 / 255.0) < 0.002 and is_equal_approx(rim_c.a, 0.85), "边缘光 #C8584A")
+	e.windup = 3.0
+	e.attack_dir = Vector2.RIGHT
+	e._go(EnemyBase.S.WINDUP)
+	await frames(2)
+	check(e.attack_tele != null and e.attack_tele.visible and e.attack_tele.kind == "circle" and is_equal_approx(e.attack_tele.radius, e.size.x * 0.5 + 14.0), "野猪前摇圈和打击半径一致")
+	var rs := await make_enemy("rootshot", Vector2(-240, 40), 50)
+	rs.windup = 3.0
+	rs.attack_dir = Vector2.LEFT
+	rs._go(EnemyBase.S.WINDUP)
+	await frames(2)
+	check(rs.attack_tele.visible and rs.attack_tele.kind == "line" and is_equal_approx(rs.attack_tele.length, 900.0), "孢子菇预警线长 900")
+	e.aggro = false
+	rs.aggro = false
+	e._go(EnemyBase.S.IDLE)
+	rs._go(EnemyBase.S.IDLE)
+	e.dismiss_telegraph()
+	rs.dismiss_telegraph()
+	var tele := Guard.BossTelegraph.new()
+	arena.add_child(tele)
+	tele.kind = "lines"
+	tele.length = 360.0
+	tele.width = 60.0
+	tele.dirs = [Vector2.RIGHT, Vector2.RIGHT.rotated(deg_to_rad(30.0)), Vector2.RIGHT.rotated(deg_to_rad(-30.0))]
+	tele.fill = 1.0
+	tele.sync(0.8)
+	await frames(1)
+	var line0 := tele.get_child(0) as TelegraphShape
+	check(tele.get_child_count() == 3 and line0 != null and line0.kind == "line" and is_equal_approx(line0.length, 360.0) and is_equal_approx(line0.width, 60.0) and is_equal_approx(line0.rim_alpha, 0.85), "层主根刺三条，线的长宽跟判定一样")
+	tele.flash_then_hide()
+	check(tele.visible and is_equal_approx((tele.get_child(0) as TelegraphShape).rim_alpha, 1.0), "出手那一帧边缘闪到 1")
+	await frames(3)
+	check(not tele.visible, "闪完预警消失")
+	Engine.time_scale = 1.0
+	var crown := CrownOccluder.new()
+	arena.add_child(crown)
+	crown.setup(Rect2(0, 0, 200, 100), Color(0.25, 0.5, 0.22))
+	var p := await make_player(Vector2(100, 8))
+	await secs(0.25)
+	check(crown.shown > 0.9, "脚在顶冠上沿外时保持不透明（%.2f）" % crown.shown)
+	p.global_position = Vector2(100, 60)
+	check(await until(func(): return crown.shown <= pres.occluder_alpha + 0.05, 0.6), "走进去后渐到半透明（%.2f）" % crown.shown)
+	p.global_position = Vector2(500, 400)
+	check(await until(func(): return crown.shown >= 0.9, 0.6), "走出来恢复（%.2f）" % crown.shown)
+	p.try_skill()
+	await frames(2)
+	var mat := p.sprite.material as ShaderMaterial
+	var glow_ok := mat != null and mat.shader != null and str(mat.shader.resource_path).ends_with("skill_windup.gdshader")
+	var ga := Color.WHITE
+	var gb := Color.WHITE
+	if glow_ok:
+		ga = mat.get_shader_parameter("glow_a") as Color
+		gb = mat.get_shader_parameter("glow_b") as Color
+	check(glow_ok and ga != Color.WHITE and gb != Color.WHITE and ga.r < 0.95 and gb.g < 0.9, "技能 1 蓄势从青过渡到苔绿，不是纯白")
+	p.state = Player.S.IDLE
+	p.phase = ""
+	p.skill_cd_left = 0.0
+	p.skill2_cd_left = 0.0
+	await frames(2)
+	p.try_skill2()
+	await frames(2)
+	check(p.state == Player.S.SKILL and p.sprite.material is ShaderMaterial, "技能 2 蓄势用同一套光")
+	p.state = Player.S.IDLE
+	p.phase = ""
+	p.skill2_cd_left = 0.0
+	await frames(2)
+	p.try_attack()
+	await frames(2)
+	check(p.state == Player.S.ATTACK and p.phase == "windup" and p.sprite.material == null, "普通攻击没有蓄势光")
+	var charm: ItemData = load("res://data/items/recall_charm.tres")
+	var moss_item: ItemData = load("res://data/items/moss.tres")
+	var fang: ItemData = load("res://data/items/moss_fang.tres")
+	check(charm.quality == "gold" and QualityFrame.tier_of(charm) == "gold", "回村符是金级")
+	check(QualityFrame.tier_of(moss_item) == "moss" and QualityFrame.tier_of(fang) == "purple", "材料苔绿，稀有材料紫")
+	var frame := ColorRect.new()
+	frame.size = Vector2(48, 48)
+	arena.add_child(frame)
+	var qmat := QualityFrame.apply(frame, "gold")
+	check(is_equal_approx(float(qmat.get_shader_parameter("tier")), 4.0) and is_equal_approx(float(qmat.get_shader_parameter("flow_speed")), 0.25), "金框着色，流光速度 0.25")
+	QualityFrame.apply(frame, "grey")
+	check(is_equal_approx(float(qmat.get_shader_parameter("tier")), 0.0), "灰框是第 0 级")
+	arena.queue_free()
+	arena = null
+	await frames(2)
+	Lineage.flags["opening_seen"] = true
+	Game.run = null
+	Game.goto(Game.SCN_VILLAGE)
+	check(await wait_scene(Game.SCN_VILLAGE), "回村看建筑排序")
+	var village := scene()
+	var crowns := 0
+	for c in village.get_children():
+		if c is CrownOccluder:
+			crowns += 1
+	check(village.y_sort_enabled and crowns > village.facilities.size(), "村落按脚底排序，建筑和树都有顶冠（%d）" % crowns)
+	Game.god_mode = true
+	Game.start_run()
+	check(await wait_scene(Game.SCN_FLOOR), "进层看脚底排序")
+	var f := scene()
+	check(f.world.y_sort_enabled and f.hud.quality_frame != null and f.hud.quality_frame.name == "quality_frame", "楼层 Y 排序开着，HUD 留了品质框")
 	Game.god_mode = false
 

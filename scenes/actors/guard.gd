@@ -65,6 +65,9 @@ func effective_interval() -> float:
 func uses_lord_moves() -> bool:
 	return gdata != null and gdata.charge_len > 0.0
 
+func _uses_body_telegraph() -> bool:
+	return not uses_lord_moves() and super._uses_body_telegraph()
+
 func _ready() -> void:
 	super._ready()
 	hitbox.source_name = gdata.display_name
@@ -135,6 +138,7 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		hitbox.end()
 		warn.visible = false
 		aim_line.visible = false
+		_hide_telegraph()
 		body.color = tint
 		if gdata.p2_attack_interval > 0.0:
 			attack_interval = gdata.p2_attack_interval
@@ -277,7 +281,7 @@ func _begin_attack() -> void:
 	if move_id == "":
 		return
 	_go(S.ATTACK)
-	_hide_telegraph()
+	_hide_telegraph(true)
 	match move_id:
 		"A":
 			charge_left = gdata.charge_len
@@ -502,17 +506,24 @@ func _show_telegraph(mv: String) -> void:
 			tele.kind = "wedge"
 			tele.radius = gdata.gore_radius
 	tele.visible = true
+	tele.striking = false
+	tele.sync(windup)
 	tele.queue_redraw()
 
 func _sync_telegraph() -> void:
-	if tele == null or not tele.visible:
+	if tele == null or not tele.visible or tele.striking:
 		return
 	tele.fill = clampf(state_t / maxf(0.01, windup), 0.0, 1.0)
+	tele.sync(windup)
 	tele.queue_redraw()
 
-func _hide_telegraph() -> void:
-	if tele:
-		tele.visible = false
+func _hide_telegraph(strike := false) -> void:
+	if tele == null:
+		return
+	if strike and tele.visible:
+		tele.flash_then_hide()
+		return
+	tele.cancel()
 
 class BossTelegraph:
 	extends Node2D
@@ -523,26 +534,67 @@ class BossTelegraph:
 	var arc_deg := 150.0
 	var dirs: Array = []
 	var fill := 0.0
+	var striking := false
+	var windup_sec := 0.8
+	var _hold := 0
+	var _shapes: Array[TelegraphShape] = []
+
+	func sync(p_windup: float) -> void:
+		windup_sec = p_windup
+		_paint()
+
+	func flash_then_hide() -> void:
+		striking = true
+		visible = true
+		_hold = 2
+		_paint()
+
+	func cancel() -> void:
+		_hold = 0
+		striking = false
+		visible = false
+
+	func _process(_delta: float) -> void:
+		if _hold <= 0:
+			return
+		_hold -= 1
+		if _hold == 0:
+			visible = false
+			striking = false
 
 	func _draw() -> void:
-		var a := lerpf(0.18, 0.35, clampf(fill, 0.0, 1.0))
-		var base := Color(122.0 / 255.0, 42.0 / 255.0, 42.0 / 255.0, a)
-		var rim := Color(200.0 / 255.0, 88.0 / 255.0, 74.0 / 255.0, lerpf(0.4, 0.85, clampf(fill, 0.0, 1.0)))
-		match kind:
-			"line", "lines":
-				for d in dirs:
-					var tip: Vector2 = d * length
-					draw_line(Vector2.ZERO, tip, base, width)
-					draw_line(Vector2.ZERO, tip, rim, 4.0)
-			"circle":
-				draw_circle(Vector2.ZERO, radius, base)
-				draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, rim, 4.0)
-			"wedge":
-				var dir: Vector2 = dirs[0] if not dirs.is_empty() else Vector2.RIGHT
-				var ang := dir.angle()
-				var half := deg_to_rad(arc_deg * 0.5)
-				var pts := PackedVector2Array([Vector2.ZERO])
-				for i in 16:
-					pts.append(Vector2.from_angle(ang - half + half * 2.0 * float(i) / 15.0) * radius)
-				draw_colored_polygon(pts, base)
-				draw_arc(Vector2.ZERO, radius, ang - half, ang + half, 24, rim, 4.0)
+		_paint()
+
+	func _paint() -> void:
+		var n := 1
+		if kind == "line" or kind == "lines":
+			n = maxi(1, dirs.size())
+		while _shapes.size() < n:
+			var made := TelegraphShape.new()
+			add_child(made)
+			_shapes.append(made)
+		var ramp := Presentation.data().rim_ramp_sec
+		for i in _shapes.size():
+			var s: TelegraphShape = _shapes[i]
+			s.visible = i < n and visible
+			if i >= n:
+				continue
+			s.fill = fill
+			s.rim_alpha = 1.0 if striking else TelegraphShape.rim_from_fill(fill, windup_sec, ramp, false)
+			if kind == "circle":
+				s.kind = "circle"
+				s.radius = radius
+				s.rotation = 0.0
+			elif kind == "wedge":
+				s.kind = "wedge"
+				s.radius = radius
+				s.arc_deg = arc_deg
+				var aim: Vector2 = dirs[0] if not dirs.is_empty() else Vector2.RIGHT
+				s.rotation = aim.angle()
+			else:
+				s.kind = "line"
+				s.length = length
+				s.width = width
+				var d: Vector2 = dirs[i] if i < dirs.size() else Vector2.RIGHT
+				s.rotation = d.angle()
+			s.refresh()

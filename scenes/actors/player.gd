@@ -47,9 +47,13 @@ var kb_vel := Vector2.ZERO
 var _mouse_aim_t := -10.0
 var input_enabled := true
 var sim_move := Vector2.ZERO ## 测试注入
+const SKILL_GLOW := preload("res://shaders/skill_windup.gdshader")
+const GLOW_A := Color(0.811765, 0.901961, 0.933333)
+const GLOW_B := Color(0.372549, 0.658824, 0.627451)
 var sim_aim := Vector2.ZERO
 var body_rect: ColorRect
 var sprite: Sprite2D
+var _skill_mat: ShaderMaterial
 var depth := 1
 
 func _ready() -> void:
@@ -336,13 +340,26 @@ func _prof_physics_process(delta: float) -> void:
 	body_rect.modulate.a = 0.35 if (iframe_left > 0.0 and state != S.DASH and int(flash_t * 20) % 2 == 0) else 1.0
 	body_rect.color = Color(0.55, 0.8, 1.0) if state == S.DASH else Color(0.3, 0.6, 1.0)
 	if sprite:
-		var tint := Color(0.75, 0.9, 1.2) if state == S.DASH else Color.WHITE
-		if state == S.DEAD:
-			tint = Color(0.4, 0.4, 0.45)
-		if hit_flash_t > 0.0:
-			tint = Color(1, 0.28, 0.28) if int(Time.get_ticks_msec() / 40) % 2 == 0 else Color(4, 4, 4)
-		sprite.modulate = tint
-		sprite.modulate.a = body_rect.modulate.a
+		var skill_wind := state == S.SKILL and phase == "windup" and atk != null
+		if skill_wind:
+			if _skill_mat == null:
+				_skill_mat = ShaderMaterial.new()
+				_skill_mat.shader = SKILL_GLOW
+				_skill_mat.set_shader_parameter("glow_a", GLOW_A)
+				_skill_mat.set_shader_parameter("glow_b", GLOW_B)
+			sprite.material = _skill_mat
+			_skill_mat.set_shader_parameter("fill", clampf(phase_t / maxf(0.001, atk.windup), 0.0, 1.0))
+			sprite.modulate = Color(1, 1, 1, body_rect.modulate.a)
+		else:
+			if sprite.material == _skill_mat:
+				sprite.material = null
+			var tint := Color(0.75, 0.9, 1.2) if state == S.DASH else Color.WHITE
+			if state == S.DEAD:
+				tint = Color(0.4, 0.4, 0.45)
+			if hit_flash_t > 0.0:
+				tint = Color(1, 0.28, 0.28) if int(Time.get_ticks_msec() / 40) % 2 == 0 else Color(4, 4, 4)
+			sprite.modulate = tint
+			sprite.modulate.a = body_rect.modulate.a
 		if absf(facing.x) > 0.2:
 			sprite.flip_h = facing.x < 0.0
 

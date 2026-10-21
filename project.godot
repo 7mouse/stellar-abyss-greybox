@@ -10,6 +10,7 @@ config/features=PackedStringArray("4.7")
 [autoload]
 
 Settings="*res://autoload/settings.gd"
+Audio="*res://autoload/audio.gd"
 Log="*res://autoload/log.gd"
 Lineage="*res://autoload/lineage.gd"
 Game="*res://autoload/game.gd"

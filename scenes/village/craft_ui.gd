@@ -15,6 +15,7 @@ func _fill() -> void:
 
 func _craft() -> void:
 	if Game.recall.craft():
+		Audio.sfx("SFX-49")
 		var v := get_parent()
 		if v and v.has_method("show_toast"):
 			v.show_toast("做成了" + Game.recall.display_name)

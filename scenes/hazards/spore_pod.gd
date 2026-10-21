@@ -19,6 +19,7 @@ func _tick(_delta: float) -> void:
 func burst() -> void:
 	if spent:
 		return
+	Audio.sfx("SFX-23")
 	get_parent().add_child(SporeCloud.make(global_position, hd))
 	if hd.noise_px > 0.0:
 		NoiseBus.emit(global_position, hd.noise_px, "spore")

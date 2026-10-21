@@ -9,6 +9,7 @@ var box: VBoxContainer
 var body: VBoxContainer
 
 func _ready() -> void:
+	Audio.sfx("SFX-43")
 	layer = 50
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = true
@@ -61,6 +62,7 @@ func _unhandled_input(e: InputEvent) -> void:
 func close() -> void:
 	if is_queued_for_deletion():
 		return
+	Audio.sfx("SFX-43")
 	get_tree().paused = false
 	closed.emit()
 	queue_free()

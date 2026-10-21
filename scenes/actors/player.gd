@@ -44,6 +44,7 @@ var _lunge_left := 0.0
 var _lunge_dir := Vector2.RIGHT
 var hurt_t := 0.0
 var kb_vel := Vector2.ZERO
+var _step_t := 0.0
 var _mouse_aim_t := -10.0
 var input_enabled := true
 var sim_move := Vector2.ZERO ## 测试注入
@@ -276,6 +277,7 @@ func try_dash() -> bool:
 	state = S.DASH
 	HitFeedback.play_dash()
 	NoiseBus.emit_kind(global_position, "dash")
+	Audio.sfx("SFX-07")
 	Tutorial.notify("dash")
 	return true
 
@@ -302,7 +304,10 @@ func _prof_physics_process(delta: float) -> void:
 	skill2_cd_left = maxf(0.0, skill2_cd_left - delta)
 	combo_timer = maxf(0.0, combo_timer - delta)
 	for k in dash_cd.size():
+		var prev_cd := dash_cd[k]
 		dash_cd[k] = maxf(0.0, dash_cd[k] - delta)
+		if prev_cd > 0.0 and dash_cd[k] <= 0.0:
+			Audio.sfx("SFX-08")
 	match state:
 		S.DEAD:
 			velocity = Vector2.ZERO
@@ -362,6 +367,17 @@ func _prof_physics_process(delta: float) -> void:
 			sprite.modulate.a = body_rect.modulate.a
 		if absf(facing.x) > 0.2:
 			sprite.flip_h = facing.x < 0.0
+	if state == S.MOVE:
+		_step_t -= delta
+		if _step_t <= 0.0:
+			_step_t = 0.36
+			Audio.sfx("SFX-01")
+	else:
+		_step_t = 0.12
+	if state != S.DEAD and max_hp > 0 and float(hp) / float(max_hp) < 0.25:
+		Audio.loop("SFX-10")
+	else:
+		Audio.stop_loop("SFX-10")
 
 func _tick_attack(delta: float) -> void:
 	phase_t += delta
@@ -379,6 +395,7 @@ func _tick_attack(delta: float) -> void:
 		hitbox.width = atk.width
 		hitbox.poise_dmg_mult = atk.poise_dmg_mult
 		hitbox.is_heavy = atk.is_heavy
+		_sfx_swing()
 		if atk.lunge_px > 0.0:
 			_lunge_left = atk.lunge_px
 			_lunge_dir = facing
@@ -408,6 +425,14 @@ func _tick_attack(delta: float) -> void:
 		phase = ""
 		if attack_buffered:
 			_start_attack()
+
+func _sfx_swing() -> void:
+	if state == S.SKILL:
+		Audio.sfx("SFX-53" if atk == Game.skill2 else "SFX-06")
+	elif combo_i >= 2:
+		Audio.sfx("SFX-03")
+	else:
+		Audio.sfx("SFX-02")
 
 func _on_hit_landed(_t: Node, _dmg: int) -> void:
 	NoiseBus.emit_kind(global_position, "combat")
@@ -447,8 +472,12 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 	if hp <= 0:
 		state = S.DEAD
 		body_rect.color = Color(0.3, 0.3, 0.35)
+		Audio.sfx("SFX-11")
+		Audio.player_dead()
 		died.emit(sname)
 		return true
+	if real > 0:
+		Audio.sfx("SFX-09")
 	state = S.HURT
 	hurt_t = 0.15
 	var dir := knockback.normalized() if knockback.length() > 0.01 else Vector2.ZERO

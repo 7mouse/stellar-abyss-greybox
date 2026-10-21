@@ -5,6 +5,10 @@ extends EnemyBase
 ## 其它层：狂暴 / 召唤（每 10 秒发芽野猪）/ 硬壳 / 孢子，沿用模板攻击。
 ## 二阶段：HP 降到 phase2_hp_ratio 时演出（无敌），之后加 phase2_affix。
 
+func _sfx_death() -> void:
+	Audio.sfx("SFX-30")
+	Audio.boss_dead()
+
 signal phase2_started
 signal summon_requested(enemy_id: String, count: int)
 
@@ -146,6 +150,9 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		_go(S.RECOVER)
 		phase2_started.emit()
 		HitFeedback.on_boss_phase(self)
+		Audio.sfx("SFX-29")
+		if max_hp > 0:
+			Audio.notify_boss_hp(float(hp) / float(max_hp))
 	return ok
 
 ## 冲撞预警线亮起的那一帧把线传进来。教学只闪第一次。
@@ -238,6 +245,7 @@ func start_move(mv: String) -> void:
 	_show_telegraph(mv)
 	if mv == "A" and tele:
 		hook_charge_telegraph(tele as CanvasItem)
+		Audio.sfx("SFX-25")
 	_go(S.WINDUP)
 
 func abort_move() -> void:
@@ -284,12 +292,16 @@ func _begin_attack() -> void:
 	_hide_telegraph(true)
 	match move_id:
 		"A":
+			Audio.sfx("SFX-26")
 			charge_left = gdata.charge_len
 		"B":
+			Audio.sfx("SFX-27")
 			_resolve_spikes()
 		"C":
+			Audio.sfx("SFX-28")
 			_resolve_summon()
 		"D":
+			Audio.sfx("SFX-51")
 			_resolve_gore()
 
 func _tick_attack(delta: float) -> void:
@@ -338,6 +350,7 @@ func _finish_move() -> void:
 func _begin_stun() -> void:
 	if stun_left > 0.0:
 		return
+	Audio.sfx("SFX-26")
 	stun_left = gdata.charge_wall_stun
 	stun_elapsed = 0.0
 	charge_left = 0.0

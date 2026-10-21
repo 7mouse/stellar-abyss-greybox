@@ -73,6 +73,7 @@ func _ready() -> void:
 	_section("线索", "#0000 墓志铭 epitaph_0000.tres", load("res://data/lore/epitaph_0000.tres"))
 	_section("村落", "village_layout.tres", load("res://data/village_layout.tres"))
 	_section("画面", "presentation.tres", load("res://data/presentation.tres"))
+	_section("音频", "music_rules.tres", load("res://data/audio/music_rules.tres"))
 	_section("回村符", "紧急回村符 recall_charm.tres", g.recall)
 	_section("打击感", "hit_feel.tres", g.hit_feel)
 	_section("教学", "tutorial_rules.tres", load("res://data/tutorial/tutorial_rules.tres"))

@@ -24,7 +24,10 @@ func _physics_process(delta: float) -> void:
 		return
 	var p := get_tree().get_first_node_in_group("player")
 	var list: Array = get_tree().get_nodes_in_group("enemies")
-	if p: list.append(p)
+	if p:
+		list.append(p)
+		if p.global_position.distance_to(global_position) <= radius:
+			Audio.hold("SFX-24", "Ambience")
 	for a in list:
 		if is_instance_valid(a) and a.global_position.distance_to(global_position) <= radius and a.has_method("apply_hazard_slow"):
 			a.apply_hazard_slow(slow_pct, 0.15)

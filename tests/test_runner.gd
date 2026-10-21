@@ -101,6 +101,7 @@ func _run() -> void:
 	await test_tutorial()
 	await test_epitaph_0000()
 	await test_presentation()
+	test_audio()
 	print("\n结果：%d 通过，%d 失败" % [passes, fails])
 	Lineage.wipe()
 	Log.clear()
@@ -3648,4 +3649,85 @@ func test_presentation() -> void:
 	var f := scene()
 	check(f.world.y_sort_enabled and f.hud.quality_frame != null and f.hud.quality_frame.name == "quality_frame", "楼层 Y 排序开着，HUD 留了品质框")
 	Game.god_mode = false
+
+func test_audio() -> void:
+	Audio.step_manual = true
+	var rules: MusicRules = Audio.rules
+	check(rules != null and is_equal_approx(rules.combat_in_sec, 0.8) and is_equal_approx(rules.combat_out_sec, 4.0) and is_equal_approx(rules.combat_range, 800.0) and is_equal_approx(rules.death_cut_sec, 0.3) and is_equal_approx(rules.boss_hp_ratio, 0.5), "音乐参数：战斗淡入 0.8、脱战 4 秒、距离 800、死亡切断 0.3、层主半血")
+	check(AudioServer.get_bus_index("Music") >= 0 and AudioServer.get_bus_index("SFX") >= 0 and AudioServer.get_bus_index("Ambience") >= 0, "总线有音乐、音效、环境")
+	Audio.enter_floor()
+	check(Audio.bed_id == "BGM-02" and Audio.bed_gain < 0.05 and not Audio.reduced, "进层从 BGM-02 淡入")
+	Audio.tick(rules.explore_fade_sec)
+	check(Audio.bed_gain > 0.95, "两秒后探索层满音量（%.2f）" % Audio.bed_gain)
+	Audio.set_combat_pressure(true)
+	Audio.tick(rules.combat_in_sec)
+	check(Audio.combat_gain > 0.95 and Audio.bed_id == "BGM-02", "追击中 0.8 秒叠上战斗层（%.2f）" % Audio.combat_gain)
+	Audio.set_combat_pressure(false)
+	Audio.tick(rules.combat_out_sec)
+	check(Audio.combat_gain > 0.9, "脱战等待期间战斗层还在（%.2f）" % Audio.combat_gain)
+	Audio.tick(rules.combat_fade_sec)
+	check(Audio.combat_gain < 0.05, "再过两秒战斗层淡出（%.2f）" % Audio.combat_gain)
+	Audio.enter_boss()
+	Audio.bar_t = 0.0
+	check(Audio.boss_id == "" and Audio.mode == "boss", "进层主区先不响 04，等小节")
+	Audio.tick(rules.boss_fade_sec)
+	check(Audio.bed_gain < 0.05 and Audio.combat_gain < 0.05, "1.5 秒淡出探索和战斗层")
+	Audio.tick(rules.bar_sec)
+	check(Audio.boss_id == "BGM-04" and Audio.boss_gain > 0.95, "小节头进入 BGM-04")
+	Audio.notify_boss_hp(0.49)
+	check(Audio.boss_id == "BGM-04", "半血当帧还是 04")
+	Audio.tick(rules.bar_sec)
+	check(Audio.boss_id == "BGM-04b", "下一个小节切到 04b")
+	Audio.boss_dead()
+	check(Audio.boss_id == "" and Audio.mode == "silence", "层主死亡立刻停 04")
+	Audio.tick(rules.boss_silence_sec)
+	check(Audio.bed_id == "BGM-02" and Audio.lowpass > 0.9 and Audio.bed_gain < 0.05, "静默 1 秒后回到探索层并低通")
+	Audio.tick(rules.lowpass_sec)
+	check(Audio.lowpass < 0.05, "低通两秒后恢复（%.2f）" % Audio.lowpass)
+	Audio.extract_success()
+	check(Audio.sting_id == "BGM-05", "撤离成功播 BGM-05")
+	Audio.enter_floor()
+	Audio.tick(0.5)
+	Audio.player_dead()
+	Audio.tick(rules.death_cut_sec)
+	check(Audio.bed_gain < 0.05 and Audio.combat_gain < 0.05 and Audio.boss_gain < 0.05 and Audio.sting_id == "BGM-06", "死亡 0.3 秒切断后播 BGM-06")
+	Audio.enter_village(true)
+	check(Audio.bed_id == "BGM-01" and Audio.reduced and Audio.bed_gain <= rules.reduced_gain + 0.001, "回村中途是降配的 BGM-01")
+	Audio.enter_floor()
+	check(Audio.bed_id == "BGM-02" and Audio.bed_gain < 0.05 and not Audio.reduced, "返回原层后 BGM-02 重新开始")
+	var prev_music := Settings.vol_music
+	Settings.set_bus_volume("music", 0.0)
+	check(AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Music")) <= -60.0, "音乐音量能关死，写在 settings.cfg")
+	Settings.set_bus_volume("music", prev_music)
+	var blob := _audio_sources()
+	var missing := PackedStringArray()
+	for i in 53:
+		var id := "SFX-%02d" % [i + 1]
+		if not blob.contains('"%s"' % id):
+			missing.append(id)
+	check(missing.is_empty(), "音效触发 %d/53，缺 %s" % [53 - missing.size(), ", ".join(missing)])
+	Audio.step_manual = false
+
+func _audio_sources() -> String:
+	var out := ""
+	var dirs: Array[String] = ["res://"]
+	var i := 0
+	while i < dirs.size():
+		var dir: String = dirs[i]
+		i += 1
+		var d := DirAccess.open(dir)
+		if d == null:
+			continue
+		for raw in d.get_directories():
+			var name := str(raw)
+			if name == "tests" or name == "legacy_greybox1" or name.begins_with("."):
+				continue
+			dirs.append(dir.path_join(name))
+		for raw in d.get_files():
+			var fname := str(raw)
+			if not fname.ends_with(".gd"):
+				continue
+			out += FileAccess.get_file_as_string(dir.path_join(fname))
+			out += "\n"
+	return out
 

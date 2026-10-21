@@ -94,6 +94,8 @@ func _ready() -> void:
 		_recall_facilities()
 	if not Lineage.flags.get("opening_seen", false):
 		play_opening(false)
+	Audio.enter_village(Game.run != null and Game.run.suspended)
+	Audio.loop("SFX-46", "Ambience")
 	_refresh_title()
 
 func _wall(r: Rect2) -> void:
@@ -237,12 +239,14 @@ func interact() -> bool:
 	if f.is_empty():
 		return false
 	if f.get("blocked", false):
+		Audio.sfx("SFX-44")
 		show_toast(str(f.reason))
 		return true
 	f.cb.call()
 	return true
 
 func _epitaph() -> void:
+	Audio.sfx("SFX-42")
 	var wall: Panel2 = _open("res://scenes/village/epitaph_wall.gd")
 	var mid := Game.run != null and Game.run.suspended
 	wall.set("read_only", mid)
@@ -313,6 +317,7 @@ func _flash_epitaph() -> void:
 	tw.tween_property(rect, "modulate", Color.WHITE, 0.45)
 
 func _dive() -> void:
+	Audio.sfx("SFX-50")
 	if Game.run and Game.run.suspended:
 		_return_floor()
 		return

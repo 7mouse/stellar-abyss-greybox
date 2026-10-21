@@ -69,6 +69,8 @@ func _ready() -> void:
 	if Game.run == null:
 		Game.start_run.call_deferred()
 		return
+	Audio.enter_floor()
+	Audio.loop("SFX-47", "Ambience")
 	depth = Game.run.depth
 	Game.recall.settle_on_floor_entry()
 	fd = Game.floor_data(depth)
@@ -548,10 +550,19 @@ func _prof_physics_process(delta: float) -> void:
 	if player == null or not is_instance_valid(player) or Game.run == null:
 		return
 	var fighting := false
+	var press := false
+	var reach: float = Audio.rules.combat_range
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if e.state != EnemyBase.S.IDLE and e.state != EnemyBase.S.RETURN and e.state != EnemyBase.S.PATROL and e.state != EnemyBase.S.ALERT:
 			fighting = true
+		if e.state == EnemyBase.S.CHASE and e.global_position.distance_to(player.global_position) <= reach:
+			press = true
+		if fighting and press:
 			break
+	if not Audio.step_manual:
+		Audio.set_combat_pressure(press)
+		if guard and is_instance_valid(guard) and guard.max_hp > 0 and guard.state != EnemyBase.S.DEAD:
+			Audio.notify_boss_hp(float(guard.hp) / float(guard.max_hp))
 	if fighting and Game.run.floor_stats.has("combat_sec"):
 		Game.run.floor_stats.combat_sec += delta
 	# 交战次数（CSV encounters）：脱战超过 encounter_gap_sec 后再进入战斗算新的一次
@@ -682,6 +693,7 @@ func _read_epitaph() -> void:
 	if _epitaph_reading:
 		return
 	_epitaph_reading = true
+	Audio.sfx("SFX-42")
 	var lore: EpitaphLore = load("res://data/lore/epitaph_0000.tres")
 	var fresh := not EpitaphLore.was_read()
 	if epitaph_line == null:
@@ -706,6 +718,7 @@ func _read_epitaph() -> void:
 func _use_campfire(key: String) -> void:
 	used[key] = true
 	Tutorial.notify("fire")
+	Audio.loop("SFX-36", "Ambience")
 	var n := roundi(player.max_hp * fd.campfire_heal)
 	player.heal(n)
 	hud.show_toast("篝火回复 %d HP" % n)
@@ -713,6 +726,7 @@ func _use_campfire(key: String) -> void:
 func _open_chest(key: String, vis: ColorRect = null) -> void:
 	used[key] = true
 	Tutorial.notify("loot")
+	Audio.sfx("SFX-31")
 	NoiseBus.emit_kind(player.global_position, "chest")
 	if vis:
 		vis.color = Color(0.4, 0.35, 0.2)
@@ -728,6 +742,8 @@ func _open_chest(key: String, vis: ColorRect = null) -> void:
 func _take_node(key: String, vis: ColorRect = null) -> void:
 	used[key] = true
 	Tutorial.notify("loot")
+	Audio.loop("SFX-35", "Ambience")
+	get_tree().create_timer(2.5, true, true).timeout.connect(func() -> void: Audio.stop_loop("SFX-35"))
 	if vis:
 		vis.color = Color(0.2, 0.3, 0.25)
 	Game.run.floor_stats["nodes_taken"] = int(Game.run.floor_stats.get("nodes_taken", 0)) + 1
@@ -772,6 +788,7 @@ func _enter_guard_zone() -> void:
 	if guard != null or guard_dead or not is_inside_tree():
 		return
 	_set_fence(true)
+	Audio.enter_boss()
 	spawn_guard()
 	guard_zone_entered.emit()
 
@@ -807,6 +824,8 @@ func _on_summon(eid: String, n: int) -> void:
 		var pos := zone_point(160.0)
 		if eid == "piglet" and guard != null:
 			pos = guard.global_position + Vector2.from_angle(TAU * float(i) / maxf(1.0, float(n))) * 120.0
+		if eid == "piglet":
+			Audio.sfx("SFX-52")
 		var e := spawn_enemy(eid, pos, "summon")
 		e.set_meta("summoned", true)
 		e.set_meta("lord", guard.get_instance_id() if guard else 0)
@@ -848,6 +867,7 @@ func _on_guard_died(_g: EnemyBase) -> void:
 		return
 	_set_fence(false)
 	exit_active = true
+	Audio.sfx("SFX-37")
 	exit_activated_at = Time.get_ticks_msec() / 1000.0
 	exit_activated.emit()
 	hud.show_toast("撤离点已亮起")
@@ -885,6 +905,8 @@ func choose_exit(descend: bool) -> bool:
 		Game.descend()
 	else:
 		Game.log_floor("extract")
+		Audio.sfx("SFX-38")
+		Audio.extract_success()
 		Game.extract()
 	return true
 
@@ -931,6 +953,7 @@ func try_recall() -> bool:
 	channel_t = 0.0
 	player.input_enabled = false
 	player.velocity = Vector2.ZERO
+	Audio.sfx("SFX-39")
 	return true
 
 func interrupt_recall() -> void:
@@ -938,6 +961,7 @@ func interrupt_recall() -> void:
 		return
 	channeling = false
 	channel_t = 0.0
+	Audio.sfx("SFX-40")
 	if player:
 		player.input_enabled = true
 	Game.run.floor_stats["charm_interrupted"] = int(Game.run.floor_stats.get("charm_interrupted", 0)) + 1

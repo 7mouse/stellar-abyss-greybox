@@ -28,6 +28,12 @@ var unbossed_open := 0 ## 当前这条楼层日志上，层主没死就存进村
 var floor_memory := {} ## depth -> {seed, killed, picked, guard_dead, corpse_taken}
 
 func add_item(st: ItemStack) -> void:
+	if st.item.id == RecallCharm.ITEM_ID or st.item.category == "key_item":
+		Audio.sfx("SFX-34")
+	elif st.item.category == "rare_material" or st.item.category == "shard":
+		Audio.sfx("SFX-33")
+	elif st.item.category == "material":
+		Audio.sfx("SFX-32")
 	if st.item.category == "shard":
 		shards_carried += st.count
 		return

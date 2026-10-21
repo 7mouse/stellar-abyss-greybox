@@ -53,6 +53,7 @@ var speed_mult := 1.0
 var xp_mult := 1.0
 var _elite_ready := false
 var _elite_introduced := false
+var _elite_voiced := false
 var _atk_i := 0
 var _bouncing := false
 var _bounce_phase := "" ## air / limp
@@ -247,13 +248,42 @@ func _prof_physics_process(delta: float) -> void:
 
 var _hurt_len := 0.3
 
+func _lord() -> bool:
+	return has_method("uses_lord_moves") and bool(call("uses_lord_moves"))
+
 func _go(s: int) -> void:
 	state = s
 	state_t = 0.0
+	if s == S.ALERT and data != null and data.id == "mushling" and not _lord():
+		Audio.sfx("SFX-12")
+	if s == S.CHASE and elite_affix != null and not _elite_voiced:
+		_elite_voiced = true
+		Audio.sfx("SFX-20")
 	if s == S.WINDUP:
 		_prepare_attack()
+		_sfx_windup()
 		if target != null and is_instance_valid(target) and global_position.distance_to(target.global_position) <= Tutorial.rules.dash_threat_px:
 			Tutorial.notify("threat")
+
+func _sfx_death() -> void:
+	if data != null and data.id == "piglet":
+		Audio.sfx("SFX-52")
+	else:
+		Audio.sfx("SFX-19")
+
+func _sfx_windup() -> void:
+	if _lord() or data == null:
+		return
+	if _bouncing:
+		Audio.sfx("SFX-21")
+		return
+	match data.id:
+		"mushling":
+			Audio.sfx("SFX-13")
+		"rootshot":
+			Audio.sfx("SFX-14")
+		"shellbug":
+			Audio.sfx("SFX-16")
 
 
 ## 环境机关减速（孢子云 −30%、缠根 −40%）：取持续中最强的一个
@@ -343,6 +373,8 @@ func _chase(delta: float) -> void:
 		_go(S.WINDUP)
 
 func _begin_attack() -> void:
+	if not _bouncing and data != null and data.id == "shellbug":
+		Audio.sfx("SFX-17")
 	_go(S.ATTACK)
 	_atk_i += 1
 	if _bouncing and elite_affix:
@@ -374,6 +406,7 @@ func _shoot(dir: Vector2) -> void:
 	p.source_name = data.display_name
 	p.position = global_position + dir * 20
 	get_parent().add_child(p)
+	Audio.sfx("SFX-15")
 
 func _tick_attack(delta: float) -> void:
 	if _bouncing:
@@ -416,10 +449,13 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		real = roundi(dmg * back_mult)
 	if moss_affix and moss_down <= 0.0 and moss_affix.dmg_taken_mult > 0.0:
 		real = roundi(float(real) * moss_affix.dmg_taken_mult)
+	var broke_poise := false
 	if moss_affix and moss_affix.break_by_heavy and _hit_is_heavy(src) and moss_down <= 0.0 and moss_lock <= 0.0:
 		moss_down = moss_affix.break_sec
+		broke_poise = true
 		Tutorial.on_thickmoss_broken()
 		HitFeedback.play("armor_break", self)
+	Audio.sfx("SFX-05" if (data != null and data.id == "shellbug") else "SFX-04")
 	hp = maxi(0, hp - real)
 	DamageNumber.spawn(get_parent(), global_position, real, Color(1, 0.95, 0.5) if real > dmg else Color.WHITE)
 	Log.write("hits", [Game.run.id if Game.run else "", depth, "主角", data.display_name, real, false])
@@ -430,13 +466,18 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 	if slow > 0.0:
 		slow_left = maxf(slow_left, slow)
 	if hp <= 0:
+		if broke_poise:
+			Audio.sfx("SFX-18")
 		_die()
 		return true
 	var poise_mult := 1.0
 	if src and src.get("poise_dmg_mult") != null:
 		poise_mult = float(src.poise_dmg_mult)
 	poise_acc += real * poise_mult
+	var had_poise := poise > 0.0
 	if poise_acc >= poise or stagger > 0.0:
+		if had_poise or stagger > 0.0:
+			broke_poise = true
 		poise_acc = 0.0
 		hitbox.end()
 		warn.visible = false
@@ -450,6 +491,8 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 	elif knockback.length() > 1.0 and is_physics_processing():
 		## 没破韧也按资源击退一截。关掉物理的测试假人停在原地。
 		move_and_collide(knockback)
+	if broke_poise:
+		Audio.sfx("SFX-18")
 	return true
 
 func _die() -> void:
@@ -457,6 +500,7 @@ func _die() -> void:
 		ai.release()
 		NoiseBus.emit_kind(global_position, "death")
 	HitFeedback.on_killed(self)
+	_sfx_death()
 	_go(S.DEAD)
 	hitbox.end()
 	remove_from_group("enemies")
@@ -626,6 +670,7 @@ func _tick_bounce(delta: float) -> void:
 			_end_attack()
 
 func _bounce_land() -> void:
+	Audio.sfx("SFX-22")
 	global_position = _land_pos
 	invulnerable = false
 	_bounce_phase = "limp"

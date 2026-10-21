@@ -19,6 +19,7 @@ func _ready() -> void:
 	add_child(label)
 
 func flash(text: String) -> void:
+	Audio.sfx("SFX-41")
 	last_text = text
 	label.text = text
 	label.visible = true

@@ -104,6 +104,7 @@ func gain_xp(x: int) -> void:
 	run.xp += x
 	if level() > before:
 		run.hp += max_hp() - old_max
+		Audio.sfx("SFX-45")
 
 ## 撤离：全部带回 → 结算（放入保险箱）
 func extract() -> void:
@@ -225,6 +226,7 @@ func store_bag(id: String) -> bool:
 		Lineage.mats[id] = int(Lineage.mats.get(id, 0)) + n
 		Lineage.save()
 		note_run_store(true, it.category, n)
+		Audio.sfx("SFX-48")
 		return true
 	if id == RecallCharm.ITEM_ID:
 		return store_charm(run.sealed_count(id) > 0, false)
@@ -234,6 +236,7 @@ func store_bag(id: String) -> bool:
 		return false
 	run.take_item(id, 1)
 	note_run_store(true, it.category, 1)
+	Audio.sfx("SFX-48")
 	return true
 
 ## 背包里的 1 张回村符存进仓库或保险箱。存进去就解开封印
@@ -250,6 +253,7 @@ func store_charm(sealed: bool, to_vault: bool) -> bool:
 		run.add_item(ItemStack.new(Items.get_item(RecallCharm.ITEM_ID), 1, sealed, ""))
 		return false
 	note_run_store(true, "key_item", 1)
+	Audio.sfx("SFX-48")
 	return true
 
 func hitstop(sec: float) -> void:

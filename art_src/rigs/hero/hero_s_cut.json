@@ -1,0 +1,286 @@
+{
+ "source": "/workspace/art/rigs/hero/src/hero_s_partsheet_gen1.jpg",
+ "out_dir": "/workspace/art/rigs/hero",
+ "base": "hero_parts_s_v1",
+ "canvas2x": 512,
+ "disp_scale": 1.25,
+ "pose_box": [
+  400,
+  2,
+  576,
+  321
+ ],
+ "parts": [
+  {
+   "name": "hair_back_s",
+   "pick": [
+    275,
+    380
+   ],
+   "box": [
+    438,
+    6,
+    570,
+    92
+   ]
+  },
+  {
+   "name": "head_s",
+   "pick": [
+    110,
+    420
+   ],
+   "box": [
+    442,
+    8,
+    572,
+    130
+   ],
+   "erase_red": true
+  },
+  {
+   "name": "torso_s_mesh",
+   "pick": [
+    385,
+    470
+   ],
+   "box": [
+    473,
+    112,
+    550,
+    238
+   ]
+  },
+  {
+   "name": "scarf_s_mesh",
+   "pick": [
+    500,
+    470
+   ],
+   "box": [
+    402,
+    105,
+    542,
+    198
+   ]
+  },
+  {
+   "name": "arm_upper_r_s",
+   "pick": [
+    600,
+    370
+   ],
+   "box": [
+    475,
+    120,
+    505,
+    175
+   ]
+  },
+  {
+   "name": "forearm_r_s",
+   "pick": [
+    607,
+    480
+   ],
+   "box": [
+    471,
+    170,
+    505,
+    230
+   ]
+  },
+  {
+   "name": "arm_upper_l_s",
+   "pick": [
+    670,
+    370
+   ],
+   "box": [
+    512,
+    120,
+    540,
+    170
+   ]
+  },
+  {
+   "name": "forearm_l_s",
+   "pick": [
+    680,
+    480
+   ],
+   "box": [
+    515,
+    168,
+    545,
+    222
+   ]
+  },
+  {
+   "name": "thigh_r_s",
+   "pick": [
+    838,
+    372
+   ],
+   "box": [
+    482,
+    212,
+    515,
+    256
+   ]
+  },
+  {
+   "name": "thigh_l_s",
+   "pick": [
+    920,
+    372
+   ],
+   "box": [
+    510,
+    212,
+    542,
+    254
+   ]
+  },
+  {
+   "name": "shin_r_s",
+   "pick": [
+    838,
+    485
+   ],
+   "box": [
+    472,
+    244,
+    526,
+    321
+   ]
+  },
+  {
+   "name": "shin_l_s",
+   "pick": [
+    928,
+    485
+   ],
+   "box": [
+    505,
+    244,
+    556,
+    316
+   ]
+  },
+  {
+   "name": "sword_s",
+   "pick": [
+    760,
+    480
+   ],
+   "box": [
+    443,
+    155,
+    580,
+    275
+   ],
+   "rotate": -45
+  },
+  {
+   "name": "backpack_s",
+   "source": "/workspace/art/rigs/hero/src/hero_fb_partsheet_gen1.jpg",
+   "pick": [
+    720,
+    370
+   ],
+   "box": [
+    440,
+    118,
+    482,
+    182
+   ]
+  }
+ ],
+ "order": [
+  "arm_upper_l_s",
+  "forearm_l_s",
+  "thigh_l_s",
+  "shin_l_s",
+  "backpack_s",
+  "hair_back_s",
+  "scarf_s_mesh",
+  "torso_s_mesh",
+  "thigh_r_s",
+  "shin_r_s",
+  "head_s",
+  "sword_s",
+  "arm_upper_r_s",
+  "forearm_r_s"
+ ],
+ "pivots": {
+  "neck": [
+   508,
+   124
+  ],
+  "shoulder_r": [
+   490,
+   138
+  ],
+  "elbow_r": [
+   490,
+   175
+  ],
+  "wrist_r": [
+   490,
+   215
+  ],
+  "shoulder_l": [
+   528,
+   138
+  ],
+  "elbow_l": [
+   530,
+   172
+  ],
+  "wrist_l": [
+   532,
+   212
+  ],
+  "hip_r": [
+   498,
+   215
+  ],
+  "knee_r": [
+   499,
+   252
+  ],
+  "ankle_r": [
+   500,
+   300
+  ],
+  "hip_l": [
+   525,
+   215
+  ],
+  "knee_l": [
+   526,
+   250
+  ],
+  "ankle_l": [
+   530,
+   298
+  ],
+  "scarf_root": [
+   505,
+   130
+  ],
+  "sword_grip": [
+   492,
+   218
+  ],
+  "backpack_anchor": [
+   478,
+   150
+  ],
+  "root": [
+   512,
+   318
+  ]
+ }
+}

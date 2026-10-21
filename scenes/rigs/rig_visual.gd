@@ -49,11 +49,20 @@ static var allow_view := true
 static var cull_far := true
 static var n_rig := 0
 static var n_draw := 0
-# Boars are the swarm. Draw them into a slightly smaller viewport (still above
-# screen resolution) and, when enemy_step > 1, refresh that viewport every Nth frame.
-# Hero and the boss stay full size and full rate. 1.0 / 1 is the unscaled path.
-static var enemy_scale := 0.75
+# Boars are the swarm. enemy_scale < 1 draws them into a smaller viewport and
+# scales the sprite back up. enemy_step > 1 refreshes that viewport every Nth frame.
+# outline_mode: 0 full ring, 1 cross, 2 off. Hero and the boss stay on the full ring.
+# 1.0 / 1 / 0 is the unscaled path.
+static var enemy_scale := 1.0
 static var enemy_step := 1
+static var outline_mode := 0
+# How many boar viewports may redraw in one frame. The rest keep their last pose.
+static var boar_budget := 2
+static var _spawn_frame := -1
+static var _spawns_left := 1
+static var _draw_frame := -1
+static var _draw_left := 0
+static var _seq := 0
 const CULL_MARGIN := 96.0
 
 var kind := "hero"
@@ -71,11 +80,24 @@ var _anim_pos := 0.0
 var _fit_k := -1.0
 var _glow: ShaderMaterial
 var _parked: Dictionary = {}
+var _warm: Array[String] = []
+var _rid := 0
+var _sprite: Sprite2D
+var _view: SubViewport
+var _posed := false
+var _pose_t := 0.0
+
+
+func _init() -> void:
+	_rid = _seq
+	_seq += 1
 
 
 func setup(k: String, world_h: float) -> void:
 	kind = k
 	_world_h = world_h
+	if kind == "boar":
+		_warm = ["f", "b"]
 	_mount("s")
 
 
@@ -95,10 +117,11 @@ func set_facing(dir: Vector2) -> void:
 	var code := _pick(dir)
 	if code == _code and _rig != null and _scene == _scene_key(code):
 		return
+	var scene_changed := _scene_key(code) != _scene or _rig == null
 	_code = code
-	_apply_scale()
 	# Left/right share one scene for boars and the boss; only the host scale flips.
-	# A real scene change waits until the rig is on screen, then reuses a parked copy.
+	if not scene_changed:
+		_apply_scale()
 	_sync_presence()
 
 
@@ -106,6 +129,7 @@ func set_anim(name: String) -> void:
 	if name == _anim:
 		return
 	_anim = name
+	_pose_t = 0.0
 	_play(name)
 
 
@@ -150,6 +174,46 @@ func _pick(dir: Vector2) -> String:
 	return "l" if d.x < 0.0 else "s"
 
 
+func wants_redraw() -> bool:
+	if kind != "boar":
+		return true
+	if boar_budget <= 0:
+		return false
+	if boar_budget >= 8:
+		return true
+	# Spread the ids so the same boars are not always the ones that redraw.
+	if (_rid + Engine.get_process_frames()) % 8 >= boar_budget:
+		return false
+	return _take_draw()
+
+
+func _take_draw() -> bool:
+	var frame := Engine.get_process_frames()
+	if frame != _draw_frame:
+		_draw_frame = frame
+		_draw_left = boar_budget
+	if _draw_left <= 0:
+		return false
+	_draw_left -= 1
+	return true
+
+
+func _spawn_limited() -> bool:
+	var vp := get_viewport()
+	return vp != null and vp.get_camera_2d() != null
+
+
+func _take_spawn() -> bool:
+	var frame := Engine.get_process_frames()
+	if frame != _spawn_frame:
+		_spawn_frame = frame
+		_spawns_left = 1
+	if _spawns_left <= 0:
+		return false
+	_spawns_left -= 1
+	return true
+
+
 func _scene_key(code: String) -> String:
 	if kind == "hero":
 		return code
@@ -168,24 +232,30 @@ func _mount(code: String) -> void:
 	var t := Prof.t0()
 	_busy = true
 	_code = code
-	_apply_scale()
 	var key := _scene_key(code)
-	if _rig and is_instance_valid(_rig) and _scene != key:
-		_stash(_rig)
-		_rig = null
-		_ap = null
-	if _rig == null or not is_instance_valid(_rig):
+	if _rig == null or not is_instance_valid(_rig) or _scene != key:
 		var reused := _parked.get(key) as Node2D
 		if reused and is_instance_valid(reused):
+			if _rig and is_instance_valid(_rig):
+				_stash(_rig)
 			_parked.erase(key)
 			_rig = reused
 			_scene = key
 			add_child(_rig)
 			_bind_player()
 			Prof.count("reuse")
+		elif kind == "boar" and _spawn_limited() and not _take_spawn():
+			# Several boars changing facing in one tick used to instantiate together.
+			_busy = false
+			return
 		else:
+			if _rig and is_instance_valid(_rig):
+				_stash(_rig)
+				_rig = null
+				_ap = null
 			_spawn(key)
 			Prof.count("spawn")
+	_apply_scale()
 	_anim_pos = 0.0
 	_shown = false
 	_fit_k = -1.0
@@ -235,22 +305,132 @@ func _stash(rig: Node2D) -> void:
 		_parked[_scene] = rig
 
 
-func _process(_dt: float) -> void:
+func _process(dt: float) -> void:
 	if _rig and is_instance_valid(_rig) and absf(_fit_k - _view_k()) > 0.001:
 		_fit_view()
 	_sync_presence()
+	_pump_warm()
+	_budget_view(dt)
+
+
+func _pump_warm() -> void:
+	# Build the other facings one per frame so a later turn does not instantiate on the spot.
+	if kind != "boar" or _warm.is_empty() or not _spawn_limited():
+		return
+	var key := _warm[0]
+	if key == _scene or _parked.has(key):
+		_warm.pop_front()
+		return
+	if not _take_spawn():
+		return
+	_warm.pop_front()
+	var face := key
+	var rig := BOAR_SCENES[face].instantiate() as Node2D
+	rig.process_mode = Node.PROCESS_MODE_DISABLED
+	var outline := rig.find_child("Outline", true, false) as Sprite2D
+	if outline and outline.material:
+		outline.material = outline.material.duplicate()
+	# Allocate the render target now, while this frame is still allowed to hitch.
+	add_child(rig)
+	_size_rig(rig, face)
+	var view := rig.find_child("View", true, false) as SubViewport
+	if view:
+		view.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		view.process_mode = Node.PROCESS_MODE_DISABLED
+	remove_child(rig)
+	_parked[key] = rig
+	Prof.count("warm")
 
 
 func _exit_tree() -> void:
 	var doomed: Array[Node] = []
 	if _rig and is_instance_valid(_rig) and _rig.get_parent() != self:
 		doomed.append(_rig)
+	if _view and is_instance_valid(_view) and _view.get_parent() == null:
+		doomed.append(_view)
 	for key in _parked.keys():
 		var n: Node = _parked[key]
 		if n and is_instance_valid(n) and n.get_parent() != self and not doomed.has(n):
 			doomed.append(n)
 	for n in doomed:
 		n.free()
+
+
+func _budget_view(dt: float) -> void:
+	if kind != "boar" or boar_budget >= 8 or not _spawn_limited():
+		return
+	if _rig == null or not is_instance_valid(_rig) or not _shown:
+		return
+	_lift_outline()
+	if _view == null or not is_instance_valid(_view):
+		_view = _rig.find_child("View", true, false) as SubViewport
+	var redraw := not _posed or wants_redraw()
+	_posed = true
+	if redraw:
+		_snap_pose()
+		if _view and _view.get_parent() != _rig:
+			_rig.add_child(_view)
+		if _view:
+			_view.process_mode = Node.PROCESS_MODE_INHERIT
+			_view.render_target_update_mode = SubViewport.UPDATE_ONCE
+		if _rig.has_method("external_tick"):
+			_rig.call("external_tick", dt, true)
+	else:
+		_pose_t += dt
+		if _view and _view.get_parent() == _rig:
+			_view.render_target_update_mode = SubViewport.UPDATE_DISABLED
+			_view.process_mode = Node.PROCESS_MODE_DISABLED
+			_rig.remove_child(_view)
+		if _rig.has_method("external_tick"):
+			_rig.call("external_tick", dt, false)
+
+
+func _snap_pose() -> void:
+	if _ap == null:
+		return
+	var use := _anim if _anim != "" and _ap.has_animation(_anim) else "idle"
+	if not _ap.has_animation(use):
+		return
+	if _ap.current_animation != use:
+		_ap.play(use)
+	var length := maxf(0.001, _ap.current_animation_length)
+	_ap.seek(fmod(_pose_t, length), true)
+
+
+func _lift_outline() -> void:
+	if _rig == null:
+		return
+	var outline := _rig.find_child("Outline", true, false) as Sprite2D
+	if outline == null:
+		return
+	if _sprite and is_instance_valid(_sprite) and _sprite != outline:
+		_sprite.queue_free()
+	var pos := outline.position
+	var sc := outline.scale
+	outline.reparent(self, true)
+	outline.position = pos
+	outline.scale = sc
+	_sprite = outline
+	if _view and _view.get_texture():
+		_sprite.texture = _view.get_texture()
+
+
+func _size_rig(rig: Node2D, face: String) -> void:
+	var view := rig.find_child("View", true, false) as SubViewport
+	var motion := rig.find_child("Motion", true, false) as Node2D
+	var outline := rig.find_child("Outline", true, false) as Sprite2D
+	if view == null or motion == null or outline == null:
+		return
+	var spec: Vector4 = VIEW["mushling_" + face]
+	var k := _view_k()
+	view.gui_disable_input = true
+	view.handle_input_locally = false
+	view.size = Vector2i(maxi(1, int(round(spec.x * k))), maxi(1, int(round(spec.y * k))))
+	motion.scale = Vector2(k, k)
+	motion.position = Vector2(spec.z, spec.w) * k
+	outline.scale = Vector2(1.0 / k, 1.0 / k)
+	outline.position = Vector2(spec.x * 0.5 - spec.z, spec.y * 0.5 - spec.w)
+	outline.texture = view.get_texture()
 
 
 func _in_camera() -> bool:
@@ -351,6 +531,8 @@ func _play(name: String) -> void:
 
 
 func _outline() -> Sprite2D:
+	if _sprite and is_instance_valid(_sprite):
+		return _sprite
 	if _rig == null:
 		return null
 	return _rig.find_child("Outline", true, false) as Sprite2D

@@ -12,9 +12,13 @@ var _blink_hold := 0.0
 var _anim_on := true
 var _ap: AnimationPlayer
 var _phase := 0
+var _outline_mode := -1
+var _outline_mat: ShaderMaterial
+var _full_shader: Shader
 # Feet can sit this far outside the camera before the body leaves the picture.
 const _MARGIN := 220.0
 const _BLINK_HOLD := 0.12
+const _CROSS := preload("res://assets/rigs/outline_cross.gdshader")
 
 
 func _ready() -> void:
@@ -66,6 +70,7 @@ func _process(dt: float) -> void:
 	if anim_on != _anim_on and _ap:
 		_anim_on = anim_on
 		_ap.process_mode = Node.PROCESS_MODE_INHERIT if anim_on else Node.PROCESS_MODE_DISABLED
+	_apply_outline()
 	RigVisual.n_rig += 1
 	if draw:
 		RigVisual.n_draw += 1
@@ -78,18 +83,60 @@ func _process(dt: float) -> void:
 	Prof.add("rig", t)
 
 
+func _apply_outline() -> void:
+	var host := get_parent()
+	if not (host is RigVisual) or (host as RigVisual).kind != "boar":
+		return
+	var mode := RigVisual.outline_mode
+	if mode == _outline_mode:
+		return
+	var outline := get_node_or_null("Outline") as Sprite2D
+	if outline == null:
+		return
+	if _outline_mat == null and outline.material is ShaderMaterial:
+		_outline_mat = outline.material as ShaderMaterial
+		_full_shader = _outline_mat.shader
+	if _outline_mat == null:
+		return
+	if mode == 3:
+		outline.visible = false
+	elif mode == 2:
+		outline.visible = true
+		outline.material = null
+	else:
+		outline.visible = true
+		_outline_mat.shader = _CROSS if mode == 1 else _full_shader
+		outline.material = _outline_mat
+	_outline_mode = mode
+
+
 func _full_rate() -> bool:
 	var host := get_parent()
 	if not (host is RigVisual):
 		return true
 	if (host as RigVisual).kind != "boar":
 		return true
-	return RigVisual.enemy_step <= 1
+	return RigVisual.enemy_step == 1
+
+
+func external_tick(dt: float, render: bool) -> void:
+	if render and RigVisual.allow_skin:
+		_skin()
+	if RigVisual.allow_blink:
+		_tick_blink(dt)
 
 
 func _due() -> bool:
+	var host := get_parent()
+	# Boars are scheduled by the host, which parks the viewport between redraws.
+	if host is RigVisual and (host as RigVisual).kind == "boar" and RigVisual.boar_budget < 8:
+		return false
+	if host is RigVisual and not (host as RigVisual).wants_redraw():
+		return false
 	if _full_rate():
 		return true
+	if RigVisual.enemy_step <= 0:
+		return false
 	var step := maxi(1, RigVisual.enemy_step)
 	return int(Engine.get_process_frames() + _phase) % step == 0
 

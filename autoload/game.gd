@@ -392,7 +392,11 @@ func _setup_web() -> void:
 		if a.size() > 6:
 			RigVisual.enemy_step = maxi(1, int(a[6]))
 		if a.size() > 7:
-			RigVisual.enemy_scale = clampf(float(a[7]), 0.5, 1.0))
+			RigVisual.enemy_scale = clampf(float(a[7]), 0.5, 1.0)
+		if a.size() > 8:
+			RigVisual.outline_mode = clampi(int(a[8]), 0, 3)
+		if a.size() > 9:
+			RigVisual.boar_budget = maxi(0, int(a[9])))
 	var cb_vis = JavaScriptBridge.create_callback(func(a):
 		var sc := get_tree().current_scene
 		if sc and sc.has_method("debug_set_visible"):

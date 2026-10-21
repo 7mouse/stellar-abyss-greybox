@@ -102,6 +102,7 @@ func _run() -> void:
 	await test_epitaph_0000()
 	await test_presentation()
 	test_audio()
+	await test_shop()
 	print("\n结果：%d 通过，%d 失败" % [passes, fails])
 	Lineage.wipe()
 	Log.clear()
@@ -3021,7 +3022,10 @@ func test_recall_charm() -> void:
 		await frames(2)
 	v.player.global_position = v.facility("shop").pos + Vector2(0, 70)
 	await frames(2)
-	check(v.interact() and v.panel_open == null and vlay.shop_closed in v.toast.text, "中途商店是占位：%s" % v.toast.text)
+	check(v.interact() and v.panel_open != null and v.panel_open.title == "补给商店", "中途可以打开补给商店")
+	if v.panel_open:
+		v.panel_open.close()
+		await frames(2)
 	v.player.global_position = v.facility("warehouse").pos + Vector2(0, 70)
 	await frames(2)
 	check(v.interact() and v.panel_open != null and v.panel_open.title == "仓库", "中途可以打开仓库")
@@ -3730,4 +3734,90 @@ func _audio_sources() -> String:
 			out += FileAccess.get_file_as_string(dir.path_join(fname))
 			out += "\n"
 	return out
+
+func test_shop() -> void:
+	var rules: ShopRules = load("res://data/shop_rules.tres")
+	check(is_equal_approx(rules.potion_heal_pct, 0.4) and rules.potion_price == 30 and rules.potion_limit_per_run == 2, "回血药回复四成生命，30 碎片，每局 2 瓶")
+	Lineage.flags["opening_seen"] = true
+	Game.run = Run.new()
+	Game.run.suspended = false
+	Game.run.shards_carried = 10
+	Game.run.hp = 100
+	Game.run.depth = 1
+	Game.goto(Game.SCN_VILLAGE)
+	check(await wait_scene(Game.SCN_VILLAGE), "正常进村看商店")
+	var v := scene()
+	v.player.global_position = v.facility("shop").pos + Vector2(0, 70)
+	await frames(2)
+	check(v.interact() and v.panel_open != null and v.panel_open.title == "补给商店", "正常局能打开补给商店")
+	var buy := _shop_buy(v.panel_open)
+	check(buy != null and buy.disabled and _shop_text(v.panel_open).contains(rules.reason_shards), "碎片不够时购买灰掉，并写原因")
+	Game.run.shards_carried = 100
+	v.panel_open.rebuild()
+	await frames(1)
+	buy = _shop_buy(v.panel_open)
+	check(buy != null and not buy.disabled, "碎片够的时候可以买")
+	buy.pressed.emit()
+	await frames(1)
+	check(Game.run.potions == 1 and Game.run.potions_bought == 1 and Game.run.shards_carried == 70, "买一瓶扣 30 碎片，记入本局")
+	v.player.hp = 50
+	v.player.max_hp = 100
+	Game.run.hp = 50
+	check(Game.drink_potion(v.player) and v.player.hp == 90 and Game.run.hp == 90 and Game.run.potions == 0, "喝掉回复最大生命的四成（50 到 90）")
+	v.panel_open.rebuild()
+	await frames(1)
+	buy = _shop_buy(v.panel_open)
+	buy.pressed.emit()
+	await frames(1)
+	check(Game.run.potions == 1 and Game.run.potions_bought == 2 and Game.run.shards_carried == 40, "第二瓶也能买")
+	v.panel_open.rebuild()
+	await frames(1)
+	buy = _shop_buy(v.panel_open)
+	check(buy != null and buy.disabled and _shop_text(v.panel_open).contains(rules.reason_limit), "买满后按钮灰掉，并写原因")
+	v.panel_open.close()
+	await frames(2)
+	Game.run.suspended = true
+	Game.goto(Game.SCN_VILLAGE)
+	check(await wait_scene(Game.SCN_VILLAGE), "中途再进村")
+	v = scene()
+	check(v.title_label.text.begins_with("中途返回"), "中途标题：%s" % v.title_label.text)
+	v.player.global_position = v.facility("shop").pos + Vector2(0, 70)
+	await frames(2)
+	check(v.interact() and v.panel_open != null, "中途回村也能打开商店")
+	buy = _shop_buy(v.panel_open)
+	check(buy != null and buy.disabled and _shop_text(v.panel_open).contains(rules.reason_limit), "限购按局计，中途不能再买")
+	Game.run.potions_bought = 1
+	Game.run.shards_carried = 30
+	v.panel_open.rebuild()
+	await frames(1)
+	buy = _shop_buy(v.panel_open)
+	check(buy != null and not buy.disabled, "中途没到上限时可以买")
+	buy.pressed.emit()
+	await frames(1)
+	check(Game.run.potions_bought == 2 and Game.run.shards_carried == 0 and Game.run.potions == 2, "中途购买同样扣碎片")
+	v.panel_open.close()
+	await frames(2)
+	Game.run.suspended = false
+	Game.run.hp = 90
+	Game.enter_floor(1)
+	check(await wait_scene(Game.SCN_FLOOR), "带着回血药下到第 1 层")
+	var f := scene()
+	await frames(2)
+	check(f.hud.potion_btn != null and f.hud.potion_btn.position.x < 200.0 and f.hud.potion_btn.position.y > 800.0 and f.hud.potion_count.text == "2", "回血药在左下消耗品格，数量是 2")
+	f.player.hp = 40
+	f.player.max_hp = 100
+	f.hud._press_potion()
+	check(f.player.hp == 80 and Game.run.potions == 1, "在楼层里喝掉一瓶，回复四成")
+
+func _shop_buy(panel: Node) -> Button:
+	for b in panel.find_children("*", "Button", true, false):
+		if str(b.text).begins_with("购买"):
+			return b
+	return null
+
+func _shop_text(panel: Node) -> String:
+	var t := ""
+	for l in panel.find_children("*", "Label", true, false):
+		t += str(l.text)
+	return t
 

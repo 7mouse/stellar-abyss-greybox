@@ -39,6 +39,8 @@ var pause_dim: ColorRect
 var pause_label: Label
 var pause_box: VBoxContainer
 var quality_frame: ColorRect
+var potion_btn: Button
+var potion_count: Label
 var _toast_t := 0.0
 var _we_paused := false
 
@@ -118,10 +120,11 @@ func _build_status() -> void:
 	pause_label.z_index = 2
 
 func _build_actions() -> void:
-	var pot := _btn(Vector2(28, 948), Vector2(104, 104), "potion", func(): show_toast("还没有消耗品"))
-	pot.text = ""
-	var count := UI.label(pot, "0", Vector2(64, 64), 22, CREAM)
-	count.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	potion_btn = _btn(Vector2(28, 948), Vector2(104, 104), "potion", _press_potion)
+	potion_btn.name = "potion"
+	potion_btn.text = ""
+	potion_count = UI.label(potion_btn, "0", Vector2(64, 64), 22, CREAM)
+	potion_count.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	heavy_btn = _btn(Vector2(1564, 948), Vector2(86, 86), "heavy", func(): show_toast("还没有重攻击"))
 	dash_btn = _btn(Vector2(1584, 828), Vector2(86, 86), "dash", _press_dash)
 	skill_box = _btn(Vector2(1704, 728), Vector2(96, 96), "skill", _press_skill)
@@ -225,6 +228,13 @@ func show_boss(g: Node) -> void:
 		boss_name.text = g.gdata.display_name + ("（二阶段）" if g.phase == 2 else "")
 		boss_bar.size.x = 640.0 * g.hp / maxf(1, g.max_hp)
 
+func _press_potion() -> void:
+	if Game.run == null or Game.run.potions <= 0:
+		show_toast("还没有回血药")
+		return
+	if player and Game.drink_potion(player):
+		show_toast("喝了回血药")
+
 func show_toast(t: String) -> void:
 	toast.text = t
 	_toast_t = 2.5
@@ -264,6 +274,10 @@ func _prof_process(delta: float) -> void:
 		for st in r.equipped:
 			names.append("◆ " + st.item.display_name)
 		boons_label.text = "\n".join(names)
+	if potion_count:
+		potion_count.text = str(r.potions) if r else "0"
+	if potion_btn:
+		potion_btn.modulate = Color.WHITE if r != null and r.potions > 0 else Color(0.45, 0.45, 0.45)
 	if quality_frame:
 		var carry := Game.recall != null and Game.recall.carrying()
 		quality_frame.visible = carry

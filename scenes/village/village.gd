@@ -254,7 +254,7 @@ func _epitaph() -> void:
 		wall.rebuild()
 
 func _shop() -> void:
-	show_toast(layout.shop_closed)
+	_open("res://scenes/village/shop.gd")
 
 func _open(script_path: String) -> Panel2:
 	var p: Panel2 = load(script_path).new()

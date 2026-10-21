@@ -98,6 +98,35 @@ func max_hp() -> int:
 	var m := mods()
 	return maxi(1, roundi(player_stats.max_hp * (1.0 + (level() - 1) * player_stats.hp_per_level)) + int(m.max_hp_add))
 
+func shop_rules() -> ShopRules:
+	return load("res://data/shop_rules.tres")
+
+func potion_block_reason() -> String:
+	var rules := shop_rules()
+	var bought := run.potions_bought if run else 0
+	var shards := run.shards_carried if run else 0
+	if bought >= rules.potion_limit_per_run:
+		return rules.reason_limit
+	if shards < rules.potion_price:
+		return rules.reason_shards
+	return ""
+
+func buy_potion() -> bool:
+	if run == null or potion_block_reason() != "":
+		return false
+	var rules := shop_rules()
+	run.shards_carried -= rules.potion_price
+	run.potions += 1
+	run.potions_bought += 1
+	return true
+
+func drink_potion(who: Player) -> bool:
+	if run == null or who == null or run.potions <= 0:
+		return false
+	run.potions -= 1
+	who.heal(roundi(float(who.max_hp) * shop_rules().potion_heal_pct))
+	return true
+
 func gain_xp(x: int) -> void:
 	var before := level()
 	var old_max := max_hp()

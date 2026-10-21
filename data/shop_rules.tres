@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ShopRules" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/shop_rules.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+potion_heal_pct = 0.4
+potion_price = 30
+potion_limit_per_run = 2
+potion_name = "回血药"
+reason_shards = "碎片不够"
+reason_limit = "这局已经买满"

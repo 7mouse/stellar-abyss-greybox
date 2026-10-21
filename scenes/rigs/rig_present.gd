@@ -9,6 +9,9 @@ var _shut_eyes: Array[CanvasItem] = []
 var _eyes_closed := false
 var _blink_wait := 3.0
 var _blink_hold := 0.0
+var _anim_on := true
+var _ap: AnimationPlayer
+var _phase := 0
 # Feet can sit this far outside the camera before the body leaves the picture.
 const _MARGIN := 220.0
 const _BLINK_HOLD := 0.12
@@ -28,7 +31,9 @@ func _ready() -> void:
 		if child is Polygon2D and child.has_meta("skin"):
 			_polys.append(child)
 	_collect_eyes(sk)
+	_ap = get_node_or_null("AnimationPlayer") as AnimationPlayer
 	_blink_wait = randf_range(2.4, 4.0)
+	_phase = int(get_instance_id() & 3)
 	set_eyes_closed(false)
 	_skin()
 
@@ -42,16 +47,51 @@ func set_eyes_closed(on: bool) -> void:
 
 
 func _process(dt: float) -> void:
-	var draw := _in_view()
-	if _view and draw != _drawing:
+	var t := Prof.t0()
+	var draw := _in_view() and RigVisual.allow_view
+	var render := draw and _due()
+	if _view:
+		if render:
+			var mode := SubViewport.UPDATE_ALWAYS if _full_rate() else SubViewport.UPDATE_ONCE
+			if _view.render_target_update_mode != mode:
+				_view.render_target_update_mode = mode
+		elif _view.render_target_update_mode != SubViewport.UPDATE_DISABLED:
+			_view.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	if draw != _drawing:
 		_drawing = draw
-		_view.render_target_update_mode = SubViewport.UPDATE_ALWAYS if draw else SubViewport.UPDATE_DISABLED
 		if not draw and _eyes_closed:
 			set_eyes_closed(false)
 			_blink_wait = randf_range(2.4, 4.0)
+	var anim_on := RigVisual.allow_anim
+	if anim_on != _anim_on and _ap:
+		_anim_on = anim_on
+		_ap.process_mode = Node.PROCESS_MODE_INHERIT if anim_on else Node.PROCESS_MODE_DISABLED
+	RigVisual.n_rig += 1
 	if draw:
-		_skin()
-		_tick_blink(dt)
+		RigVisual.n_draw += 1
+		if render and RigVisual.allow_skin:
+			var ts := Prof.t0()
+			_skin()
+			Prof.add("skin", ts)
+		if RigVisual.allow_blink:
+			_tick_blink(dt)
+	Prof.add("rig", t)
+
+
+func _full_rate() -> bool:
+	var host := get_parent()
+	if not (host is RigVisual):
+		return true
+	if (host as RigVisual).kind != "boar":
+		return true
+	return RigVisual.enemy_step <= 1
+
+
+func _due() -> bool:
+	if _full_rate():
+		return true
+	var step := maxi(1, RigVisual.enemy_step)
+	return int(Engine.get_process_frames() + _phase) % step == 0
 
 
 func _in_view() -> bool:

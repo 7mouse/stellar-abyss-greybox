@@ -41,15 +41,36 @@ const VIEW := {
 	"boss_b": Vector4(224, 298, 113, 284),
 }
 
+# Debug switches for the perf breakdown. Defaults keep the full rig.
+static var allow_skin := true
+static var allow_anim := true
+static var allow_blink := true
+static var allow_view := true
+static var cull_far := true
+static var n_rig := 0
+static var n_draw := 0
+# Boars are the swarm. Draw them into a slightly smaller viewport (still above
+# screen resolution) and, when enemy_step > 1, refresh that viewport every Nth frame.
+# Hero and the boss stay full size and full rate. 1.0 / 1 is the unscaled path.
+static var enemy_scale := 0.75
+static var enemy_step := 1
+const CULL_MARGIN := 96.0
+
 var kind := "hero"
 var _code := ""
+var _scene := ""
 var _anim := ""
 var _world_h := 96.0
 var _px := HERO_PX
 var _rig: Node2D
 var _ap: AnimationPlayer
 var _asleep := false
+var _shown := true
+var _busy := false
+var _anim_pos := 0.0
+var _fit_k := -1.0
 var _glow: ShaderMaterial
+var _parked: Dictionary = {}
 
 
 func setup(k: String, world_h: float) -> void:
@@ -72,13 +93,13 @@ func set_facing(dir: Vector2) -> void:
 	if dir.length() < 0.05:
 		return
 	var code := _pick(dir)
-	if code == _code and _rig != null:
+	if code == _code and _rig != null and _scene == _scene_key(code):
 		return
-	var anim := _anim
-	_mount(code)
-	if anim != "":
-		_anim = ""
-		set_anim(anim)
+	_code = code
+	_apply_scale()
+	# Left/right share one scene for boars and the boss; only the host scale flips.
+	# A real scene change waits until the rig is on screen, then reuses a parked copy.
+	_sync_presence()
 
 
 func set_anim(name: String) -> void:
@@ -92,7 +113,7 @@ func set_asleep(on: bool) -> void:
 	if on == _asleep:
 		return
 	_asleep = on
-	_apply_sleep()
+	_sync_presence()
 
 
 func apply_glow(src: Material) -> void:
@@ -129,13 +150,56 @@ func _pick(dir: Vector2) -> String:
 	return "l" if d.x < 0.0 else "s"
 
 
+func _scene_key(code: String) -> String:
+	if kind == "hero":
+		return code
+	return "s" if code == "l" else code
+
+
+func _view_k() -> float:
+	if kind != "boar":
+		return 1.0
+	return clampf(enemy_scale, 0.5, 1.0)
+
+
 func _mount(code: String) -> void:
+	if _busy:
+		return
+	var t := Prof.t0()
+	_busy = true
 	_code = code
 	_apply_scale()
+	var key := _scene_key(code)
+	if _rig and is_instance_valid(_rig) and _scene != key:
+		_stash(_rig)
+		_rig = null
+		_ap = null
+	if _rig == null or not is_instance_valid(_rig):
+		var reused := _parked.get(key) as Node2D
+		if reused and is_instance_valid(reused):
+			_parked.erase(key)
+			_rig = reused
+			_scene = key
+			add_child(_rig)
+			_bind_player()
+			Prof.count("reuse")
+		else:
+			_spawn(key)
+			Prof.count("spawn")
+	_anim_pos = 0.0
+	_shown = false
+	_fit_k = -1.0
+	_fit_view()
+	Prof.add("mount", t)
+	_sync_presence()
+	_busy = false
+
+
+func _spawn(key: String) -> void:
 	for c in get_children():
 		remove_child(c)
 		c.free()
-	var face := "s" if code == "l" else code
+	var face := "s" if _code == "l" else _code
 	var packed: PackedScene
 	match kind:
 		"boar":
@@ -143,15 +207,99 @@ func _mount(code: String) -> void:
 		"boss":
 			packed = BOSS_SCENES[face]
 		_:
-			packed = HERO_SCENES[code]
+			packed = HERO_SCENES[_code]
 	_rig = packed.instantiate() as Node2D
+	_scene = key
 	add_child(_rig)
-	_ap = _rig.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	_bind_player()
 	var outline := _outline()
 	if outline and outline.material:
 		outline.material = outline.material.duplicate()
-	_fit_view()
-	_apply_sleep()
+
+
+func _bind_player() -> void:
+	if _rig == null:
+		_ap = null
+		return
+	_ap = _rig.find_child("AnimationPlayer", true, false) as AnimationPlayer
+
+
+func _stash(rig: Node2D) -> void:
+	var view := rig.find_child("View", true, false) as SubViewport
+	if view:
+		view.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	rig.process_mode = Node.PROCESS_MODE_DISABLED
+	if rig.get_parent() == self:
+		remove_child(rig)
+	if _scene != "":
+		_parked[_scene] = rig
+
+
+func _process(_dt: float) -> void:
+	if _rig and is_instance_valid(_rig) and absf(_fit_k - _view_k()) > 0.001:
+		_fit_view()
+	_sync_presence()
+
+
+func _exit_tree() -> void:
+	var doomed: Array[Node] = []
+	if _rig and is_instance_valid(_rig) and _rig.get_parent() != self:
+		doomed.append(_rig)
+	for key in _parked.keys():
+		var n: Node = _parked[key]
+		if n and is_instance_valid(n) and n.get_parent() != self and not doomed.has(n):
+			doomed.append(n)
+	for n in doomed:
+		n.free()
+
+
+func _in_camera() -> bool:
+	if not cull_far:
+		return true
+	var vp := get_viewport()
+	if vp == null or vp.get_camera_2d() == null:
+		return true
+	return vp.get_visible_rect().grow(CULL_MARGIN).has_point(vp.get_canvas_transform() * global_position)
+
+
+func _wants_show() -> bool:
+	return allow_view and not _asleep and _in_camera()
+
+
+func _sync_presence() -> void:
+	var show := _wants_show()
+	var key := _scene_key(_code if _code != "" else "s")
+	if show and not _busy and (_rig == null or not is_instance_valid(_rig) or _scene != key):
+		_mount(_code if _code != "" else "s")
+		return
+	if _rig == null or not is_instance_valid(_rig):
+		return
+	if show == _shown and (_rig.get_parent() == self) == show:
+		return
+	_shown = show
+	var view := _rig.find_child("View", true, false) as SubViewport
+	if show:
+		if _rig.get_parent() != self:
+			add_child(_rig)
+		_rig.process_mode = Node.PROCESS_MODE_INHERIT
+		if view:
+			view.render_target_update_mode = SubViewport.UPDATE_ONCE
+			var outline := _outline()
+			if outline:
+				outline.texture = view.get_texture()
+		if _anim != "":
+			var pos := _anim_pos
+			_play(_anim)
+			if _ap and pos > 0.0:
+				_ap.seek(pos, true)
+	else:
+		if _ap and _ap.is_playing():
+			_anim_pos = _ap.current_animation_position
+		if view:
+			view.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		_rig.process_mode = Node.PROCESS_MODE_DISABLED
+		if _rig.get_parent() == self:
+			remove_child(_rig)
 
 
 func _fit_view() -> void:
@@ -167,8 +315,15 @@ func _fit_view() -> void:
 	elif kind == "boss":
 		key = "boss_" + face
 	var spec: Vector4 = VIEW[key]
-	view.size = Vector2i(int(spec.x), int(spec.y))
-	motion.position = Vector2(spec.z, spec.w)
+	var k := _view_k()
+	_fit_k = k
+	view.gui_disable_input = true
+	view.handle_input_locally = false
+	view.size = Vector2i(maxi(1, int(round(spec.x * k))), maxi(1, int(round(spec.y * k))))
+	motion.scale = Vector2(k, k)
+	motion.position = Vector2(spec.z, spec.w) * k
+	# Scale the sprite back up around its center. Feet stay on the host origin.
+	outline.scale = Vector2(1.0 / k, 1.0 / k)
 	outline.position = Vector2(spec.x * 0.5 - spec.z, spec.y * 0.5 - spec.w)
 	outline.texture = view.get_texture()
 
@@ -184,15 +339,6 @@ func _apply_scale() -> void:
 	var s := _world_h / _px
 	var flip := -1.0 if (kind == "boar" or kind == "boss") and _code == "l" else 1.0
 	scale = Vector2(s * flip, s)
-
-
-func _apply_sleep() -> void:
-	if _rig == null:
-		return
-	_rig.process_mode = Node.PROCESS_MODE_DISABLED if _asleep else Node.PROCESS_MODE_INHERIT
-	var view := _rig.find_child("View", true, false) as SubViewport
-	if view:
-		view.render_target_update_mode = SubViewport.UPDATE_DISABLED if _asleep else SubViewport.UPDATE_ALWAYS
 
 
 func _play(name: String) -> void:

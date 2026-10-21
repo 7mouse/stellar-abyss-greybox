@@ -380,11 +380,25 @@ func _setup_web() -> void:
 	var cb_clear = JavaScriptBridge.create_callback(func(_a):
 		for e in get_tree().get_nodes_in_group("enemies"):
 			e.queue_free())
+	var cb_budget = JavaScriptBridge.create_callback(func(a):
+		# skin, anim, blink, view, nine. 1 = on.
+		RigVisual.allow_skin = a.size() < 1 or int(a[0]) != 0
+		RigVisual.allow_anim = a.size() < 2 or int(a[1]) != 0
+		RigVisual.allow_blink = a.size() < 3 or int(a[2]) != 0
+		RigVisual.allow_view = a.size() < 4 or int(a[3]) != 0
+		Hud.allow_nine = a.size() < 5 or int(a[4]) != 0
+		if a.size() > 5:
+			RigVisual.cull_far = int(a[5]) != 0
+		if a.size() > 6:
+			RigVisual.enemy_step = maxi(1, int(a[6]))
+		if a.size() > 7:
+			RigVisual.enemy_scale = clampf(float(a[7]), 0.5, 1.0))
 	var cb_vis = JavaScriptBridge.create_callback(func(a):
 		var sc := get_tree().current_scene
 		if sc and sc.has_method("debug_set_visible"):
 			sc.debug_set_visible(String(a[0]), bool(a[1])))
-	_js_refs = [cb_dl, cb_row, cb_run, cb_perf, cb_prof_on, cb_prof_dump, cb_clear, cb_vis]
+	_js_refs = [cb_dl, cb_row, cb_run, cb_perf, cb_prof_on, cb_prof_dump, cb_clear, cb_vis, cb_budget]
+	_js_obj.rigBudget = cb_budget
 	_js_obj.vis = cb_vis
 	_js_obj.profOn = cb_prof_on
 	_js_obj.profDump = cb_prof_dump
@@ -404,6 +418,10 @@ func _update_web() -> void:
 			"steps": pf - _phys_last, "t": Time.get_ticks_usec(), "objs": Performance.get_monitor(Performance.OBJECT_COUNT), "draw": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)})
 		_phys_last = pf
 	if _js_obj:
+		_js_obj.rigN = RigVisual.n_rig
+		_js_obj.rigDraw = RigVisual.n_draw
+		RigVisual.n_rig = 0
+		RigVisual.n_draw = 0
 		var ms := (Performance.get_monitor(Performance.TIME_PROCESS) + Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0
 		_logic_ms = lerpf(_logic_ms, ms, 0.05)
 		_js_obj.logicMs = _logic_ms

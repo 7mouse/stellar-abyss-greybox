@@ -167,7 +167,9 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	var _p := Prof.t0()
 	_prof_physics_process(delta)
+	var _v := Prof.t0()
 	_sync_visual()
+	Prof.add("visual", _v)
 	Prof.add("enemy", _p)
 
 func _sync_visual() -> void:

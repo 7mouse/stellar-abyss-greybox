@@ -4,6 +4,7 @@ extends CanvasLayer
 ## 右下是攻击键和围着它的一圈按钮，左下一格消耗品。MP、SP、重攻击、第二技能、消耗品还没有对应系统，显示占位。
 
 const BAG_SLOTS := 12 ## 画面上的容量。灰盒背包还没有这个上限
+static var allow_nine := true
 const BAR_FRAME := preload("res://assets/hud/frames/u02_bar_frame.png")
 const SLOT_FRAME := preload("res://assets/hud/frames/u07_slot_square.png")
 const PORTRAIT_FRAME := preload("res://assets/hud/frames/u01_portrait_frame.png")
@@ -272,8 +273,16 @@ func show_toast(t: String) -> void:
 	toast.text = t
 	_toast_t = 2.5
 
+var _nine_on := true
+
 func _process(delta: float) -> void:
 	var _p := Prof.t0()
+	if allow_nine != _nine_on:
+		_nine_on = allow_nine
+		for node_name in ["hp_frame", "mp_frame", "sp_frame", "slot_frame"]:
+			var n := get_node_or_null(node_name)
+			if n:
+				n.visible = allow_nine
 	_prof_process(delta)
 	Prof.add("hud", _p)
 

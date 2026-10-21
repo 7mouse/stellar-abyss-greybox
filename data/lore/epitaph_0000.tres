@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EpitaphLore" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/epitaph_lore.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+lines = PackedStringArray("「#0000」。原来刻名字的地方被人用刀刮平了。", "碑脚一行小字，刻得很浅：「死在这里的不是我。下一个也不会是。」", "背面，几乎被苔藓盖住：「别信他们说的第一句话。」")
+line_sec = 1.2
+flash_text = "[CRADLE] subject #0000 … record mismatch"
+slot_text = "#0000"

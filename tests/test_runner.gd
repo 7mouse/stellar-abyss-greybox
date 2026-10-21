@@ -95,6 +95,7 @@ func _run() -> void:
 	await test_recall_charm()
 	await test_hit_feel()
 	await test_tutorial()
+	await test_epitaph_0000()
 	print("\n结果：%d 通过，%d 失败" % [passes, fails])
 	Lineage.wipe()
 	Log.clear()
@@ -3385,4 +3386,59 @@ func test_tutorial() -> void:
 	Tutorial.path = old_path
 	Tutorial.reset_progress()
 	InputGlyph.device = "kb"
+
+# ---------------- T6 #0000 墓志铭 ----------------
+func test_epitaph_0000() -> void:
+	print("== T6 #0000 ==")
+	check(Tutorial.path == "user://profile.cfg", "已读记在 user://profile.cfg")
+	var cf := ConfigFile.new()
+	cf.load(Tutorial.path)
+	cf.set_value("profile", EpitaphLore.PROFILE_KEY, false)
+	cf.save(Tutorial.path)
+	var lore: EpitaphLore = load("res://data/lore/epitaph_0000.tres")
+	check(lore.lines.size() == 3 and is_equal_approx(lore.line_sec, 1.2) and DP.find_editor(lore, "line_sec") != null, "墓碑三行，每行 1.2 秒，F1 可调")
+	Lineage.flags["floor1_visits"] = 0
+	Lineage.flags["opening_seen"] = true
+	Game.god_mode = true
+	Game.start_run()
+	check(await wait_scene(Game.SCN_FLOOR), "首局进入第 1 层")
+	var f := scene()
+	await clear_enemies()
+	var ep := Vector2.INF
+	for lm in f.layout.landmarks:
+		if lm.id == "lm_epitaph":
+			ep = lm.pos
+	check(not is_inf(ep.x), "首局墓碑在主路上")
+	f.player.global_position = ep
+	f.player.iframe_left = 30.0
+	await frames(3)
+	var it := find_it(f, "lm_epitaph")
+	check(not it.is_empty() and is_equal_approx(float(it.hold), 1.0) and "读墓碑" in f.hud.prompt.text, "墓碑要长按 1 秒（%s）" % f.hud.prompt.text)
+	SysLog.last_text = ""
+	await hold_interact(1.05)
+	check(await until(func(): return f.epitaph_line != null and f.epitaph_line.text == lore.lines[0], 2.0), "第一行：%s" % lore.lines[0])
+	var t1 := Time.get_ticks_msec()
+	check(await until(func(): return f.epitaph_line.text == lore.lines[1], 2.0), "第二行")
+	var gap := (Time.get_ticks_msec() - t1) / 1000.0
+	check(absf(gap - lore.line_sec) < 0.35, "行与行间隔 %.2f 秒（1.2）" % gap)
+	check(await until(func(): return f.epitaph_line.text == lore.lines[2], 2.0), "第三行")
+	check(await until(func(): return SysLog.last_text == lore.flash_text, 2.0), "读完闪一次：%s" % SysLog.last_text)
+	check(EpitaphLore.was_read(), "profile.cfg 记下已读")
+	check(await until(func(): return not f._epitaph_reading, 2.0), "三行放完")
+	SysLog.last_text = ""
+	f.player.global_position = ep
+	await frames(2)
+	await hold_interact(1.05)
+	check(await until(func(): return f.epitaph_line != null and f.epitaph_line.text == lore.lines[0], 2.0), "同一块碑可以再读")
+	await secs(lore.line_sec * 3.0 + 0.5)
+	check(SysLog.last_text == "" and EpitaphLore.was_read(), "再读不重复闪现")
+	Game.goto(Game.SCN_VILLAGE)
+	check(await wait_scene(Game.SCN_VILLAGE), "回村看墓志铭墙")
+	var v := scene()
+	var wall: Panel2 = v._open("res://scenes/village/epitaph_wall.gd")
+	await frames(2)
+	check(wall.blank_0000 != null and wall.blank_0000.text == lore.slot_text, "读过后墙上有 #0000 空位")
+	wall.close()
+	await frames(2)
+	Game.god_mode = false
 

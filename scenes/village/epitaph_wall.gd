@@ -2,6 +2,7 @@ extends Panel2
 ## 墓志铭墙：所有前任。死过 ≥ epitaph0_min_deaths 次后最底部多一条灰色 #0000；焦点停 2 秒后逐字“修复”
 
 var ghost: Button
+var blank_0000: Button
 var focus_t := 0.0
 var fix_progress := -1.0
 
@@ -14,6 +15,16 @@ func _fill() -> void:
 	for e in Lineage.epitaphs:
 		btn("%s　Lv%d　—　第 %d 层　—　死因：%s" % [e.name, int(e.level), int(e.depth), e.cause], func(): pass)
 	_append_ghost_entry()
+	_append_blank_slot()
+
+func _append_blank_slot() -> void:
+	blank_0000 = null
+	if not EpitaphLore.was_read():
+		return
+	var lore: EpitaphLore = load("res://data/lore/epitaph_0000.tres")
+	blank_0000 = btn(lore.slot_text, func(): pass)
+	blank_0000.add_theme_color_override("font_color", Color(0.42, 0.42, 0.46))
+	blank_0000.add_theme_color_override("font_focus_color", Color(0.55, 0.55, 0.58))
 
 func _append_ghost_entry() -> void:
 	ghost = null

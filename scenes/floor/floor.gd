@@ -14,6 +14,8 @@ const AGGRO_DEFAULT := preload("res://data/aggro_rules.tres")
 
 var fd: FloorData
 var _first_run := true
+var epitaph_line: Label
+var _epitaph_reading := false
 var layout: Dictionary
 var depth := 1
 var player: Player
@@ -444,7 +446,8 @@ func _spawn_landmarks() -> void:
 				elite.make_thickmoss_elite()
 				elite.set_meta("landmark", true)
 			"lm_epitaph":
-				pass
+				var hold: float = float(lm.get("interact", 1.0))
+				_add_interact(lm.pos, "读墓碑", _read_epitaph, func(): return not _epitaph_reading, "epitaph", "lm_epitaph", hold)
 
 func _draw_landmark(lm: Dictionary) -> void:
 	match str(lm.id):
@@ -668,6 +671,31 @@ func _on_dashed(_from: Vector2, to: Vector2) -> void:
 		h.queue_free()
 
 # ---------- 互动 ----------
+func _read_epitaph() -> void:
+	if _epitaph_reading:
+		return
+	_epitaph_reading = true
+	var lore: EpitaphLore = load("res://data/lore/epitaph_0000.tres")
+	var fresh := not EpitaphLore.was_read()
+	if epitaph_line == null:
+		epitaph_line = UI.label(hud, "", Vector2(360, 600), 28, Color(0.92, 0.9, 0.84))
+		epitaph_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		epitaph_line.custom_minimum_size = Vector2(1200, 140)
+		epitaph_line.size = Vector2(1200, 140)
+	for i in lore.lines.size():
+		var line: String = lore.lines[i]
+		epitaph_line.text = line
+		epitaph_line.visible = true
+		await get_tree().create_timer(lore.line_sec, true, true).timeout
+		if not is_inside_tree():
+			return
+	epitaph_line.text = ""
+	epitaph_line.visible = false
+	if fresh:
+		EpitaphLore.mark_read()
+		SysLog.flash(lore.flash_text)
+	_epitaph_reading = false
+
 func _use_campfire(key: String) -> void:
 	used[key] = true
 	Tutorial.notify("fire")

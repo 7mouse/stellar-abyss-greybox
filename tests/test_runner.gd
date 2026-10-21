@@ -77,6 +77,7 @@ func _run() -> void:
 	await test_player()
 	await test_attacks()
 	await test_skill2()
+	await test_elite()
 	await test_enemies()
 	await test_guards_and_exit()
 	await test_boons()
@@ -344,10 +345,22 @@ func make_enemy(id: String, pos: Vector2, hp := -1) -> EnemyBase:
 	await frames(1)
 	return e
 
+func make_elite(pos: Vector2) -> EnemyBase:
+	var e := EnemyBase.new()
+	e.setup(Game.enemies.shellbug, 1, Game.floors[0])
+	e.position = pos
+	arena.add_child(e)
+	await frames(1)
+	e.make_thickmoss_elite()
+	e.cooldown = 99.0
+	return e
+
 class Src extends Node2D:
 	var source_name := "测试"
 	var stagger_sec := 0.0
 	var slow_sec := 0.0
+	var is_heavy := false
+	var poise_dmg_mult := 1.0
 
 # ---------------- T2 主角 ----------------
 func test_player() -> void:
@@ -570,6 +583,156 @@ func test_skill2() -> void:
 	rs.global_position = p.global_position + Vector2(80, 0)
 	await secs(0.4)
 	check(n1 == 1 and away and n2 == 1 and rs.retreats == 2, "孢子菇贴近后撤 1 次（冷却内不再次，冷却结束再撤）：%d → %d → %d" % [n1, n2, rs.retreats])
+
+func test_elite() -> void:
+	print("== T3 深苔史莱姆 ==")
+	if arena and is_instance_valid(arena):
+		arena.queue_free()
+		await frames(2)
+	Lineage.wipe()
+	plain()
+	Game.run = null
+	var moss_a: AffixData = Game.affixes.thickmoss
+	var elite_a: AffixData = Game.affixes.elite
+	check(is_equal_approx(moss_a.dmg_taken_mult, 0.7) and moss_a.break_by_heavy and is_equal_approx(moss_a.break_sec, 4.0) and is_equal_approx(moss_a.break_cd, 6.0) and is_equal_approx(moss_a.poise_pct, 1.0), "厚苔：减伤 0.7，重击打破 4 秒，长回后 6 秒不能再破，poise +100%")
+	check(is_equal_approx(elite_a.hp_mult, 2.0) and is_equal_approx(elite_a.dmg_mult, 1.15) and elite_a.bounce_enabled and elite_a.bounce_every == 3 and is_equal_approx(elite_a.bounce_recover, 1.0) and elite_a.palette == "deep_moss", "精英词条：HP ×2、弹跳每 3 下一次、落地瘫软 1 秒")
+	var loot: LootTable = elite_a.loot_table
+	var moss_n := false
+	var shard_n := false
+	var essence_n := false
+	var charm_in_table := false
+	for entry in loot.entries:
+		var iid := String(entry.get("item", ""))
+		if iid == "moss":
+			moss_n = int(entry.get("min", 0)) == 4 and int(entry.get("max", 0)) == 6
+		elif iid == "shard":
+			shard_n = is_equal_approx(float(entry.get("chance", 0)), 0.5)
+		elif iid == "moss_essence":
+			essence_n = is_equal_approx(float(entry.get("chance", 0)), 0.2)
+		elif iid == RecallCharm.ITEM_ID:
+			charm_in_table = true
+	check(moss_n and shard_n and essence_n and not charm_in_table, "精英掉落表：材料 4–6、碎片 50%、萤苔精 20%；回村符不进这张表")
+	var old_path := Tutorial.path
+	var old_hold := Tutorial.hold_world
+	Tutorial.path = "user://test_elite_profile.cfg"
+	Tutorial.reset_progress()
+	Tutorial.hold_world = true
+	var seen0 := int(Tutorial.hooked.get("elite_first_seen", 0))
+	var moss0 := int(Tutorial.hooked.get("thickmoss_broken", 0))
+	await make_arena()
+	var p := await make_player(Vector2(0, 0))
+	p.facing = Vector2.RIGHT
+	p.sim_aim = Vector2.RIGHT
+	p.sim_move = Vector2.ZERO
+	var e := await make_elite(Vector2(80, 0))
+	e.aggro = true
+	e.target = p
+	await frames(5)
+	check(int(Tutorial.hooked.get("elite_first_seen", 0)) == seen0 + 1 and "破甲突刺" in Tutorial.hint_text(), "靠近深苔史莱姆会调用 on_elite_first_seen：%s" % Tutorial.hint_text())
+	e.aggro = false
+	p.skill2_cd_left = 0.0
+	var hp_before := e.hp
+	p.try_skill2()
+	await until(func(): return p.state != Player.S.SKILL)
+	check(hp_before - e.hp == roundi(30 * 0.7) and not e.moss_up() and int(Tutorial.hooked.get("thickmoss_broken", 0)) == moss0 + 1, "技能 2 打在厚苔上先按 ×0.7 结算，并调用 on_thickmoss_broken")
+	check(e.max_hp == 140 and is_equal_approx(e.poise, 60.0) and e.damage == 8 and is_equal_approx(e.speed(), 88.0) and is_equal_approx(e.attack_interval, 2.4) and e.xp_value() == 20 and e.bounce_damage() == 10, "精英 HP 140、poise 60、重拍实伤 8、移速 88、间隔 2.4、XP 20、弹跳实伤 10")
+	var timed := await make_elite(Vector2(1200, 0))
+	timed.aggro = false
+	timed.poise = 500.0
+	var src := Src.new()
+	arena.add_child(src)
+	var h0 := timed.hp
+	src.is_heavy = false
+	timed.take_hit(10, src, Vector2.ZERO)
+	var d_moss := h0 - timed.hp
+	src.is_heavy = true
+	var h1 := timed.hp
+	timed.take_hit(10, src, Vector2.ZERO)
+	var d_break := h1 - timed.hp
+	var opened := timed.moss_down > 0.0
+	src.is_heavy = false
+	var h2 := timed.hp
+	timed.take_hit(10, src, Vector2.ZERO)
+	var d_open := h2 - timed.hp
+	await secs(4.25)
+	var regrown := timed.moss_up() and timed.moss_lock > 5.0
+	var h3 := timed.hp
+	timed.take_hit(10, src, Vector2.ZERO)
+	var d_back := h3 - timed.hp
+	src.is_heavy = true
+	var h4 := timed.hp
+	timed.take_hit(10, src, Vector2.ZERO)
+	var locked := timed.moss_up() and h4 - timed.hp == 7
+	await secs(6.25)
+	var h5 := timed.hp
+	timed.take_hit(10, src, Vector2.ZERO)
+	var broke_again := timed.moss_down > 3.5 and h5 - timed.hp == 7
+	check(d_moss == 7 and d_break == 7 and opened and d_open == 10 and regrown and d_back == 7 and locked and broke_again, "厚苔 ×0.7，重击后的一下 ×1，4 秒长回，6 秒内打不破，冷却结束又能破")
+	# 重拍、重拍、弹跳
+	var saved_active: float = Game.enemies.shellbug.attack_active
+	var saved_recover: float = Game.enemies.shellbug.recover_sec
+	var cycler := await make_elite(Vector2(0, 400))
+	cycler.attack_interval = 0.05
+	cycler.data.attack_active = 0.05
+	cycler.data.recover_sec = 0.05
+	cycler.cooldown = 0.0
+	cycler.aggro = true
+	var holder := await make_player(Vector2(80, 400))
+	holder.hp = 999
+	holder.max_hp = 999
+	holder.set_physics_process(false)
+	cycler.target = holder
+	check(await until(func(): return cycler.attack_log.size() >= 3, 8.0), "精英打完三下")
+	check(cycler.attack_log[0] == "slam" and cycler.attack_log[1] == "slam" and cycler.attack_log[2] == "bounce", "出手循环是重拍、重拍、弹跳：%s" % str(cycler.attack_log))
+	Game.enemies.shellbug.attack_active = saved_active
+	Game.enemies.shellbug.recover_sec = saved_recover
+	# 冲刺躲开落点，腾空无敌，落地瘫软 1 秒
+	p.global_position = Vector2(80, 800)
+	p.hp = 100
+	p.iframe_left = 0.0
+	p.sim_move = Vector2.ZERO
+	var hopper := await make_elite(Vector2(0, 800))
+	hopper._atk_i = 2
+	hopper.cooldown = 0.0
+	hopper.aggro = true
+	hopper.target = p
+	check(await until(func(): return hopper._bounce_phase == "air", 3.0), "第三次出手进入弹跳腾空")
+	check(absf(hopper.last_windup_sec - 0.8) <= 0.05, "弹跳前摇 %.3f 秒（0.8）" % hopper.last_windup_sec)
+	var ehp := hopper.hp
+	check(hopper.invulnerable and hopper.take_hit(40, src, Vector2.ZERO) == false and hopper.hp == ehp, "腾空 0.6 秒内打不中")
+	var land: Vector2 = hopper._land_pos
+	var php := p.hp
+	p.sim_move = Vector2.UP
+	p.try_dash()
+	check(await until(func(): return hopper.is_limping(), 2.0), "落地后进入瘫软")
+	check(p.hp == php and p.global_position.distance_to(land) > hopper.elite_affix.bounce_radius, "落点圈出现后冲刺能离开判定（距离 %.0f）" % p.global_position.distance_to(land))
+	var t0 := Time.get_ticks_msec()
+	check(await until(func(): return not hopper.is_limping(), 3.0), "瘫软结束")
+	var limp_sec := (Time.get_ticks_msec() - t0) / 1000.0
+	check(absf(limp_sec - 1.0) <= 0.15, "落地瘫软 %.2f 秒（1.0）" % limp_sec)
+	# 离开菌环 900px 回归
+	hopper.global_position = hopper.home_pos + Vector2(950, 0)
+	p.global_position = hopper.global_position
+	hopper.aggro = true
+	hopper.target = p
+	hopper._go(EnemyBase.S.CHASE)
+	await frames(4)
+	check(hopper.state == EnemyBase.S.RETURN, "离开出生点 900px 后回归")
+	# 回村符走现有 roll_elite
+	var saved_chance := Game.recall.elite_drop_chance
+	Game.recall.elite_drop_chance = 1.0
+	Game.run = Run.new()
+	Game.run.seed = 11
+	Game.run.depth = 1
+	var victim := await make_elite(Vector2(-400, -400))
+	victim.aggro = false
+	victim.take_hit(5000, src, Vector2.ZERO)
+	check(Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1 and Game.run.charm_source == "elite", "深苔史莱姆死亡按现有精英概率掉回村符")
+	Game.recall.elite_drop_chance = saved_chance
+	Game.run = null
+	Tutorial.hold_world = old_hold
+	Tutorial.reset_progress()
+	Tutorial.path = old_path
 
 # ---------------- T4 敌人 ----------------
 func test_enemies() -> void:

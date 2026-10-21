@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AffixData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/affix_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "thickmoss"
+display_name = "厚苔"
+poise_pct = 1.0
+dmg_taken_mult = 0.7
+break_by_heavy = true
+break_sec = 4.0
+break_cd = 6.0

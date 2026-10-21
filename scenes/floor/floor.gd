@@ -366,6 +366,12 @@ func _pick_enemy() -> String:
 			return k
 	return mix.keys()[0]
 
+## 菌环中心那只史莱姆。T5 把落点交给地标；靠近后精英自己通知教学。
+func spawn_elite(pos: Vector2, group := "") -> EnemyBase:
+	var e := spawn_enemy("shellbug", pos, group)
+	e.make_thickmoss_elite()
+	return e
+
 func spawn_enemy(eid: String, pos: Vector2, group := "") -> EnemyBase:
 	var e := EnemyBase.new()
 	e.setup(Game.enemies[eid], depth, fd)

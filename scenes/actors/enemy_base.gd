@@ -42,6 +42,22 @@ var _lunge_left := 0.0
 var retreat_cd_left := 0.0
 var retreat_left := 0.0
 var retreats := 0 ## 被贴近后撤的次数（冷却内不再次触发）
+var moss_affix: AffixData
+var elite_affix: AffixData
+var moss_down := 0.0 ## 厚苔破开剩余时间，此间受伤不再乘 0.7
+var moss_lock := 0.0 ## 长回后不能再破的剩余时间
+var speed_mult := 1.0
+var xp_mult := 1.0
+var _elite_ready := false
+var _elite_introduced := false
+var _atk_i := 0
+var _bouncing := false
+var _bounce_phase := "" ## air / limp
+var _air_left := 0.0
+var _limp_left := 0.0
+var _land_pos := Vector2.ZERO
+var attack_log: Array[String] = []
+var bounce_ring: BounceRing
 var feel_flash_t := 0.0
 var feel_moss := false
 var _windup_started := 0.0
@@ -157,6 +173,8 @@ func _prof_physics_process(delta: float) -> void:
 	hz_slow_left = maxf(0.0, hz_slow_left - delta)
 	cooldown = maxf(0.0, cooldown - delta)
 	retreat_cd_left = maxf(0.0, retreat_cd_left - delta)
+	_tick_moss(delta)
+	_note_elite_seen()
 	if target == null or not is_instance_valid(target):
 		var ps := get_tree().get_nodes_in_group("player")
 		target = ps[0] if not ps.is_empty() else null
@@ -183,6 +201,7 @@ func _prof_physics_process(delta: float) -> void:
 			velocity = Vector2.ZERO
 			warn.visible = state_t >= telegraph_delay
 			body.color = tint.lerp(Color(1, 0.25, 0.2), 0.6)
+			_sync_bounce_ring()
 			if data.id == "rootshot":
 				aim_line.visible = true
 				aim_line.points = PackedVector2Array([Vector2.ZERO, attack_dir * 900])
@@ -213,8 +232,10 @@ var _hurt_len := 0.3
 func _go(s: int) -> void:
 	state = s
 	state_t = 0.0
-	if s == S.WINDUP and target != null and is_instance_valid(target) and global_position.distance_to(target.global_position) <= Tutorial.rules.dash_threat_px:
-		Tutorial.notify("threat")
+	if s == S.WINDUP:
+		_prepare_attack()
+		if target != null and is_instance_valid(target) and global_position.distance_to(target.global_position) <= Tutorial.rules.dash_threat_px:
+			Tutorial.notify("threat")
 
 
 ## 环境机关减速（孢子云 −30%、缠根 −40%）：取持续中最强的一个
@@ -230,7 +251,7 @@ func hazard_speed_mult() -> float:
 	return 1.0 - hz_slow_pct if hz_slow_left > 0.0 else 1.0
 
 func speed() -> float:
-	return data.move_speed * (0.5 if slow_left > 0.0 else 1.0) * hazard_speed_mult()
+	return data.move_speed * speed_mult * (0.5 if slow_left > 0.0 else 1.0) * hazard_speed_mult()
 
 func should_return() -> bool:
 	return false
@@ -274,6 +295,9 @@ func _chase(delta: float) -> void:
 		return
 	var to: Vector2 = target.global_position - global_position
 	var dist := to.length()
+	if elite_affix and elite_affix.leash_px > 0.0 and home_pos != Vector2.INF and global_position.distance_to(home_pos) > elite_affix.leash_px:
+		_go(S.RETURN)
+		return
 	facing = to.normalized() if dist > 1 else facing
 	var dir := nav_dir(target.global_position, delta)
 	if data.id == "rootshot":
@@ -302,6 +326,16 @@ func _chase(delta: float) -> void:
 
 func _begin_attack() -> void:
 	_go(S.ATTACK)
+	_atk_i += 1
+	if _bouncing and elite_affix:
+		attack_log.append("bounce")
+		_land_pos = _bounce_aim()
+		_bounce_phase = "air"
+		_air_left = elite_affix.bounce_air_sec
+		invulnerable = true
+		_sync_bounce_ring()
+		return
+	attack_log.append("slam")
 	match data.id:
 		"mushling":
 			_lunge_left = data.lunge_distance
@@ -324,6 +358,9 @@ func _shoot(dir: Vector2) -> void:
 	get_parent().add_child(p)
 
 func _tick_attack(delta: float) -> void:
+	if _bouncing:
+		_tick_bounce(delta)
+		return
 	match data.id:
 		"mushling":
 			var step := minf(data.lunge_distance / data.lunge_time * delta, _lunge_left)
@@ -359,6 +396,12 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 	var real := dmg
 	if back_mult > 1.0 and facing.dot(to_src) < -0.3:
 		real = roundi(dmg * back_mult)
+	if moss_affix and moss_down <= 0.0 and moss_affix.dmg_taken_mult > 0.0:
+		real = roundi(float(real) * moss_affix.dmg_taken_mult)
+	if moss_affix and moss_affix.break_by_heavy and _hit_is_heavy(src) and moss_down <= 0.0 and moss_lock <= 0.0:
+		moss_down = moss_affix.break_sec
+		Tutorial.on_thickmoss_broken()
+		HitFeedback.play("armor_break", self)
 	hp = maxi(0, hp - real)
 	DamageNumber.spawn(get_parent(), global_position, real, Color(1, 0.95, 0.5) if real > dmg else Color.WHITE)
 	Log.write("hits", [Game.run.id if Game.run else "", depth, "主角", data.display_name, real, false])
@@ -420,12 +463,13 @@ func _die() -> void:
 	queue_free()
 
 func roll_loot(rare_mult := 1.0) -> Array[ItemStack]:
-	if data.loot_table == null:
+	var table := elite_affix.loot_table if elite_affix and elite_affix.loot_table else data.loot_table
+	if table == null:
 		return []
-	return data.loot_table.roll(Game.rng, rare_mult)
+	return table.roll(Game.rng, rare_mult)
 
 func xp_value() -> int:
-	return data.xp
+	return roundi(data.xp * xp_mult)
 
 func _separate() -> void:
 	var _p := Prof.t0()
@@ -450,3 +494,139 @@ func _prof_separate() -> void:
 				continue
 			if dl2 > 0.0001:
 				move_and_collide(d.normalized() * (min_d - d.length()) * 0.3)
+
+## 史莱姆 + 厚苔 + 精英。不新做敌人。菌环中心由 Floor.spawn_elite 刷出。
+func make_thickmoss_elite() -> void:
+	if _elite_ready:
+		return
+	_elite_ready = true
+	moss_affix = Game.affixes.thickmoss
+	elite_affix = Game.affixes.elite
+	max_hp = roundi(max_hp * elite_affix.hp_mult)
+	hp = max_hp
+	damage = roundi(damage * elite_affix.dmg_mult)
+	poise *= 1.0 + moss_affix.poise_pct
+	if elite_affix.interval_override > 0.0:
+		attack_interval = elite_affix.interval_override
+	speed_mult = elite_affix.speed_mult
+	xp_mult = elite_affix.xp_mult
+	if elite_affix.palette == "deep_moss":
+		tint = Color(0.13, 0.34, 0.24)
+	if body:
+		body.color = tint
+	set_meta("elite", true)
+	add_to_group("elites")
+	bounce_ring = BounceRing.new()
+	bounce_ring.visible = false
+	add_child(bounce_ring)
+
+func bounce_damage() -> int:
+	if elite_affix == null:
+		return damage
+	var scale := 1.0
+	if depth >= 1 and depth <= Game.floors.size():
+		scale = Game.floors[depth - 1].dmg_scale()
+	return roundi(data.damage * elite_affix.bounce_damage_mult * scale)
+
+func moss_up() -> bool:
+	return moss_affix != null and moss_down <= 0.0
+
+func is_limping() -> bool:
+	return _bounce_phase == "limp"
+
+func _hit_is_heavy(src: Node) -> bool:
+	return src != null and src.get("is_heavy") != null and bool(src.is_heavy)
+
+func _tick_moss(delta: float) -> void:
+	if moss_affix == null:
+		return
+	if moss_down > 0.0:
+		moss_down = maxf(0.0, moss_down - delta)
+		if moss_down <= 0.0:
+			moss_lock = moss_affix.break_cd
+			if body:
+				body.color = tint
+	elif moss_lock > 0.0:
+		moss_lock = maxf(0.0, moss_lock - delta)
+
+func _note_elite_seen() -> void:
+	if _elite_introduced or elite_affix == null or target == null or not is_instance_valid(target):
+		return
+	if global_position.distance_to(target.global_position) <= 520.0:
+		_elite_introduced = true
+		Tutorial.on_elite_first_seen()
+
+func _prepare_attack() -> void:
+	if elite_affix == null or not elite_affix.bounce_enabled:
+		_bouncing = false
+		return
+	var n := _atk_i + 1
+	_bouncing = elite_affix.bounce_every > 0 and n % elite_affix.bounce_every == 0
+	windup = elite_affix.bounce_windup if _bouncing else data.windup
+	if not _bouncing and bounce_ring:
+		bounce_ring.visible = false
+
+func _bounce_aim() -> Vector2:
+	var dest := global_position + attack_dir * 80.0
+	if target and is_instance_valid(target):
+		dest = target.global_position
+	var delta := dest - global_position
+	if delta.length() > elite_affix.bounce_range:
+		dest = global_position + delta.normalized() * elite_affix.bounce_range
+	return dest
+
+func _sync_bounce_ring() -> void:
+	if bounce_ring == null or elite_affix == null:
+		return
+	if not _bouncing or _bounce_phase == "limp":
+		bounce_ring.visible = false
+		return
+	bounce_ring.visible = true
+	var at := _land_pos if _bounce_phase == "air" else _bounce_aim()
+	bounce_ring.global_position = at
+	bounce_ring.radius = elite_affix.bounce_radius
+	bounce_ring.fill = 1.0 if _bounce_phase == "air" else clampf(state_t / maxf(0.01, windup), 0.0, 1.0)
+	bounce_ring.queue_redraw()
+
+func _tick_bounce(delta: float) -> void:
+	velocity = Vector2.ZERO
+	if _bounce_phase == "air":
+		_air_left -= delta
+		_sync_bounce_ring()
+		if _air_left <= 0.0:
+			_bounce_land()
+	elif _bounce_phase == "limp":
+		_limp_left -= delta
+		if _limp_left <= 0.0:
+			_bouncing = false
+			_bounce_phase = ""
+			invulnerable = false
+			if bounce_ring:
+				bounce_ring.visible = false
+			_end_attack()
+
+func _bounce_land() -> void:
+	global_position = _land_pos
+	invulnerable = false
+	_bounce_phase = "limp"
+	_limp_left = elite_affix.bounce_recover
+	if bounce_ring:
+		bounce_ring.visible = false
+	var dmg := bounce_damage()
+	for p in get_tree().get_nodes_in_group("player"):
+		if not is_instance_valid(p):
+			continue
+		if p.global_position.distance_to(_land_pos) <= elite_affix.bounce_radius:
+			var away: Vector2 = p.global_position - _land_pos
+			if away.length() < 1.0:
+				away = attack_dir
+			p.take_hit(dmg, self, away.normalized() * 140.0)
+
+class BounceRing extends Node2D:
+	var radius := 100.0
+	var fill := 0.0
+
+	func _draw() -> void:
+		var a := 0.18 + 0.17 * clampf(fill, 0.0, 1.0)
+		draw_circle(Vector2.ZERO, radius, Color(0.478, 0.165, 0.165, a))
+		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 40, Color(0.784, 0.345, 0.29, 0.4 + 0.45 * clampf(fill, 0.0, 1.0)), 3.0)

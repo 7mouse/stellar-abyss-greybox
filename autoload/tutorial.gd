@@ -1,8 +1,8 @@
 extends Node
 ## 新手引导。步骤记在 user://profile.cfg 的 tutorial_done；整局结束后 sealed，下一局不再触发。
 ## 外部事件走 notify(event_id)。T2/T3/T4 用 boss_enter、boss_first_telegraph、elite_first_seen、armor_broken_first。
-## 深苔史莱姆不是新的教学步骤。T3 第一次遇到时调用 on_elite_first_seen()，厚苔打破时调用 on_thickmoss_broken()。
-## 这条提示排在层主名条之前。精英、厚苔和技能 2 都还没做，不会自己触发。
+## 深苔史莱姆不是新的教学步骤。靠近时 on_elite_first_seen()，厚苔被重击（含技能 2）打破时 on_thickmoss_broken()。
+## 这条提示排在层主名条之前。
 
 const STEPS: PackedStringArray = ["move", "attack", "dash", "loot", "stealth", "fire", "boss", "extract", "death", "charm"]
 

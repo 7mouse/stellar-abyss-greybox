@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="AffixData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/affix_data.gd" id="s"]
+[ext_resource type="Resource" path="res://data/loot_tables/elite.tres" id="r0"]
+
+[resource]
+script = ExtResource("s")
+id = "elite"
+display_name = "精英"
+hp_mult = 2.0
+dmg_mult = 1.15
+speed_mult = 1.1
+interval_override = 2.4
+palette = "deep_moss"
+bounce_enabled = true
+bounce_windup = 0.8
+bounce_range = 260.0
+bounce_air_sec = 0.6
+bounce_radius = 100.0
+bounce_damage_mult = 1.35
+bounce_recover = 1.0
+bounce_every = 3
+leash_px = 900.0
+loot_table = ExtResource("r0")
+xp_mult = 2.5

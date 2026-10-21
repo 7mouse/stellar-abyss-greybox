@@ -10,6 +10,18 @@
 | hero_s_render_256.png | 主角侧面 256×256 单图（AI 原图，拆件前的侧面参考） |
 | mossroot_basic3_v1.jpg / _v2.jpg | 苔根林窟 3 种基础怪 |
 | slime_depth_progression_v1.jpg | 史莱姆按深度变化（浅层→深层）示意 |
+| explore/ | 画风探索期 AI 原图 37 张（10-15～16，已作废，见 explore/README.md） |
 | level1_plan_samples/ | 第一关美术方案 v1 的样板：a 起程村、b 苔根林窟战斗、c 层守苔冠王野猪 |
 
 第三方游戏截图（Zenonia 等）不放在本仓库（仓库公开）；截图和来源（SOURCES.md）在私有仓库 stellar-abyss-design 的 06-art-direction/reference/zenonia/。
+
+## art_src/src 本批新增 AI 原图（2026-10-21 11:54–11:59 生成，未切）
+| 文件 | 内容 |
+|---|---|
+| slime_deep_moss_partsheet_gen1.jpg / _gen2.jpg | 史莱姆 + 深苔史莱姆拆件表（gen2 为 5 分钟后的重出版） |
+| root_spore_mushroom_partsheet_gen1.jpg | 根须孢子菇拆件表（正/侧/背 + 部件） |
+| sprout_boar_fb_partsheet_gen1.jpg | 发芽野猪正面/背面拆件表 |
+| mosscrown_king_boar_partsheet_gen1.jpg | 苔冠王野猪拆件表（偏写实，待重画） |
+| terrain_floor1_set_gen1.jpg | 苔根林窟地表、边缘、装饰（未保证无缝） |
+| hud_set_gen1.jpg | HUD 框、条、按钮、技能图标（边框偏重、条偏饱和） |
+| fx_set_gen1.jpg | 斩击、冲刺尘、受击、治疗等特效序列草图 |

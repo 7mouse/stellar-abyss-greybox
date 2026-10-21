@@ -1,0 +1,8 @@
+root_spore_mushroom_parts_f_v1 {'cap_root': (455.2, 67.0), 'hip_r': (0.0, 0.0), 'hip_l': (0.0, 0.0), 'arm_root_r': (6.2, 6.2), 'arm_root_l': (6.8, 6.8)}
+root_spore_mushroom_parts_s_v1 {'cap_root': (165.8, 57.0), 'hip_r': (4.2, 2.5), 'hip_l': (0.0, 0.0), 'arm_root_r': (0.0, 0.0), 'arm_root_l': (0.0, 0.0)}
+root_spore_mushroom_parts_b_v1 {'cap_root': (239.5, 55.0), 'hip_r': (0.0, 0.0), 'hip_l': (0.0, 0.0), 'arm_root_r': (2.5, 2.5), 'arm_root_l': (8.2, 8.2)}
+sprout_boar_parts_f_v1 {'neck': (0.0, 0.0), 'sprout_root': (0.0, 0.0), 'hip_r': (0.0, 0.0), 'hip_l': (0.0, 0.0), 'shoulder_r': (0.0, 0.0), 'shoulder_l': (0.0, 0.0)}
+sprout_boar_parts_b_v1 {'sprout_root': (0.0, 0.0), 'tail_root': (40.0, 13.8), 'hip_r': (0.0, 0.0), 'hip_l': (0.0, 0.0), 'shoulder_r': (0.0, 0.0), 'shoulder_l': (0.0, 0.0)}
+mosscrown_king_boar_parts_f_v2 {'neck': (0.0, 0.0), 'hip_r': (0.0, 0.0), 'hip_l': (0.0, 0.0), 'shoulder_r': (0.0, 0.0), 'shoulder_l': (0.0, 0.0)}
+mosscrown_king_boar_parts_s_v2 {'neck': (0.0, 0.0), 'tail_root': (31.5, 19.2), 'hip_r': (0.0, 0.0), 'hip_l': (0.0, 0.0), 'shoulder_r': (0.0, 0.0), 'shoulder_l': (0.0, 0.0)}
+mosscrown_king_boar_parts_b_v2 {'neck': (0.0, 0.0), 'crown_root': (55.5, 40.0), 'tail_root': (0.0, 0.0), 'hip_r': (0.0, 0.0), 'hip_l': (0.0, 0.0), 'shoulder_r': (0.0, 0.0), 'shoulder_l': (0.0, 0.0)}

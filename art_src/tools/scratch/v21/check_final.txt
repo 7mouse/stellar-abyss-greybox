@@ -1,0 +1,38 @@
+neck         head_s           visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+ear_root     ear_s            visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=5.5 v2.1=20.8
+sprout_root  sprout_s         visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+tail_root    tail_s           visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+hip_r        leg_hind_r_s     visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+hip_l        leg_hind_l_s     visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+shoulder_r   leg_front_r_s    visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+shoulder_l   leg_front_l_s    visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+== hero f
+neck         head_f           visible holes(px@1:1, worst +-30) v2=3.2 v2.1=0.0 | pair-core v2=0.8 v2.1=0.0
+shoulder_r   arm_upper_r_f    visible holes(px@1:1, worst +-30) v2=0.2 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+elbow_r      forearm_r_f      visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+hip_r        thigh_r_f        visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.8 | pair-core v2=0.0 v2.1=0.0
+knee_r       shin_r_f         visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+shoulder_l   arm_upper_l_f    visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+elbow_l      forearm_l_f      visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+hip_l        thigh_l_f        visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+knee_l       shin_l_f         visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+== hero s
+neck         head_s           visible holes(px@1:1, worst +-30) v2=4.5 v2.1=0.0 | pair-core v2=54.8 v2.1=52.5
+shoulder_r   arm_upper_r_s    visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+elbow_r      forearm_r_s      visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=6.5
+hip_r        thigh_r_s        visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+knee_r       shin_r_s         visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+shoulder_l   arm_upper_l_s    visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+elbow_l      forearm_l_s      visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=2.0 v2.1=2.0
+hip_l        thigh_l_s        visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+knee_l       shin_l_s         visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+== hero b
+neck         head_b           visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+shoulder_r   arm_upper_r_b    visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+elbow_r      forearm_r_b      visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+hip_r        thigh_r_b        visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+knee_r       shin_r_b         visible holes(px@1:1, worst +-30) v2=4.2 v2.1=0.0 | pair-core v2=0.2 v2.1=0.2
+shoulder_l   arm_upper_l_b    visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=8.5 v2.1=8.5
+elbow_l      forearm_l_b      visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+hip_l        thigh_l_b        visible holes(px@1:1, worst +-30) v2=0.0 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0
+knee_l       shin_l_b         visible holes(px@1:1, worst +-30) v2=3.5 v2.1=0.0 | pair-core v2=0.0 v2.1=0.0

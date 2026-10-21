@@ -7,7 +7,7 @@ item: {"name", "pick":[x,y]}                one connected component (background 
       {"name", "tile":[x0,y0,x1,y1]}        opaque square texture crop (largest centred square inside the rect);
             "wrap":"xy"|"x" -> seam test (wrap-edge difference / inner neighbour difference) + a tool-fixed
             <name>_seamless.png (half-offset cross-fade), "size": upscale target (e.g. 512) also written as <name>_<size>.png
-      "black": true (rect only) light on black -> alpha from brightness; "max": N downscale to fit N px (never up); "open_holes": true (pick) enclosed white -> transparent
+      "alpha_gain": g, "tint": [r,g,b], "erase_dark": [lum, dilate(, min_area)] (rect only); "black": true (rect only) light on black -> alpha from brightness; "max": N downscale to fit N px (never up); "open_holes": true (pick) enclosed white -> transparent
       optional per item: "group", "frame", "nine": true (estimate 9-slice margins), "recolor": name of a recolor op,
             "split_fill": {"fills":{name:[r,g,b]}} (bars: frame with the coloured fill replaced by the charcoal base +
             one fill strip per colour, fill area = the saturated interior)
@@ -96,10 +96,13 @@ def nine_margins(im):
 
 def main(cfg):
     c = json.load(open(cfg)); ds = c.get('disp_scale', 1.25); out = c['out_dir']; os.makedirs(out, exist_ok=True)
-    rgb, lab, NI, rgba = segment(c['source']); man = {'source': c['source'], 'items': {}}
+    SEG = {c['source']: segment(c['source'])}; man = {'source': c['source'], 'items': {}}
     R = c.get('recolor', {})
     thumbs = []
     for it in c['items']:
+        src = it.get('source', c['source'])          # per-item sheet (several AI sheets -> one output set / manifest)
+        if src not in SEG: SEG[src] = segment(src)
+        rgb, lab, NI, rgba = SEG[src]
         n = it['name']; g = it.get('group', ''); od = os.path.join(out, g); os.makedirs(od, exist_ok=True); rec = {}
         if 'tile' in it:
             x0, y0, x1, y1 = [int(v * ds) for v in it['tile']]; s = min(x1 - x0, y1 - y0)
@@ -138,6 +141,18 @@ def main(cfg):
                     part = np.dstack([col, al * 255])
                 else:
                     part = soft_alpha(rgb[y0:y1, x0:x1]) if it.get('soft', True) else rgba[y0:y1, x0:x1].copy()
+                    if it.get('alpha_gain'):   # pale light on white paper (pickup glow): alpha = gain x distance to white, colour = tint
+                        dd = 255 - rgb[y0:y1, x0:x1].min(2); part[..., 3] = np.clip((dd - 4) * it['alpha_gain'] * 255 / 90.0, 0, 255)
+                    if it.get('tint'):
+                        part[..., :3] = np.array(it['tint'], float)
+                    if it.get('erase_dark'):   # drop a dark subject drawn into the effect (e.g. a running beast in a dust trail)
+                        thr, dil = it['erase_dark'][:2]; t = rgb[y0:y1, x0:x1]; lum = t @ [0.299, 0.587, 0.114]
+                        dk = nd.binary_closing(lum < thr, iterations=2); lb, nb = nd.label(dk)
+                        if nb:
+                            sz = nd.sum(dk, lb, range(1, nb + 1)); ma = it['erase_dark'][2] if len(it['erase_dark']) > 2 else sz.max()
+                            big = np.isin(lb, [i + 1 for i, v in enumerate(sz) if v >= ma])
+                            big = nd.binary_dilation(nd.binary_fill_holes(big), iterations=dil); part[..., 3][big] = 0
+                            rec['erased_dark_px'] = int(big.sum())
                 rec['rect_src'] = [x0, y0, x1, y1]
             orig = part.copy()
             if it.get('recolor'): part = recolor(part, R[it['recolor']])
@@ -173,6 +188,7 @@ def main(cfg):
                 if k < 1: im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS); rec['scale'] = round(k, 3)
             im.save(f'{od}/{n}.png')
             if it.get('nine'): rec['nine'] = nine_margins(im)
+        if src != c['source']: rec['source'] = src
         rec['size'] = list(Image.open(f'{od}/{n}.png').size); rec['file'] = os.path.join(g, n + '.png')
         for k in ('frame', 'spec', 'note', 'recolor'):
             if it.get(k) is not None: rec[k] = it[k]

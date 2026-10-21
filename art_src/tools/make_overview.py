@@ -8,15 +8,15 @@ import sys, glob, json, os
 from PIL import Image, ImageDraw
 R = 'art_src/rigs/'
 def prev(p): im = Image.open(p).convert('RGBA'); return im.crop(im.getbbox())
-hero = prev(R + 'hero/hero_parts_s_v2_2_preview.png'); k = 135 / hero.height
-chars = [('hero f/s/b v2.2', [R + 'hero/hero_parts_f_v2_2_preview.png', R + 'hero/hero_parts_s_v2_2_preview.png', R + 'hero/hero_parts_b_v2_2_preview.png']),
-         ('sprout_boar f v1.1 / s v2.2 / b v1.1', [R + 'sprout_boar/sprout_boar_parts_f_v1_1_preview.png', R + 'sprout_boar/sprout_boar_parts_s_v2_2_preview.png', R + 'sprout_boar/sprout_boar_parts_b_v1_1_preview.png']),
-         ('root_spore_mushroom f/s/b v1.1', [R + f'root_spore_mushroom/root_spore_mushroom_parts_{f}_v1_1_preview.png' for f in 'fsb']),
-         ('slime v1.1', [R + 'slime/slime_parts_v1_1_preview.png']),
-         ('deep_moss_slime v1.1', [R + 'deep_moss_slime/deep_moss_slime_parts_v1_1_preview.png']),
-         ('mosscrown_king_boar f/s/b v2.1 (redraw)', [R + f'mosscrown_king_boar/mosscrown_king_boar_parts_{f}_v2_1_preview.png' for f in 'fsb'])]
-W = 2600; BG = (226, 222, 212, 255)
-sheet = Image.new("RGBA", (W, 4000), BG); d = ImageDraw.Draw(sheet)
+hero = prev(R + 'hero/hero_parts_s_v2_3_preview.png'); k = 135 / hero.height
+chars = [('hero f/s/b v2.3', [R + f'hero/hero_parts_{f}_v2_3_preview.png' for f in 'fsb']),
+         ('sprout_boar f v1.1 / s v2.2 / b v1.2', [R + 'sprout_boar/sprout_boar_parts_f_v1_1_preview.png', R + 'sprout_boar/sprout_boar_parts_s_v2_2_preview.png', R + 'sprout_boar/sprout_boar_parts_b_v1_2_preview.png']),
+         ('root_spore_mushroom f/s/b v1.2', [R + f'root_spore_mushroom/root_spore_mushroom_parts_{f}_v1_2_preview.png' for f in 'fsb']),
+         ('slime v1.2', [R + 'slime/slime_parts_v1_2_preview.png']),
+         ('deep_moss_slime v1.2', [R + 'deep_moss_slime/deep_moss_slime_parts_v1_2_preview.png']),
+         ('mosscrown_king_boar f/s/b v3', [R + f'mosscrown_king_boar/mosscrown_king_boar_parts_{f}_v3_preview.png' for f in 'fsb'])]
+W = 2900; BG = (226, 222, 212, 255)
+sheet = Image.new("RGBA", (W, 6500), BG); d = ImageDraw.Draw(sheet)
 d.text((20, 12), 'Stellar Abyss - level 1 art batch ' + (sys.argv[2] if len(sys.argv) > 2 else '2026-10-21d') + ' - overview at game scale (1080p, hero = 135 px). AI output cut by tool, no hand painting.', fill=(20, 20, 20, 255))
 # baseline crop
 base = Image.open('art_src/ref/combat_baseline_v2.jpg').convert('RGBA').crop((380, 250, 980, 560)); base = base.resize((base.width * 3 // 2, base.height * 3 // 2), Image.LANCZOS)
@@ -52,7 +52,14 @@ row('HUD v2 thin-border set + paper grain in the fills (9-slice rebuilt; 1:1 x0.
     [U + 'bars/u02_bar_frame.png', U + 'bars/u02_fill_hp.png', U + 'bars/u02_fill_mp.png', U + 'bars/u02_fill_sp.png', U + 'bars/u10_boss_bar_frame.png', U + 'bars/u10_fill_boss.png', U + 'icons/u10_boss_icon.png', U + 'frames/u07_slot.png']
     + sorted(glob.glob(U + 'frames/u15_quality_frame_*.png')) + [U + 'frames/u03_level_badge.png'] + sorted(glob.glob(U + 'panels/*.png')) + sorted(glob.glob(U + 'hud/*.png')) + sorted(glob.glob(U + 'icons_u16/u16_*.png')), 0.6)
 row('U11-U13 screens 1920x1080 (x0.3, over a dark backdrop)', [U + 'screens/u11_backpack.png', U + 'screens/u12_extract_result.png', U + 'screens/u13_vault_storage.png'], 0.3)
+row('21f swap sheets (swap_sheet.py: rest + each hidden layer shown; hero expressions, king boar roar head + angry eyes, mushroom open mouth)',
+    [R + 'hero/hero_parts_f_v2_3_swapsheet.png', R + 'hero/hero_parts_s_v2_3_swapsheet.png', R + 'mosscrown_king_boar/mosscrown_king_boar_parts_f_v3_swapsheet.png', R + 'mosscrown_king_boar/mosscrown_king_boar_parts_s_v3_swapsheet.png',
+     R + 'root_spore_mushroom/root_spore_mushroom_parts_f_v1_2_swapsheet.png', R + 'root_spore_mushroom/root_spore_mushroom_parts_s_v1_2_swapsheet.png'], 0.5, maxh=300)
+row('21f C03 hero portrait 256 (round cut, x1)', [U + 'portrait/c03_hero_portrait_256.png'], 1.0)
 F = 'art_src/fx/fx_v1/'
 fx = sorted(glob.glob(F + '*/*.png'))
-row('FX frames (1:1 cut x0.6)', fx, 0.6)
+row('FX v1 frames (1:1 cut x0.6)', fx, 0.6)
+F2 = 'art_src/fx/fx_v2/'
+row('FX v2 (21f) frames: F01 finisher 5-6, F02, F06, F07 sacs, F10, F11, F13, F14 (1:1 cut x0.6)', [f for f in sorted(glob.glob(F2 + '*/*.png')) if '/f08_' not in f and '/f12_' not in f], 0.6)
+row('FX v2 (21f) F08 warning brush 256 tileable + 3x3 tiling check, F12 damage font (Lilita One, OFL) + tint preview', [F2 + 'f08_warning_brush/f08_warning_brush_256.png', F2 + 'f08_warning_brush/f08_warning_brush_tiling_check.png', F2 + 'f12_damage_font/f12_damage_font_preview.png'], 0.6)
 sheet = sheet.crop((0, 0, W, y + 10)); sheet.save(sys.argv[1]); print(sys.argv[1], sheet.size)

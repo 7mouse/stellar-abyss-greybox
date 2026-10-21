@@ -47,3 +47,15 @@ v2.1（2026-10-21b）：配置写 `"cap_version": 2` 用 round_cap2。上层部�
 | make_ui_v2.py | `paper`：中间区叠周期纸纹（TILE 安全），固定件的深色部分也加；`tile_center=True`：渲染到别的尺寸时中间区平铺；另出 256 纸纹平铺图。 |
 | make_combat_mock.py | 场景加了悬崖带、背景树丛、前景树冠、石板变体随机选（seed 11）、散布灌木和石头。 |
 | make_overview.py | 第二个参数是日期；加了石板变体、贴花 / 光 v3、悬崖和森林层一行。 |
+
+## v6（2026-10-21f，缺件补齐）
+- `rig_extras.py` 新操作：
+  - `add_part`：从新 AI 图（`source` + `pick`，显示坐标 = 实际 / 1.25；`extra_picks` 合并多个连通块；`clip`、`flip_h`、`rotate`）或现成的透明 PNG（`png`）取一个件，`fit` 三种对位：`{"iou": 图层, "region", "scale"}`（alpha IoU，FFT）、`{"box", "anchor"}`、`{"at", "h"|"w"}`；`recolor`（meanstd / hist，向某图层的色板靠）；`mask`（椭圆 + 肤色区，和原图层合成，保证没有洞）；`alpha_mul`、`darken`；`above` / `below` / `replace` / `merge_into`；`swap`（隐藏替换件）；`pivots`
+  - `split`：一条肢体在膝点垂直于肢体方向切成上下 2 段（干净切口，圆头由 rig_patch 的 cap v2 补）
+  - `underfill`：隐藏延伸。子件在父件上面 → 父件在子件静止覆盖区 ∩ 半径圆内长出来；子件在下面 → 在子件下面加一层 `<父>_under_<子>`（跟父件走）。颜色取父件最近的内部像素，模糊后压暗 `shade`
+  - `grade`（饱和度 / 明度 / alpha，`min_lum` 只动亮部）、`translate_layer`、`remove`、`reorder`、`pivots`、`rename`；`empty` / `dup_layer` 支持 `above` / `below` / `swap`
+- `swap_sheet.py psd out.png --crop x0 y0 x1 y1 --only a,b`：静止 + 每个隐藏替换件单独显示
+- `make_fx_extra.py`：F08 平铺笔触（自动周期 + 环绕）和 F12 位图字体（字库 → png + BMFont .fnt + tint 预览）
+- `make_portrait.py`：圆形头像裁切
+- `cut_sprites.py`：每项可指定 `source`（不同原图），清单记录来源；`alpha_gain`、`tint`、`erase_dark: [亮度, 膨胀(, 最小面积)]`
+- 流程（以苔冠王为例）：`rig_extras.py <x>_extras_v3.json`（→ `_v3_raw`）→ `rig_patch.py <x>_v3_patch.json`（膝盖圆头）→ `rig_check.py <x>_v3_fix.json --seam-band 4`

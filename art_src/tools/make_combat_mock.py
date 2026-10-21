@@ -111,9 +111,9 @@ def put(img, x, y): cv.alpha_composite(img, (x, y))
 def text(s, x, y, sz, col=(236, 230, 214), anchor='la'):
     ImageDraw.Draw(cv).text((x, y), s, font=font(sz), fill=col, anchor=anchor)
 # portrait + level + bars
-por = L(U + 'hud/u01_portrait_ring.png').resize((132, 132)); face = L(R + 'hero/parts_v2_2/head_f.png'); face = face.crop(face.getbbox()); face.thumbnail((104, 104))
-disc = Image.new('RGBA', (132, 132)); ImageDraw.Draw(disc).ellipse([8, 8, 124, 124], fill=(40, 42, 46, 200)); disc.alpha_composite(face, (66 - face.width // 2, 70 - face.height // 2))
-m = Image.new('L', (132, 132)); ImageDraw.Draw(m).ellipse([9, 9, 123, 123], fill=255); disc.putalpha(Image.fromarray(np.minimum(np.asarray(disc.getchannel('A')), np.asarray(m))))
+por = L(U + 'hud/u01_portrait_ring.png').resize((132, 132))
+# 21f: C03 portrait (AI bust, round-cut by make_portrait.py) inside the U01 ring
+disc = L(U + 'portrait/c03_hero_portrait_256.png').resize((116, 116), Image.LANCZOS); disc0 = Image.new('RGBA', (132, 132)); disc0.alpha_composite(disc, (8, 8)); disc = disc0
 put(disc, 24, 20); put(por, 24, 20)
 put(L(U + 'frames/u03_level_badge.png').resize((52, 52)), 120, 104); text('18', 146, 130, 22, anchor='mm')
 for i, (fn, frac, lab) in enumerate([('u02_fill_hp', 1.0, 'HP'), ('u02_fill_mp', 0.7, 'MP'), ('u02_fill_sp', 0.85, 'SP')]):
@@ -140,6 +140,6 @@ mock = cv.convert('RGB'); mock.save(sys.argv[2])
 bl = Image.open('art_src/ref/combat_baseline_v2.jpg').convert('RGB').resize((W, H), Image.LANCZOS)
 out = Image.new('RGB', (W * 2 + 40, H + 70), (24, 24, 26)); out.paste(mock, (0, 70)); out.paste(bl, (W + 40, 70))
 d = ImageDraw.Draw(out)
-d.text((10, 20), 'NEW 2026-10-21e (cut assets only, 1080p, hero 135 px)', font=font(24), fill=(236, 230, 214))
+d.text((10, 20), 'NEW ' + (sys.argv[3] if len(sys.argv) > 3 else '2026-10-21f') + ' (cut assets only, 1080p, hero 135 px)', font=font(24), fill=(236, 230, 214))
 d.text((W + 50, 20), 'REFERENCE combat_baseline_v2', font=font(24), fill=(236, 230, 214))
 out.save(sys.argv[1]); print(sys.argv[1], out.size)

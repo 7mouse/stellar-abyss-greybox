@@ -1,0 +1,70 @@
+{
+ "source": "art_src/src/terrain_v2/cliffs_modular_gen1.jpg",
+ "out_dir": "art_src/terrain/floor1_v2/cliffs",
+ "disp_scale": 1.25,
+ "items": [
+  {
+   "name": "cliff_straight_a",
+   "pick": [
+    170,
+    130
+   ],
+   "spec": "cliff: mossy top edge + rock face, joins left/right (overlap ~8 px)",
+   "recolor": "muted"
+  },
+  {
+   "name": "cliff_straight_b",
+   "pick": [
+    505,
+    130
+   ],
+   "spec": "cliff straight",
+   "recolor": "muted"
+  },
+  {
+   "name": "cliff_straight_c",
+   "pick": [
+    845,
+    130
+   ],
+   "spec": "cliff straight",
+   "recolor": "muted"
+  },
+  {
+   "name": "cliff_corner_outer",
+   "pick": [
+    160,
+    390
+   ],
+   "spec": "cliff outer corner",
+   "recolor": "muted"
+  },
+  {
+   "name": "cliff_corner_inner",
+   "pick": [
+    515,
+    370
+   ],
+   "spec": "cliff inner corner",
+   "recolor": "muted"
+  },
+  {
+   "name": "cliff_end_rubble",
+   "rect": [
+    728,
+    252,
+    1004,
+    532
+   ],
+   "soft": false,
+   "spec": "cliff end tapering into boulders",
+   "recolor": "muted"
+  }
+ ],
+ "recolor": {
+  "muted": {
+   "sat": 0.8,
+   "val": 0.93
+  }
+ }
+}

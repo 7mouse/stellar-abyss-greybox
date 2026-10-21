@@ -1,0 +1,127 @@
+{
+ "canvas": [
+  256,
+  192
+ ],
+ "unit": "px@1:1",
+ "version": "deep_moss_slime_parts_v1_1",
+ "order": [
+  "puddle_mesh",
+  "body_mesh",
+  "highlight",
+  "eye_r",
+  "eye_closed_r_s",
+  "eye_l",
+  "eye_closed_l_s",
+  "mouth",
+  "shell",
+  "moss_tuft"
+ ],
+ "swap": [
+  "eye_closed_l_s",
+  "eye_closed_r_s"
+ ],
+ "pivots": {
+  "root": [
+   127.8,
+   186.6
+  ],
+  "body": [
+   127.8,
+   143.9
+  ],
+  "eye_r": [
+   94.5,
+   143.5
+  ],
+  "eye_l": [
+   138.5,
+   143.5
+  ],
+  "mouth": [
+   125.8,
+   153.0
+  ],
+  "highlight": [
+   96.1,
+   124.7
+  ],
+  "shell_root": [
+   127.8,
+   117.5
+  ],
+  "tuft_root": [
+   98.0,
+   79.1
+  ]
+ },
+ "line_rgb": [
+  30,
+  24,
+  20
+ ],
+ "from": "art_src/rigs/deep_moss_slime/deep_moss_slime_parts_v1_src2x.psd",
+ "log": {
+  "extras": [
+   {
+    "op": "blink",
+    "head": "body_mesh",
+    "suffix": "s",
+    "closed_only": true,
+    "eyes": [
+     {
+      "side": "r",
+      "open_layer": "eye_r",
+      "ellipse": [
+       94.5,
+       143.5,
+       10.5,
+       11.5
+      ]
+     },
+     {
+      "side": "l",
+      "open_layer": "eye_l",
+      "ellipse": [
+       138.5,
+       143.5,
+       10.5,
+       11.5
+      ]
+     }
+    ],
+    "eyes_fit": [
+     {
+      "side": "r",
+      "ellipse_1to1": [
+       94.5,
+       143.5,
+       10.5,
+       11.5
+      ],
+      "skin_rgb": [
+       74.0,
+       106.0,
+       83.0
+      ]
+     },
+     {
+      "side": "l",
+      "ellipse_1to1": [
+       138.5,
+       143.5,
+       10.5,
+       11.5
+      ],
+      "skin_rgb": [
+       69.0,
+       101.0,
+       78.0
+      ]
+     }
+    ]
+   }
+  ],
+  "previous": null
+ }
+}

@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import rig_joints as RJ
 
 CLS = {'small': RJ.SMALL, 'big': RJ.BIG}
+HIDDEN = set()   # swap layers (eye_closed etc., saved hidden): kept, but left out of previews and cap covers
 
 def load_psd(path):
     psd = PSDImage.open(path)
@@ -36,6 +37,8 @@ def load_psd(path):
             cv.alpha_composite(im.convert('RGBA'), (l.left, l.top))
         layers[l.name] = RJ.to_f(cv)
         order.append(l.name)
+        if not l.visible:
+            HIDDEN.add(l.name)
     return layers, order, (W, H)
 
 def reoutline(a, old_alpha, line_rgb, lw):
@@ -55,7 +58,7 @@ def compose(layers, order, size, bg=None):
     W, H = size
     cv = Image.new('RGBA', (W, H), bg or (0, 0, 0, 0))
     for n in order:
-        if layers.get(n) is not None:
+        if layers.get(n) is not None and n not in HIDDEN:
             cv.alpha_composite(RJ.to_img(layers[n]))
     return cv
 
@@ -210,11 +213,11 @@ def run(cfg_path, root=None, out_root=None):
                     w_ = L[q][..., 3:4]
                     vis_par[..., :3] = vis_par[..., :3] * (1 - w_) + L[q][..., :3] * w_
                     vis_par[..., 3] = np.maximum(vis_par[..., 3], L[q][..., 3])
-            ab = [L[q][..., 3] for q in order[idx[part] + 1:] if q != other]
+            ab = [L[q][..., 3] for q in order[idx[part] + 1:] if q != other and q not in HIDDEN]
             above = np.maximum.reduce(ab) if (vis_par is not None and ab) else None
             if not on_top and kw['hide_under'] is None and jt.get(f'{side}_cover_only', c.get('hidden_caps_only_under_cover', True)):
                 # a 'hidden' cap must really be hidden: grow it only where some higher layer covers it at rest
-                cover = [L[q][..., 3] for q in order[idx[part] + 1:]]
+                cover = [L[q][..., 3] for q in order[idx[part] + 1:] if q not in HIDDEN]
                 if cover:
                     kw['hide_under'] = np.maximum.reduce(cover)
             return RJ.round_cap2(L[part], P[j], u, cls, S, on_top=on_top, parent=vis_par, above=above,
@@ -260,7 +263,10 @@ def run(cfg_path, root=None, out_root=None):
     for sc, suf, LL, sz, k in ((1, '', small, (W1, H1), 1), (S, '_src2x', L, (W, H), S)):
         psd = PSDImage.new('RGBA', sz)
         for n in order:
-            psd.append(PixelLayer.frompil(RJ.to_img(LL[n]), psd, n, 0, 0))
+            ly = PixelLayer.frompil(RJ.to_img(LL[n]), psd, n, 0, 0)
+            if n in HIDDEN:
+                ly.visible = False
+            psd.append(ly)
         psd.append(PixelLayer.frompil(pivot_layer(piv1, sz, k), psd, '_pivots', 0, 0))
         psd.save(f'{out}/{base}{suf}.psd')
     for n in order:
@@ -268,7 +274,7 @@ def run(cfg_path, root=None, out_root=None):
         if im.getbbox():
             im.save(f'{out}/{PD}/{n}.png')
     compose(small, order, (W1, H1)).save(f'{out}/{base}_preview.png')
-    json.dump({'canvas': [W1, H1], 'unit': 'px@1:1', 'version': base, 'order': order, 'pivots': piv1,
+    json.dump({'canvas': [W1, H1], 'unit': 'px@1:1', 'version': base, 'order': order, 'swap': sorted(HIDDEN & set(order)), 'pivots': piv1,
                'line_rgb': [int(round(x * 255)) for x in line], 'log': log},
               open(f'{out}/{base}_pivots.json', 'w'), ensure_ascii=False, indent=1,
               default=lambda o: o.tolist() if hasattr(o, 'tolist') else str(o))

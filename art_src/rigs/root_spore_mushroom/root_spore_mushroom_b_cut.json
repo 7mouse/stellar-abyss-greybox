@@ -1,0 +1,207 @@
+{
+ "source": "art_src/src/root_spore_mushroom_partsheet_gen1.jpg",
+ "out_dir": "art_src/rigs/root_spore_mushroom",
+ "base": "root_spore_mushroom_parts_b_v1",
+ "canvas2x": 512,
+ "disp_scale": 1.25,
+ "k": 1.5,
+ "pose_box": [
+  717,
+  57,
+  916,
+  306
+ ],
+ "parts": [
+  {
+   "name": "root_l_b",
+   "pick": [
+    847,
+    440
+   ],
+   "box": [
+    722,
+    226,
+    816,
+    308
+   ]
+  },
+  {
+   "name": "root_r_b",
+   "pick": [
+    752,
+    440
+   ],
+   "box": [
+    816,
+    226,
+    910,
+    308
+   ]
+  },
+  {
+   "name": "arm_l_b",
+   "pick": [
+    985,
+    440
+   ],
+   "box": [
+    708,
+    189,
+    768,
+    241
+   ],
+   "rotate": 100,
+   "flip_h": true
+  },
+  {
+   "name": "arm_r_b",
+   "pick": [
+    920,
+    440
+   ],
+   "box": [
+    866,
+    189,
+    926,
+    241
+   ],
+   "rotate": -100,
+   "flip_h": true
+  },
+  {
+   "name": "stalk_b_mesh",
+   "pick": [
+    557,
+    430
+   ],
+   "box": [
+    745,
+    132,
+    887,
+    272
+   ]
+  },
+  {
+   "name": "cap_b",
+   "pick": [
+    425,
+    420
+   ],
+   "box": [
+    717,
+    57,
+    913,
+    166
+   ]
+  }
+ ],
+ "order": [
+  "root_l_b",
+  "root_r_b",
+  "arm_l_b",
+  "arm_r_b",
+  "stalk_b_mesh",
+  "cap_b"
+ ],
+ "pivots": {
+  "cap_root": [
+   816,
+   152
+  ],
+  "cap_top": [
+   816,
+   60
+  ],
+  "hip_l": [
+   770,
+   248
+  ],
+  "foot_l": [
+   770,
+   302
+  ],
+  "hip_r": [
+   862,
+   248
+  ],
+  "foot_r": [
+   862,
+   302
+  ],
+  "arm_root_l": [
+   764,
+   214
+  ],
+  "hand_l": [
+   720,
+   228
+  ],
+  "arm_root_r": [
+   869,
+   214
+  ],
+  "hand_r": [
+   914,
+   228
+  ],
+  "root": [
+   816,
+   305
+  ]
+ },
+ "joints": [
+  {
+   "pivot": "cap_root",
+   "parent": "stalk_b_mesh",
+   "child": "cap_b",
+   "child_cls": "big",
+   "child_from": "cap_top",
+   "parent_cls": "big",
+   "parent_from": "root"
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "stalk_b_mesh",
+   "child": "root_r_b",
+   "child_cls": "big",
+   "child_from": "foot_r",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "stalk_b_mesh",
+   "child": "root_l_b",
+   "child_cls": "big",
+   "child_from": "foot_l",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "arm_root_r",
+   "parent": "stalk_b_mesh",
+   "child": "arm_r_b",
+   "child_cls": "small",
+   "child_from": "hand_r",
+   "child_target": 8,
+   "parent_cls": "small",
+   "parent_from": "root",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "arm_root_l",
+   "parent": "stalk_b_mesh",
+   "child": "arm_l_b",
+   "child_cls": "small",
+   "child_from": "hand_l",
+   "child_target": 8,
+   "parent_cls": "small",
+   "parent_from": "root",
+   "child_cover_only": false
+  }
+ ],
+ "cap_version": 2,
+ "line_rgb": [
+  38,
+  40,
+  32
+ ]
+}

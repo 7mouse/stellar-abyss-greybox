@@ -1,0 +1,187 @@
+{
+ "source": "art_src/src/mosscrown_king_boar_partsheet_v2_gen1.jpg",
+ "out_dir": "art_src/rigs/mosscrown_king_boar",
+ "base": "mosscrown_king_boar_parts_f_v2",
+ "canvas2x": 640,
+ "disp_scale": 1.25,
+ "k": 2.15,
+ "cap_version": 2,
+ "why": "v2 redraw; crown/ears/tusks baked into head_f",
+ "pose_box": [
+  419,
+  13,
+  607,
+  260
+ ],
+ "parts": [
+  {
+   "name": "leg_hind_r_f",
+   "pick": [
+    175,
+    490
+   ],
+   "box": [
+    470,
+    200,
+    500,
+    250
+   ]
+  },
+  {
+   "name": "leg_hind_l_f",
+   "pick": [
+    371,
+    490
+   ],
+   "box": [
+    526,
+    200,
+    556,
+    250
+   ]
+  },
+  {
+   "name": "body_f_mesh",
+   "pick": [
+    770,
+    360
+   ],
+   "box": [
+    423,
+    86,
+    605,
+    248
+   ]
+  },
+  {
+   "name": "leg_front_r_f",
+   "pick": [
+    77,
+    490
+   ],
+   "box": [
+    436,
+    202,
+    476,
+    260
+   ]
+  },
+  {
+   "name": "leg_front_l_f",
+   "pick": [
+    277,
+    490
+   ],
+   "box": [
+    550,
+    202,
+    590,
+    260
+   ]
+  },
+  {
+   "name": "head_f",
+   "pick": [
+    270,
+    370
+   ],
+   "box": [
+    425,
+    13,
+    605,
+    212
+   ]
+  }
+ ],
+ "order": [
+  "leg_hind_r_f",
+  "leg_hind_l_f",
+  "body_f_mesh",
+  "leg_front_r_f",
+  "leg_front_l_f",
+  "head_f"
+ ],
+ "pivots": {
+  "neck": [
+   513,
+   170
+  ],
+  "head_top": [
+   513,
+   40
+  ],
+  "hip_r": [
+   485,
+   220
+  ],
+  "hoof_r_hind": [
+   485,
+   250
+  ],
+  "hip_l": [
+   541,
+   220
+  ],
+  "hoof_l_hind": [
+   541,
+   250
+  ],
+  "shoulder_r": [
+   456,
+   220
+  ],
+  "hoof_r_front": [
+   456,
+   258
+  ],
+  "shoulder_l": [
+   570,
+   220
+  ],
+  "hoof_l_front": [
+   570,
+   258
+  ],
+  "root": [
+   513,
+   259
+  ]
+ },
+ "joints": [
+  {
+   "pivot": "neck",
+   "parent": "body_f_mesh",
+   "child": "head_f",
+   "child_cls": "big",
+   "child_from": "head_top"
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "body_f_mesh",
+   "child": "leg_hind_r_f",
+   "child_cls": "big",
+   "child_from": "hoof_r_hind"
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "body_f_mesh",
+   "child": "leg_hind_l_f",
+   "child_cls": "big",
+   "child_from": "hoof_l_hind"
+  },
+  {
+   "pivot": "shoulder_r",
+   "parent": "body_f_mesh",
+   "child": "leg_front_r_f",
+   "child_cls": "big",
+   "child_from": "hoof_r_front"
+  },
+  {
+   "pivot": "shoulder_l",
+   "parent": "body_f_mesh",
+   "child": "leg_front_l_f",
+   "child_cls": "big",
+   "child_from": "hoof_l_front"
+  }
+ ]
+}

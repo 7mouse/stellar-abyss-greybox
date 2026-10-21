@@ -1,0 +1,231 @@
+{
+ "source": "art_src/src/sprout_boar_fb_partsheet_gen1.jpg",
+ "out_dir": "art_src/rigs/sprout_boar",
+ "base": "sprout_boar_parts_b_v1",
+ "canvas2x": 512,
+ "disp_scale": 1.25,
+ "k": 1.54,
+ "cap_version": 2,
+ "line_rgb": [
+  33,
+  24,
+  8
+ ],
+ "why": "back facing; head hidden behind the body (empty head_b kept for structure)",
+ "pose_box": [
+  555,
+  22,
+  800,
+  278
+ ],
+ "parts": [
+  {
+   "name": "leg_front_l_b",
+   "pick": [
+    808,
+    480
+   ],
+   "box": [
+    608,
+    230,
+    642,
+    272
+   ]
+  },
+  {
+   "name": "leg_front_r_b",
+   "pick": [
+    880,
+    480
+   ],
+   "box": [
+    670,
+    230,
+    704,
+    272
+   ]
+  },
+  {
+   "name": "head_b",
+   "empty": true,
+   "note": "head not visible from behind"
+  },
+  {
+   "name": "leg_hind_l_b",
+   "pick": [
+    736,
+    480
+   ],
+   "box": [
+    574,
+    228,
+    614,
+    282
+   ]
+  },
+  {
+   "name": "leg_hind_r_b",
+   "pick": [
+    949,
+    480
+   ],
+   "box": [
+    698,
+    228,
+    738,
+    282
+   ]
+  },
+  {
+   "name": "body_b_mesh",
+   "pick": [
+    290,
+    400
+   ],
+   "box": [
+    560,
+    60,
+    760,
+    268
+   ]
+  },
+  {
+   "name": "tail_b",
+   "pick": [
+    940,
+    400
+   ],
+   "box": [
+    740,
+    178,
+    796,
+    240
+   ]
+  },
+  {
+   "name": "sprout_b",
+   "pick": [
+    900,
+    330
+   ],
+   "box": [
+    614,
+    28,
+    700,
+    84
+   ]
+  }
+ ],
+ "order": [
+  "leg_front_l_b",
+  "leg_front_r_b",
+  "head_b",
+  "leg_hind_l_b",
+  "leg_hind_r_b",
+  "body_b_mesh",
+  "tail_b",
+  "sprout_b"
+ ],
+ "pivots": {
+  "sprout_root": [
+   657,
+   75
+  ],
+  "sprout_tip": [
+   657,
+   20
+  ],
+  "tail_root": [
+   748,
+   205
+  ],
+  "tail_tip": [
+   790,
+   215
+  ],
+  "hip_l": [
+   594,
+   245
+  ],
+  "hoof_l_hind": [
+   594,
+   280
+  ],
+  "hip_r": [
+   718,
+   245
+  ],
+  "hoof_r_hind": [
+   718,
+   280
+  ],
+  "shoulder_l": [
+   625,
+   242
+  ],
+  "hoof_l_front": [
+   625,
+   270
+  ],
+  "shoulder_r": [
+   687,
+   242
+  ],
+  "hoof_r_front": [
+   687,
+   270
+  ],
+  "root": [
+   657,
+   280
+  ]
+ },
+ "joints": [
+  {
+   "pivot": "sprout_root",
+   "parent": "body_b_mesh",
+   "child": "sprout_b",
+   "child_cls": "small",
+   "child_from": "sprout_tip"
+  },
+  {
+   "pivot": "tail_root",
+   "parent": "body_b_mesh",
+   "child": "tail_b",
+   "child_cls": "small",
+   "child_from": "tail_tip",
+   "parent_cls": "small",
+   "parent_from": "root",
+   "child_cover_only": false,
+   "child_target": 8
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "body_b_mesh",
+   "child": "leg_hind_r_b",
+   "child_cls": "small",
+   "child_from": "hoof_r_hind"
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "body_b_mesh",
+   "child": "leg_hind_l_b",
+   "child_cls": "small",
+   "child_from": "hoof_l_hind"
+  },
+  {
+   "pivot": "shoulder_r",
+   "parent": "body_b_mesh",
+   "child": "leg_front_r_b",
+   "child_cls": "small",
+   "child_from": "hoof_r_front"
+  },
+  {
+   "pivot": "shoulder_l",
+   "parent": "body_b_mesh",
+   "child": "leg_front_l_b",
+   "child_cls": "small",
+   "child_from": "hoof_l_front"
+  }
+ ]
+}

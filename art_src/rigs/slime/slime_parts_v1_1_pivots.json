@@ -1,0 +1,117 @@
+{
+ "canvas": [
+  256,
+  192
+ ],
+ "unit": "px@1:1",
+ "version": "slime_parts_v1_1",
+ "order": [
+  "puddle_mesh",
+  "body_mesh",
+  "highlight",
+  "eye_r",
+  "eye_closed_r_s",
+  "eye_l",
+  "eye_closed_l_s",
+  "mouth"
+ ],
+ "swap": [
+  "eye_closed_l_s",
+  "eye_closed_r_s"
+ ],
+ "pivots": {
+  "root": [
+   127.5,
+   186.6
+  ],
+  "body": [
+   127.5,
+   141.5
+  ],
+  "eye_r": [
+   103.5,
+   146.0
+  ],
+  "eye_l": [
+   151.0,
+   146.0
+  ],
+  "mouth": [
+   127.0,
+   155.4
+  ],
+  "highlight": [
+   100.6,
+   103.6
+  ]
+ },
+ "line_rgb": [
+  30,
+  24,
+  20
+ ],
+ "from": "art_src/rigs/slime/slime_parts_v1_src2x.psd",
+ "log": {
+  "extras": [
+   {
+    "op": "blink",
+    "head": "body_mesh",
+    "suffix": "s",
+    "closed_only": true,
+    "eyes": [
+     {
+      "side": "r",
+      "open_layer": "eye_r",
+      "ellipse": [
+       103.5,
+       146.0,
+       10.5,
+       12.0
+      ]
+     },
+     {
+      "side": "l",
+      "open_layer": "eye_l",
+      "ellipse": [
+       151.0,
+       146.0,
+       11.0,
+       12.0
+      ]
+     }
+    ],
+    "eyes_fit": [
+     {
+      "side": "r",
+      "ellipse_1to1": [
+       103.5,
+       146.0,
+       10.5,
+       12.0
+      ],
+      "skin_rgb": [
+       180.0,
+       159.0,
+       201.0
+      ]
+     },
+     {
+      "side": "l",
+      "ellipse_1to1": [
+       151.0,
+       146.0,
+       11.0,
+       12.0
+      ],
+      "skin_rgb": [
+       156.0,
+       134.0,
+       184.0
+      ]
+     }
+    ]
+   }
+  ],
+  "previous": null
+ }
+}

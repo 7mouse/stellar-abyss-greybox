@@ -1,0 +1,545 @@
+{
+ "source": "art_src/src/fx_set_gen1.jpg",
+ "items": {
+  "f01_slash_1": {
+   "rect_src": [
+    108,
+    3,
+    216,
+    90
+   ],
+   "size": [
+    100,
+    70
+   ],
+   "file": "f01_slash/f01_slash_1.png",
+   "frame": 1,
+   "spec": "F01 light slash (4 frames; spec 3 segments x2 = 6)"
+  },
+  "f01_slash_2": {
+   "rect_src": [
+    361,
+    3,
+    502,
+    90
+   ],
+   "size": [
+    135,
+    76
+   ],
+   "file": "f01_slash/f01_slash_2.png",
+   "frame": 2,
+   "spec": "F01 light slash (4 frames; spec 3 segments x2 = 6)"
+  },
+  "f01_slash_3": {
+   "rect_src": [
+    648,
+    3,
+    825,
+    90
+   ],
+   "size": [
+    170,
+    77
+   ],
+   "file": "f01_slash/f01_slash_3.png",
+   "frame": 3,
+   "spec": "F01 light slash (4 frames; spec 3 segments x2 = 6)"
+  },
+  "f01_slash_4": {
+   "rect_src": [
+    972,
+    3,
+    1133,
+    90
+   ],
+   "size": [
+    155,
+    77
+   ],
+   "file": "f01_slash/f01_slash_4.png",
+   "frame": 4,
+   "spec": "F01 light slash (4 frames; spec 3 segments x2 = 6)"
+  },
+  "f15_ring_1": {
+   "rect_src": [
+    78,
+    97,
+    237,
+    187
+   ],
+   "size": [
+    149,
+    70
+   ],
+   "file": "f15_ring/f15_ring_1.png",
+   "frame": 1,
+   "spec": "F15 roar ring (1 needed) / F13 shockwave frames"
+  },
+  "f15_ring_2": {
+   "rect_src": [
+    338,
+    97,
+    526,
+    187
+   ],
+   "size": [
+    179,
+    76
+   ],
+   "file": "f15_ring/f15_ring_2.png",
+   "frame": 2,
+   "spec": "F15 roar ring (1 needed) / F13 shockwave frames"
+  },
+  "f15_ring_3": {
+   "rect_src": [
+    638,
+    97,
+    842,
+    187
+   ],
+   "size": [
+    193,
+    80
+   ],
+   "file": "f15_ring/f15_ring_3.png",
+   "frame": 3,
+   "spec": "F15 roar ring (1 needed) / F13 shockwave frames"
+  },
+  "f15_ring_4": {
+   "rect_src": [
+    966,
+    97,
+    1157,
+    187
+   ],
+   "size": [
+    181,
+    80
+   ],
+   "file": "f15_ring/f15_ring_4.png",
+   "frame": 4,
+   "spec": "F15 roar ring (1 needed) / F13 shockwave frames"
+  },
+  "f03_thrust_1": {
+   "rect_src": [
+    76,
+    193,
+    216,
+    253
+   ],
+   "size": [
+    132,
+    18
+   ],
+   "file": "f03_thrust/f03_thrust_1.png",
+   "frame": 1,
+   "spec": "F03 skill-2 thrust (4)"
+  },
+  "f03_thrust_2": {
+   "rect_src": [
+    327,
+    193,
+    522,
+    253
+   ],
+   "size": [
+    189,
+    28
+   ],
+   "file": "f03_thrust/f03_thrust_2.png",
+   "frame": 2,
+   "spec": "F03 skill-2 thrust (4)"
+  },
+  "f03_thrust_3": {
+   "rect_src": [
+    612,
+    193,
+    857,
+    253
+   ],
+   "size": [
+    240,
+    53
+   ],
+   "file": "f03_thrust/f03_thrust_3.png",
+   "frame": 3,
+   "spec": "F03 skill-2 thrust (4)"
+  },
+  "f03_thrust_4": {
+   "rect_src": [
+    925,
+    193,
+    1207,
+    253
+   ],
+   "size": [
+    273,
+    55
+   ],
+   "file": "f03_thrust/f03_thrust_4.png",
+   "frame": 4,
+   "spec": "F03 skill-2 thrust (4)"
+  },
+  "f04_hit_spark_1": {
+   "rect_src": [
+    70,
+    251,
+    235,
+    332
+   ],
+   "size": [
+    87,
+    47
+   ],
+   "file": "f04_hit_spark/f04_hit_spark_1.png",
+   "frame": 1,
+   "spec": "F04 hit spark (4)"
+  },
+  "f04_hit_spark_2": {
+   "rect_src": [
+    330,
+    251,
+    520,
+    332
+   ],
+   "size": [
+    153,
+    66
+   ],
+   "file": "f04_hit_spark/f04_hit_spark_2.png",
+   "frame": 2,
+   "spec": "F04 hit spark (4)"
+  },
+  "f04_hit_spark_3": {
+   "rect_src": [
+    616,
+    251,
+    856,
+    332
+   ],
+   "size": [
+    230,
+    80
+   ],
+   "file": "f04_hit_spark/f04_hit_spark_3.png",
+   "frame": 3,
+   "spec": "F04 hit spark (4)"
+  },
+  "f04_hit_spark_4": {
+   "rect_src": [
+    950,
+    251,
+    1165,
+    332
+   ],
+   "size": [
+    208,
+    64
+   ],
+   "file": "f04_hit_spark/f04_hit_spark_4.png",
+   "frame": 4,
+   "spec": "F04 hit spark (4)"
+  },
+  "f05_dust_1": {
+   "rect_src": [
+    70,
+    327,
+    235,
+    410
+   ],
+   "size": [
+    155,
+    61
+   ],
+   "file": "f05_dust/f05_dust_1.png",
+   "frame": 1,
+   "spec": "F05 dash dust (4); reusable for F14 charge dust"
+  },
+  "f05_dust_2": {
+   "rect_src": [
+    330,
+    327,
+    520,
+    410
+   ],
+   "size": [
+    182,
+    70
+   ],
+   "file": "f05_dust/f05_dust_2.png",
+   "frame": 2,
+   "spec": "F05 dash dust (4); reusable for F14 charge dust"
+  },
+  "f05_dust_3": {
+   "rect_src": [
+    616,
+    327,
+    856,
+    410
+   ],
+   "size": [
+    191,
+    79
+   ],
+   "file": "f05_dust/f05_dust_3.png",
+   "frame": 3,
+   "spec": "F05 dash dust (4); reusable for F14 charge dust"
+  },
+  "f05_dust_4": {
+   "rect_src": [
+    950,
+    327,
+    1165,
+    410
+   ],
+   "size": [
+    190,
+    65
+   ],
+   "file": "f05_dust/f05_dust_4.png",
+   "frame": 4,
+   "spec": "F05 dash dust (4); reusable for F14 charge dust"
+  },
+  "f09_moss_debris_1": {
+   "rect_src": [
+    76,
+    412,
+    235,
+    487
+   ],
+   "size": [
+    149,
+    63
+   ],
+   "file": "f09_moss_debris/f09_moss_debris_1.png",
+   "frame": 1,
+   "spec": "F09 death moss debris (4)"
+  },
+  "f09_moss_debris_2": {
+   "rect_src": [
+    333,
+    412,
+    526,
+    487
+   ],
+   "size": [
+    182,
+    64
+   ],
+   "file": "f09_moss_debris/f09_moss_debris_2.png",
+   "frame": 2,
+   "spec": "F09 death moss debris (4)"
+  },
+  "f09_moss_debris_3": {
+   "rect_src": [
+    635,
+    412,
+    838,
+    487
+   ],
+   "size": [
+    193,
+    66
+   ],
+   "file": "f09_moss_debris/f09_moss_debris_3.png",
+   "frame": 3,
+   "spec": "F09 death moss debris (4)"
+  },
+  "f09_moss_debris_4": {
+   "rect_src": [
+    966,
+    412,
+    1153,
+    487
+   ],
+   "size": [
+    177,
+    63
+   ],
+   "file": "f09_moss_debris/f09_moss_debris_4.png",
+   "frame": 4,
+   "spec": "F09 death moss debris (4)"
+  },
+  "fx_leaf_scatter_1": {
+   "rect_src": [
+    67,
+    490,
+    228,
+    547
+   ],
+   "size": [
+    152,
+    49
+   ],
+   "file": "fx_leaf_scatter/fx_leaf_scatter_1.png",
+   "frame": 1,
+   "spec": "C08 shell-break leaf debris (extra)"
+  },
+  "fx_leaf_scatter_2": {
+   "rect_src": [
+    326,
+    490,
+    540,
+    547
+   ],
+   "size": [
+    173,
+    48
+   ],
+   "file": "fx_leaf_scatter/fx_leaf_scatter_2.png",
+   "frame": 2,
+   "spec": "C08 shell-break leaf debris (extra)"
+  },
+  "fx_leaf_scatter_3": {
+   "rect_src": [
+    612,
+    490,
+    858,
+    547
+   ],
+   "size": [
+    207,
+    52
+   ],
+   "file": "fx_leaf_scatter/fx_leaf_scatter_3.png",
+   "frame": 3,
+   "spec": "C08 shell-break leaf debris (extra)"
+  },
+  "fx_leaf_scatter_4": {
+   "rect_src": [
+    927,
+    490,
+    1206,
+    547
+   ],
+   "size": [
+    175,
+    46
+   ],
+   "file": "fx_leaf_scatter/fx_leaf_scatter_4.png",
+   "frame": 4,
+   "spec": "C08 shell-break leaf debris (extra)"
+  },
+  "f11_portal_splash_1": {
+   "rect_src": [
+    67,
+    545,
+    228,
+    628
+   ],
+   "size": [
+    105,
+    61
+   ],
+   "file": "f11_portal_splash/f11_portal_splash_1.png",
+   "frame": 1,
+   "spec": "F11 portal (4 of 10)"
+  },
+  "f11_portal_splash_2": {
+   "rect_src": [
+    326,
+    545,
+    540,
+    628
+   ],
+   "size": [
+    176,
+    60
+   ],
+   "file": "f11_portal_splash/f11_portal_splash_2.png",
+   "frame": 2,
+   "spec": "F11 portal (4 of 10)"
+  },
+  "f11_portal_splash_3": {
+   "rect_src": [
+    612,
+    545,
+    858,
+    628
+   ],
+   "size": [
+    193,
+    83
+   ],
+   "file": "f11_portal_splash/f11_portal_splash_3.png",
+   "frame": 3,
+   "spec": "F11 portal (4 of 10)"
+  },
+  "f11_portal_splash_4": {
+   "rect_src": [
+    927,
+    545,
+    1206,
+    628
+   ],
+   "size": [
+    191,
+    83
+   ],
+   "file": "f11_portal_splash/f11_portal_splash_4.png",
+   "frame": 4,
+   "spec": "F11 portal (4 of 10)"
+  },
+  "f07_spore_cloud_1": {
+   "rect_src": [
+    67,
+    625,
+    228,
+    715
+   ],
+   "size": [
+    137,
+    77
+   ],
+   "file": "f07_spore_cloud/f07_spore_cloud_1.png",
+   "frame": 1,
+   "spec": "F07 spore cloud (4 of 6; sac 2 missing)"
+  },
+  "f07_spore_cloud_2": {
+   "rect_src": [
+    326,
+    625,
+    540,
+    715
+   ],
+   "size": [
+    204,
+    83
+   ],
+   "file": "f07_spore_cloud/f07_spore_cloud_2.png",
+   "frame": 2,
+   "spec": "F07 spore cloud (4 of 6; sac 2 missing)"
+  },
+  "f07_spore_cloud_3": {
+   "rect_src": [
+    612,
+    625,
+    858,
+    715
+   ],
+   "size": [
+    237,
+    88
+   ],
+   "file": "f07_spore_cloud/f07_spore_cloud_3.png",
+   "frame": 3,
+   "spec": "F07 spore cloud (4 of 6; sac 2 missing)"
+  },
+  "f07_spore_cloud_4": {
+   "rect_src": [
+    927,
+    625,
+    1206,
+    715
+   ],
+   "size": [
+    270,
+    86
+   ],
+   "file": "f07_spore_cloud/f07_spore_cloud_4.png",
+   "frame": 4,
+   "spec": "F07 spore cloud (4 of 6; sac 2 missing)"
+  }
+ }
+}

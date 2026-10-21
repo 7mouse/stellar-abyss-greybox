@@ -1,0 +1,104 @@
+{
+ "canvas": [
+  320,
+  320
+ ],
+ "unit": "px@1:1",
+ "pivots": {
+  "neck": [
+   160.5,
+   136.3
+  ],
+  "head_top": [
+   160.5,
+   82.6
+  ],
+  "crown_root": [
+   160.5,
+   93.3
+  ],
+  "crown_tip": [
+   160.5,
+   50.3
+  ],
+  "tail_root": [
+   226.1,
+   184.7
+  ],
+  "tail_tip": [
+   251.9,
+   206.2
+  ],
+  "hip_l": [
+   101.4,
+   270.7
+  ],
+  "hoof_l_hind": [
+   101.4,
+   310.5
+  ],
+  "hip_r": [
+   219.7,
+   270.7
+  ],
+  "hoof_r_hind": [
+   219.7,
+   310.5
+  ],
+  "shoulder_l": [
+   141.2,
+   268.6
+  ],
+  "hoof_l_front": [
+   141.2,
+   301.9
+  ],
+  "shoulder_r": [
+   179.9,
+   268.6
+  ],
+  "hoof_r_front": [
+   179.9,
+   301.9
+  ],
+  "root": [
+   160.5,
+   311.6
+  ]
+ },
+ "parts": {
+  "leg_front_l_b": {
+   "pick_component": 11,
+   "scale": 0.884
+  },
+  "leg_front_r_b": {
+   "pick_component": 12,
+   "scale": 0.908
+  },
+  "head_b": {
+   "pick_component": 7,
+   "scale": 1.321
+  },
+  "leg_hind_l_b": {
+   "pick_component": 10,
+   "scale": 1.113
+  },
+  "leg_hind_r_b": {
+   "pick_component": 13,
+   "scale": 1.113
+  },
+  "body_b_mesh": {
+   "pick_component": 8,
+   "scale": 2.297
+  },
+  "tail_b": {
+   "pick_component": 17,
+   "scale": 1.191
+  },
+  "crown_b": {
+   "pick_component": 14,
+   "scale": 1.085
+  }
+ },
+ "swap": []
+}

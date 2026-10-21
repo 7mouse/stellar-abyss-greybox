@@ -1,0 +1,249 @@
+{
+ "source": "art_src/src/hud_set_gen1.jpg",
+ "out_dir": "art_src/ui/hud_v1",
+ "disp_scale": 1.25,
+ "recolor": {
+  "muted_frame": {
+   "sat": 0.45,
+   "val": 0.88
+  },
+  "muted_icon": {
+   "sat": 0.6,
+   "val": 0.92
+  },
+  "muted_quality": {
+   "sat": 0.55,
+   "val": 0.9
+  }
+ },
+ "why": "AI direct cut; tool-side recolour only (saturation down on gold borders/icons, bar fills replaced with muted ui_style_v1 colours). Border thickness/ornament cannot be fixed by tool.",
+ "items": [
+  {
+   "name": "u01_portrait_frame",
+   "group": "frames",
+   "pick": [
+    120,
+    100
+   ],
+   "recolor": "muted_frame",
+   "nine": false,
+   "spec": "U01"
+  },
+  {
+   "name": "u04_minimap_ring",
+   "group": "frames",
+   "pick": [
+    895,
+    105
+   ],
+   "recolor": "muted_frame",
+   "spec": "U04 (arrow baked in; programmer draws its own arrow)"
+  },
+  {
+   "name": "u02_bar",
+   "group": "bars",
+   "pick": [
+    410,
+    56
+   ],
+   "recolor": "muted_frame",
+   "split_fill": {
+    "base_rgb": [
+     34,
+     32,
+     30
+    ],
+    "fills": {
+     "u02_fill_hp": [
+      150,
+      64,
+      56
+     ],
+     "u02_fill_mp": [
+      76,
+      110,
+      134
+     ],
+     "u02_fill_sp": [
+      150,
+      132,
+      84
+     ]
+    }
+   },
+   "spec": "U02 frame + 3 fills"
+  },
+  {
+   "name": "u02_bar_src_mp",
+   "group": "bars/_src",
+   "pick": [
+    410,
+    108
+   ],
+   "recolor": "muted_frame",
+   "spec": "original blue bar, kept for reference"
+  },
+  {
+   "name": "u02_bar_src_sp",
+   "group": "bars/_src",
+   "pick": [
+    410,
+    160
+   ],
+   "recolor": "muted_frame",
+   "spec": "original yellow bar, kept for reference"
+  },
+  {
+   "name": "u05_attack_button",
+   "group": "buttons",
+   "pick": [
+    60,
+    283
+   ],
+   "recolor": "muted_icon",
+   "spec": "U05 (sword)"
+  },
+  {
+   "name": "u06_heavy_attack",
+   "group": "buttons",
+   "pick": [
+    270,
+    283
+   ],
+   "recolor": "muted_icon",
+   "spec": "U06"
+  },
+  {
+   "name": "u06_dash",
+   "group": "buttons",
+   "pick": [
+    442,
+    283
+   ],
+   "recolor": "muted_icon",
+   "spec": "U06"
+  },
+  {
+   "name": "u06_skill1",
+   "group": "buttons",
+   "pick": [
+    612,
+    283
+   ],
+   "recolor": "muted_icon",
+   "spec": "U06"
+  },
+  {
+   "name": "u06_skill2",
+   "group": "buttons",
+   "pick": [
+    781,
+    283
+   ],
+   "recolor": "muted_icon",
+   "spec": "U06"
+  },
+  {
+   "name": "u07_consumable_slot",
+   "group": "buttons",
+   "pick": [
+    694,
+    100
+   ],
+   "recolor": "muted_frame",
+   "spec": "U07"
+  },
+  {
+   "name": "u07_slot_square",
+   "group": "frames",
+   "pick": [
+    84,
+    455
+   ],
+   "recolor": "muted_frame",
+   "nine": true,
+   "spec": "U07 alt / inventory slot"
+  },
+  {
+   "name": "u08_backpack",
+   "group": "icons",
+   "pick": [
+    212,
+    455
+   ],
+   "recolor": "muted_icon",
+   "spec": "U08"
+  },
+  {
+   "name": "u08_shard",
+   "group": "icons",
+   "pick": [
+    334,
+    455
+   ],
+   "recolor": "muted_icon",
+   "spec": "U08 (also usable as U16 \u788e\u7247)"
+  },
+  {
+   "name": "u08_pause",
+   "group": "icons",
+   "pick": [
+    445,
+    455
+   ],
+   "recolor": "muted_frame",
+   "spec": "U08"
+  },
+  {
+   "name": "u15_quality_frame_grey",
+   "group": "quality",
+   "pick": [
+    552,
+    453
+   ],
+   "recolor": "muted_quality",
+   "nine": true,
+   "spec": "U15 (1 needed; shader tints)"
+  },
+  {
+   "name": "u15_quality_frame_moss",
+   "group": "quality",
+   "pick": [
+    654,
+    453
+   ],
+   "recolor": "muted_quality",
+   "nine": true
+  },
+  {
+   "name": "u15_quality_frame_teal",
+   "group": "quality",
+   "pick": [
+    754,
+    453
+   ],
+   "recolor": "muted_quality",
+   "nine": true
+  },
+  {
+   "name": "u15_quality_frame_purple",
+   "group": "quality",
+   "pick": [
+    853,
+    453
+   ],
+   "recolor": "muted_quality",
+   "nine": true
+  },
+  {
+   "name": "u15_quality_frame_gold",
+   "group": "quality",
+   "pick": [
+    954,
+    453
+   ],
+   "recolor": "muted_quality",
+   "nine": true
+  }
+ ]
+}

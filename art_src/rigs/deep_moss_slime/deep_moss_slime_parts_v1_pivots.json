@@ -1,0 +1,76 @@
+{
+ "canvas": [
+  256,
+  192
+ ],
+ "unit": "px@1:1",
+ "pivots": {
+  "root": [
+   127.8,
+   186.6
+  ],
+  "body": [
+   127.8,
+   143.9
+  ],
+  "eye_r": [
+   94.2,
+   143.4
+  ],
+  "eye_l": [
+   138.3,
+   143.4
+  ],
+  "mouth": [
+   125.8,
+   153.0
+  ],
+  "highlight": [
+   96.1,
+   124.7
+  ],
+  "shell_root": [
+   127.8,
+   117.5
+  ],
+  "tuft_root": [
+   98.0,
+   79.1
+  ]
+ },
+ "parts": {
+  "puddle_mesh": {
+   "pick_component": 11,
+   "scale": 0.367
+  },
+  "body_mesh": {
+   "pick_component": 4,
+   "scale": 0.79
+  },
+  "highlight": {
+   "pick_component": 3,
+   "scale": 0.408
+  },
+  "eye_l": {
+   "pick_component": 6,
+   "scale": 0.73
+  },
+  "eye_r": {
+   "pick_component": 10,
+   "scale": 0.715
+  },
+  "mouth": {
+   "pick_component": 9,
+   "scale": 0.668
+  },
+  "shell": {
+   "pick_component": 5,
+   "scale": 0.992
+  },
+  "moss_tuft": {
+   "pick_component": 8,
+   "scale": 0.385
+  }
+ },
+ "swap": []
+}

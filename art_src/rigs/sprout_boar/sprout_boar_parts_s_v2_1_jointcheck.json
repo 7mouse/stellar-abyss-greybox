@@ -1,0 +1,358 @@
+{
+ "previous": {
+  "neck": {
+   "parent": "body_s_mesh",
+   "child": "head_s",
+   "pair_disc_r": 25.1,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 33.4,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "ear_root": {
+   "parent": "head_s",
+   "child": "ear_s",
+   "pair_disc_r": 6.0,
+   "pair_gaps": {
+    "-30": 4.5,
+    "-15": 5.0,
+    "0": 5.5,
+    "15": 5.0,
+    "30": 5.2
+   },
+   "pair_worst": 5.5,
+   "visible_disc_r": 8.0,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "sprout_root": {
+   "parent": "body_s_mesh",
+   "child": "sprout_s",
+   "pair_disc_r": 8.1,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 10.8,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "tail_root": {
+   "parent": "body_s_mesh",
+   "child": "tail_s",
+   "pair_disc_r": 2.2,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 3.0,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "hip_r": {
+   "parent": "body_s_mesh",
+   "child": "leg_hind_r_s",
+   "pair_disc_r": 4.6,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 6.4,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "hip_l": {
+   "parent": "body_s_mesh",
+   "child": "leg_hind_l_s",
+   "pair_disc_r": 4.0,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 5.3,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "shoulder_r": {
+   "parent": "body_s_mesh",
+   "child": "leg_front_r_s",
+   "pair_disc_r": 4.1,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 5.6,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "shoulder_l": {
+   "parent": "body_s_mesh+head_s",
+   "child": "leg_front_l_s",
+   "pair_disc_r": 3.4,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 4.6,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  }
+ },
+ "version": {
+  "neck": {
+   "parent": "body_s_mesh",
+   "child": "head_s",
+   "pair_disc_r": 25.1,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 33.4,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "ear_root": {
+   "parent": "head_s",
+   "child": "ear_s",
+   "pair_disc_r": 6.0,
+   "pair_gaps": {
+    "-30": 20.8,
+    "-15": 20.8,
+    "0": 19.2,
+    "15": 20.8,
+    "30": 20.2
+   },
+   "pair_worst": 20.8,
+   "visible_disc_r": 8.0,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "sprout_root": {
+   "parent": "body_s_mesh",
+   "child": "sprout_s",
+   "pair_disc_r": 8.1,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 10.8,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "tail_root": {
+   "parent": "body_s_mesh",
+   "child": "tail_s",
+   "pair_disc_r": 2.2,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 3.0,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "hip_r": {
+   "parent": "body_s_mesh",
+   "child": "leg_hind_r_s",
+   "pair_disc_r": 4.6,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 6.4,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "hip_l": {
+   "parent": "body_s_mesh",
+   "child": "leg_hind_l_s",
+   "pair_disc_r": 4.0,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 5.3,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "shoulder_r": {
+   "parent": "body_s_mesh",
+   "child": "leg_front_r_s",
+   "pair_disc_r": 4.1,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 5.6,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "shoulder_l": {
+   "parent": "body_s_mesh+head_s",
+   "child": "leg_front_l_s",
+   "pair_disc_r": 3.4,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 4.6,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  }
+ }
+}

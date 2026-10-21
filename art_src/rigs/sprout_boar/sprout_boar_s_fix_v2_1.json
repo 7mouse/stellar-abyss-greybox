@@ -1,0 +1,110 @@
+{
+ "src_psd2x": "art_src/rigs/sprout_boar/sprout_boar_parts_s_v1_src2x.psd",
+ "src_pivots": "art_src/rigs/sprout_boar/sprout_boar_parts_s_v1_pivots.json",
+ "out_dir": "art_src/rigs/sprout_boar",
+ "base": "sprout_boar_parts_s_v2_1",
+ "scale": 2,
+ "line_rgb": [
+  33,
+  24,
+  8
+ ],
+ "ops": [
+  {
+   "op": "pivot_to_edge",
+   "pivot": "shoulder_l",
+   "parents": [
+    "body_s_mesh",
+    "head_s"
+   ],
+   "dir": [
+    0,
+    -1
+   ],
+   "inset": 2,
+   "x_from_part": "leg_front_l_s",
+   "why": "far front leg had ~8px gap to the body"
+  }
+ ],
+ "joints": [
+  {
+   "pivot": "neck",
+   "parent": "body_s_mesh",
+   "child": "head_s",
+   "child_cls": "big"
+  },
+  {
+   "pivot": "ear_root",
+   "parent": "head_s",
+   "child": "ear_s",
+   "child_cls": "small"
+  },
+  {
+   "pivot": "sprout_root",
+   "parent": "body_s_mesh",
+   "child": "sprout_s",
+   "child_cls": "small"
+  },
+  {
+   "pivot": "tail_root",
+   "parent": "body_s_mesh",
+   "child": "tail_s",
+   "child_cls": "small"
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "body_s_mesh",
+   "child": "leg_hind_r_s",
+   "child_cls": "small",
+   "child_from": "hoof_r_hind"
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "body_s_mesh",
+   "child": "leg_hind_l_s",
+   "child_cls": "small",
+   "child_from": "hoof_l_hind",
+   "fill_inset": 2.5
+  },
+  {
+   "pivot": "shoulder_r",
+   "parent": "body_s_mesh",
+   "child": "leg_front_r_s",
+   "child_cls": "small",
+   "child_from": "hoof_r_front"
+  },
+  {
+   "pivot": "shoulder_l",
+   "parent": "body_s_mesh",
+   "child": "leg_front_l_s",
+   "child_cls": "small",
+   "child_from": "hoof_l_front",
+   "child_target": 10,
+   "test_parents": [
+    "body_s_mesh",
+    "head_s"
+   ],
+   "child_cover_only": false,
+   "v21": "far front leg: cap may show below the belly (it is the leg itself joining the belly, same colours, cut line erased); cover-only left 3.2px holes at +-30",
+   "fill_inset": 2.5
+  }
+ ],
+ "parts_dir": "parts_v2_1",
+ "cap_version": 2,
+ "post_ops": [
+  {
+   "op": "erase_outline_over",
+   "under": [
+    "leg_hind_l_s",
+    "leg_front_l_s"
+   ],
+   "band": 2.5,
+   "inset": 1.5,
+   "why": "v2.1 item 5: belly outline ring where the far legs come out from under the body",
+   "parts": [
+    "body_s_mesh",
+    "head_s"
+   ]
+  }
+ ]
+}

@@ -303,3 +303,188 @@ def palette_png(cols, path, cell=16):
     for i, c in enumerate(cols):
         im.paste(Image.new('RGBA', (cell, cell), c + (255,)), (i * cell, 0))
     im.save(path)
+
+# ---------------------------------------------------------------- v2.1 round cap
+def column_fill(a, t, s, s0, hw, edge_band, inset, scale, line_rgb=None, sample_len=3):
+    """Per-lateral-column interior colour: for each s bin, median of the part's non-line pixels lying
+    `inset`..`inset+sample_len` px (1:1) inward from that column's own end (not from the cut edge itself).
+    Returns (fn(s)->rgb array, edge_t(s) array fn)."""
+    m = a[..., 3] > 0.9
+    sel = m & edge_band
+    lo, hi = s0 - hw - 3 * scale, s0 + hw + 3 * scale
+    bins = np.arange(np.floor(lo), np.ceil(hi) + 1, 1.0)
+    nb = len(bins)
+    edge = np.full(nb, np.nan); col = np.full((nb, 3), np.nan)
+    rgb = a[..., :3]
+    Lall = lum(rgb)
+    din = nd.distance_transform_edt(a[..., 3] > 0.5)
+    for i, sb in enumerate(bins):
+        cm = sel & (np.abs(s - sb) <= 1.0)
+        if cm.sum() < 2:
+            continue
+        te = t[cm].max(); edge[i] = te
+        win = cm & (t <= te - inset * scale) & (t >= te - (inset + sample_len) * scale) & (din > 1.5 * scale)
+        if win.sum() < 2:
+            win = cm & (t <= te - inset * scale) & (t >= te - (inset + 2 * sample_len) * scale)
+        if win.sum() < 2:
+            continue
+        px = rgb[win]; Lp = Lall[win]
+        keep = Lp >= np.median(Lp) - 0.10          # drop line / crease pixels from the sample
+        if line_rgb is not None:
+            keep &= np.abs(px - np.asarray(line_rgb)).sum(1) > 0.12
+        if keep.sum() >= 1:
+            col[i] = np.median(px[keep], axis=0)
+    ok = ~np.isnan(col[:, 0])
+    if not ok.any():
+        return None, None
+    for c in range(3):
+        col[:, c] = np.interp(np.arange(nb), np.nonzero(ok)[0], col[ok, c])
+    col = nd.gaussian_filter1d(col, 1.2 * scale, axis=0, mode='nearest')
+    eok = ~np.isnan(edge)
+    edge = np.interp(np.arange(nb), np.nonzero(eok)[0], edge[eok]) if eok.any() else np.zeros(nb)
+    def at(sv):
+        k = np.clip(np.round(sv - bins[0]).astype(int), 0, nb - 1)
+        return col[k]
+    def edge_at(sv):
+        k = np.clip(np.round(sv - bins[0]).astype(int), 0, nb - 1)
+        return edge[k]
+    return at, edge_at
+
+def round_cap2(a, p, u, ovl_range, scale=2, on_top=False, line_rgb=None, line_w=None,
+               target=None, cap_r=None, hide_under=None, parent=None, erase_cut=True,
+               fill_inset=4.0, erase_w=4.0, keep_sides=1.0, above=None, cap_w=None):
+    """v2.1 round cap.
+    Hidden end (part under its parent): 1) erase the old cut outline (end band of each column, side outlines
+    kept) by the column's interior colour sampled `fill_inset` px inward; 2) add the round head filled with the
+    same per-column colours (no darkening -> no 'one shade darker' cap, no light banding); 3) outline only the
+    new silhouette.
+    Visible end (part on top of its parent, `parent` given): the old end stays the visible boundary; the head
+    is only grown where the parent is opaque (takes the parent's own pixels -> invisible at rest) or where a
+    higher layer (`above`) hides it; nothing visible is grown outside the parent. Returns (new_rgba, info)."""
+    u = unit(u)
+    lo, hi = ovl_range[0] * scale, ovl_range[1] * scale
+    prof = end_profile(a[..., 3], p, u)
+    if prof is None:
+        return a, dict(skipped='empty')
+    t_end, s0, hw, v = prof['t_end'], prof['s0'], prof['hw'], prof['v']
+    info = dict(before=round(t_end / scale, 1), half_width=round(hw / scale, 1))
+    if t_end > hi + 1 and target is None:
+        info.update(after=info['before'], action='kept (already deeper than range)')
+        return a, info
+    if target is not None:
+        want = target * scale; hi = max(hi, want)
+    else:
+        want = lo + scale if on_top else hi - 0.5 * scale
+    if t_end >= want:
+        want = t_end
+    want = float(np.clip(want, lo, hi))
+    X, Y = grid(a.shape)
+    P = np.asarray(p, dtype=np.float64)
+    t = (X - P[0]) * u[0] + (Y - P[1]) * u[1]
+    s = (X - P[0]) * v[0] + (Y - P[1]) * v[1]
+    lw = line_w if line_w is not None else 1.0 * scale
+    old = a[..., 3]; m_old = old > 0.5
+    out = a.copy()
+    band = (t > prof['tref'] - 14 * scale)
+    fill_at, edge_at = column_fill(a, t, s, s0, hw, band, fill_inset, scale, line_rgb)
+    tc = min(t_end - 0.5 * scale, want - 2 * scale)
+    b = _end_halfwidth(m_old, t, s, min(tc, t_end), s0, 2.5 * scale) or hw
+    b = min(b, hw * 1.15)
+    if cap_r is not None:
+        b = min(b, cap_r * scale)
+    if cap_w is not None:          # force the lateral radius (hidden collar/stub caps that must be wider than the end)
+        b = cap_w * scale
+    erased = 0
+    vis = on_top and parent is not None
+    if erase_cut and not vis and fill_at is not None:
+        e_t = edge_at(s)
+        lat = np.abs(s - s0) <= b - keep_sides * scale
+        fc = fill_at(s)
+        dl = lum(fc) - lum(out[..., :3])
+        # near the old end: anything darker than the interior; a bit deeper (jagged cuts): only clear line pixels
+        E = m_old & band & lat & (((t > e_t - erase_w * scale) & (dl > 0.04)) | ((t > e_t - 1.75 * erase_w * scale) & (dl > 0.15)))
+        out[..., :3][E] = fc[E]
+        erased = int(E.sum())
+    ax_ = max(want - tc, 1.0)
+    q = np.sqrt(((t - tc) / ax_) ** 2 + ((s - s0) / b) ** 2)
+    sdf_e = np.where(t >= tc, (q - 1) * min(ax_, b), np.inf)
+    t_in = min(prof['tref'], tc) - 3 * scale
+    # bridge stops exactly where the half-ellipse starts (v2 put a half-transparent seam row at t=tc)
+    sdf_r = np.where(t < tc, np.maximum(np.abs(s - s0) - b, t_in - t), np.inf)
+    cov = np.clip(0.5 - np.minimum(sdf_e, sdf_r), 0, 1).astype(np.float32)
+    if hide_under is not None:
+        # close hair-line cracks in the covering layer first, otherwise the hidden cap gets matching slits
+        cov = np.minimum(cov, nd.grey_closing(hide_under, size=(5, 5)))
+    if vis:
+        allow = parent[..., 3] if above is None else np.maximum(parent[..., 3], above)
+        cov = np.minimum(cov, nd.grey_closing(allow, size=(5, 5)))
+    new_a = np.maximum(old, cov)
+    added = new_a > old + 0.05
+    w = (np.clip((new_a - old) / np.maximum(new_a, 1e-3), 0, 1) * added)[..., None]
+    if vis:
+        # over the parent: the parent's own pixels; elsewhere (only where a higher layer hides it): own fill
+        own = fill_at(s) if fill_at is not None else out[..., :3]
+        pw = (parent[..., 3] > 0.5)[..., None]
+        fillc = np.where(pw, parent[..., :3], own)
+    else:
+        fillc = fill_at(s) if fill_at is not None else out[..., :3]
+    out[..., :3] = out[..., :3] * (1 - w) + fillc * w
+    out[..., 3] = new_a
+    if line_rgb is not None and not vis:
+        m_new = new_a > 0.5
+        din = nd.distance_transform_edt(m_new)
+        near = nd.distance_transform_edt(~added) <= lw + 2.5
+        st = (np.clip(lw + 0.5 - din, 0, 1) * near * (new_a > 0.02))[..., None] * 0.92
+        out[..., :3] = out[..., :3] * (1 - st) + np.asarray(line_rgb)[None, None, :] * st
+    prof2 = end_profile(out[..., 3], p, u)
+    info.update(after=round(prof2['t_end'] / scale, 1), action='round cap v2.1 ' + ('visible: parent pixels' if vis else 'hidden: erase+interior fill'),
+                target=round(want / scale, 1), cap_half_width=round(b / scale, 1),
+                added_px_1to1=int(added.sum() / scale / scale), erased_cut_px_1to1=int(erased / scale / scale))
+    return out, info
+
+def erase_outline_over(body, under_masks, band, scale, lw, line_rgb=None, inset=1.5):
+    """Erase the body's own silhouette outline where a lower-layer part (far leg) comes out from under it,
+    so that part joins the body without a ring of line. The under-part's side outlines are kept (its mask is
+    eroded laterally by lw+inset first) so they still meet the body outline. Fill = body interior colour."""
+    al = body[..., 3]; m = al > 0.5
+    din = nd.distance_transform_edt(m)
+    outb = (al > 0.02) & (din <= band * scale)
+    U = np.zeros_like(m)
+    for um in under_masks:
+        U |= nd.binary_erosion(um > 0.5, iterations=int(round(lw + inset * scale)))
+    # body outline pixels that have the (eroded) under part right below/next to them
+    near = nd.distance_transform_edt(~U) <= (band + 1.0) * scale
+    R = outb & near
+    inner = m & (din > (band + 1.5) * scale) & (al > 0.9)
+    _, (iy, ix) = nd.distance_transform_edt(~inner, return_indices=True)
+    ref = body[..., :3][iy, ix]
+    ref = np.stack([nd.uniform_filter(ref[..., c], 3) for c in range(3)], -1)
+    wgt = nd.gaussian_filter(R.astype(np.float32), 0.6 * scale) * R
+    wgt = np.clip(wgt * 1.6, 0, 1)[..., None]
+    out = body.copy()
+    dark = (lum(body[..., :3]) < lum(ref) - 0.04)[..., None]
+    out[..., :3] = body[..., :3] * (1 - wgt * dark) + ref * wgt * dark
+    return out, int((R & dark[..., 0]).sum() / scale / scale)
+
+def solidify(a, depth=1.5, scale=2, iters=40):
+    """Close half-transparent cracks inside a part (v1 erase_red leftovers): pixels deeper than `depth` px (1:1)
+    inside the silhouette with alpha < 0.9 become opaque, coloured by a smooth inpaint of their opaque neighbours."""
+    al = a[..., 3]
+    ext = nd.binary_fill_holes(al > 0.05)
+    crack = (nd.distance_transform_edt(ext) > depth * scale) & (al < 0.9)
+    if not crack.any():
+        return a, 0
+    known = ((al > 0.9) & ~crack).astype(np.float32)
+    col = a[..., :3] * known[..., None]; w = known.copy()
+    for _ in range(iters):
+        col2 = np.stack([nd.uniform_filter(col[..., c], 3) for c in range(3)], -1)
+        w2 = nd.uniform_filter(w, 3)
+        upd = crack & (w2 > 1e-3)
+        col[upd] = col2[upd] / w2[upd][:, None]; w[upd] = 1.0
+        col[known > 0] = a[..., :3][known > 0]
+    out = a.copy()
+    # keep the crack's own colour where it was mostly opaque, blend in the inpaint by missing alpha
+    m = (1 - al)[..., None]
+    out[..., :3] = np.where(crack[..., None], a[..., :3] * (1 - m) + col * m, a[..., :3])
+    out[..., 3] = np.where(crack, 1.0, al)
+    return out, int(crack.sum())

@@ -80,7 +80,7 @@ def crop_rot(L, order, piv, joint, joints, ang, S=2, half=26):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('config'); ap.add_argument('--prev', nargs=2); ap.add_argument('--sheet'); ap.add_argument('--json'); ap.add_argument('--out-root')
+    ap.add_argument('config'); ap.add_argument('--prev', nargs=2); ap.add_argument('--sheet'); ap.add_argument('--json'); ap.add_argument('--out-root'); ap.add_argument('--labels', nargs=2, default=['v1', 'v2'])
     a = ap.parse_args()
     c = json.load(open(a.config)); S = c.get('scale', 2)
     if not os.path.isabs(c['out_dir']):
@@ -102,14 +102,15 @@ def main():
         cols = 6 if a.prev else 3
         rows = len(joints)
         sh = Image.new('RGBA', (cols * 160 + 150, rows * 160 + 24), (40, 40, 40, 255)); d = ImageDraw.Draw(sh)
-        hdr = (['v1 -30', 'v1 0', 'v1 +30'] if a.prev else []) + ['v2 -30', 'v2 0', 'v2 +30']
+        A, B = a.labels
+        hdr = ([f'{A} -30', f'{A} 0', f'{A} +30'] if a.prev else []) + [f'{B} -30', f'{B} 0', f'{B} +30']
         for i, hname in enumerate(hdr):
             d.text((150 + i * 160 + 50, 6), hname, fill=(255, 255, 0, 255))
         for r, j in enumerate(joints):
             y = 24 + r * 160
             g2 = out['version'][j['pivot']]['worst']
             g1 = out['previous'][j['pivot']]['worst'] if a.prev else None
-            d.text((4, y + 60), f"{j['pivot']}\n{j['child']}\nholes v1={g1}\nholes v2={g2}", fill=(255, 255, 255, 255))
+            d.text((4, y + 60), f"{j['pivot']}\n{j['child']}\nholes {A}={g1}\nholes {B}={g2}", fill=(255, 255, 255, 255))
             x = 150
             sets = ([(L1, o1, piv1)] if a.prev else []) + [(L2, o2, piv2)]
             for (LL, oo, pp) in sets:
@@ -120,7 +121,7 @@ def main():
         v = out['version'][j['pivot']]
         pv = out['previous'][j['pivot']]['worst'] if a.prev else '-'
         pp = out['previous'][j['pivot']]['pair_worst'] if a.prev else '-'
-        print(f"{j['pivot']:12s} {j['child']:16s} visible holes(px@1:1, worst +-30) v1={pv} v2={v['worst']} | pair-core v1={pp} v2={v['pair_worst']}")
+        print(f"{j['pivot']:12s} {j['child']:16s} visible holes(px@1:1, worst +-30) {a.labels[0]}={pv} {a.labels[1]}={v['worst']} | pair-core {a.labels[0]}={pp} {a.labels[1]}={v['pair_worst']}")
 
 if __name__ == '__main__':
     main()

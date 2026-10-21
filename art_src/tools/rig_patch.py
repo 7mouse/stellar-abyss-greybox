@@ -94,6 +94,9 @@ def run(cfg_path, root=None, out_root=None):
         L[n], k = RJ.fill_holes(L[n], max_area=c.get('fill_holes_max', 4000), close_r=int(fh.get('close_r', 0) * S),
                                 box=[int(v * S) for v in fh['box']] if fh.get('box') else None)
         log['cleanup'][n] = f'filled {k / (S * S):.0f} px@1:1 hole'
+    for n in c.get('solidify', []):
+        L[n], k = RJ.solidify(L[n], scale=S)
+        log['cleanup'][n + ' solidify'] = f'closed {k / (S * S):.0f} px@1:1 half-transparent crack pixels'
     # 2. ops
     for op in c.get('ops', []):
         kind = op['op']
@@ -192,22 +195,64 @@ def run(cfg_path, root=None, out_root=None):
             raise ValueError(kind)
     # 3. joints: round caps
     idx = {n: i for i, n in enumerate(order)}
+    v21 = c.get('cap_version', 1) >= 2
+    def cap(part, other, jt, side, u, on_top):
+        kw = dict(line_rgb=line, line_w=lw, target=jt.get(f'{side}_target'), cap_r=jt.get(f'{side}_cap_r'),
+                  hide_under=(np.maximum.reduce([L[q][..., 3] for q in jt[f'{side}_hide_under']])
+                              if jt.get(f'{side}_hide_under') else None))
+        cls = CLS[jt[f'{side}_cls']]
+        if v21:
+            vis_par = None
+            if on_top and not jt.get(f'{side}_hide_under'):
+                ov = jt.get(f'{side}_over', [other])        # layers the visible cap may sit on
+                vis_par = L[ov[0]].copy()
+                for q in ov[1:]:
+                    w_ = L[q][..., 3:4]
+                    vis_par[..., :3] = vis_par[..., :3] * (1 - w_) + L[q][..., :3] * w_
+                    vis_par[..., 3] = np.maximum(vis_par[..., 3], L[q][..., 3])
+            ab = [L[q][..., 3] for q in order[idx[part] + 1:] if q != other]
+            above = np.maximum.reduce(ab) if (vis_par is not None and ab) else None
+            if not on_top and kw['hide_under'] is None and jt.get(f'{side}_cover_only', c.get('hidden_caps_only_under_cover', True)):
+                # a 'hidden' cap must really be hidden: grow it only where some higher layer covers it at rest
+                cover = [L[q][..., 3] for q in order[idx[part] + 1:]]
+                if cover:
+                    kw['hide_under'] = np.maximum.reduce(cover)
+            return RJ.round_cap2(L[part], P[j], u, cls, S, on_top=on_top, parent=vis_par, above=above,
+                                 erase_cut=jt.get(f'{side}_erase_cut', jt.get('erase_cut', c.get('erase_cut', True))),
+                                 cap_w=jt.get(f'{side}_cap_w'),
+                                 fill_inset=jt.get('fill_inset', c.get('fill_inset', 4.0)), **kw)
+        kw.pop('hide_under') if side == 'child' else None
+        return RJ.round_cap(L[part], P[j], u, cls, S, on_top=on_top, **kw)
     for jt in c.get('joints', []):
         j, pa, ch = jt['pivot'], jt['parent'], jt['child']
         rec = {}
         if jt.get('child_cls'):
-          uc = RJ.unit(P[j] - P[jt['child_from']]) if jt.get('child_from') else RJ.unit(P[j] - RJ.centroid(L[ch][..., 3]))
-          L[ch], rec['child'] = RJ.round_cap(L[ch], P[j], uc, CLS[jt['child_cls']], S, on_top=idx[ch] > idx[pa],
-                                          line_rgb=line, line_w=lw, target=jt.get('child_target'), cap_r=jt.get('child_cap_r'))
-          rec['child']['part'] = ch; rec['child']['cls'] = jt['child_cls']
+            uc = RJ.unit(P[j] - P[jt['child_from']]) if jt.get('child_from') else RJ.unit(P[j] - RJ.centroid(L[ch][..., 3]))
+            L[ch], rec['child'] = cap(ch, pa, jt, 'child', uc, idx[ch] > idx[pa])
+            rec['child']['part'] = ch; rec['child']['cls'] = jt['child_cls']
         if jt.get('parent_cls'):
             up = RJ.unit(P[j] - P[jt['parent_from']]) if jt.get('parent_from') else RJ.unit(P[j] - RJ.centroid(L[pa][..., 3]))
-            L[pa], rec['parent'] = RJ.round_cap(L[pa], P[j], up, CLS[jt['parent_cls']], S, on_top=idx[pa] > idx[ch],
-                                               line_rgb=line, line_w=lw, target=jt.get('parent_target'), cap_r=jt.get('parent_cap_r'),
-                                               hide_under=(np.maximum.reduce([L[q][..., 3] for q in jt['parent_hide_under']])
-                                                           if jt.get('parent_hide_under') else None))
+            L[pa], rec['parent'] = cap(pa, ch, jt, 'parent', up, idx[pa] > idx[ch])
             rec['parent']['part'] = pa; rec['parent']['cls'] = jt['parent_cls']
         log['joints'][j] = rec
+    # 3b. post ops (after caps)
+    log['post_ops'] = []
+    for op in c.get('post_ops', []):
+        if op['op'] == 'erase_outline_over':
+            ks = {}
+            for n in op['parts']:
+                L[n], ks[n] = RJ.erase_outline_over(L[n], [L[q][..., 3] for q in op['under']], op.get('band', 2.5), S, lw,
+                                                    inset=op.get('inset', 1.5))
+            log['post_ops'].append({**op, 'erased_px_1to1': ks})
+        elif op['op'] == 'clip_below':
+            # remove anything of `part` beyond a reference extent (e.g. caps grown past the fingertips)
+            n = op['part']; y = op['y'] * S
+            a = L[n].copy(); X, Y = RJ.grid(a.shape)
+            k = int(((Y > y) & (a[..., 3] > 0.5)).sum() / S / S)
+            a[..., 3] = np.where(Y > y, 0, a[..., 3]); L[n] = a
+            log['post_ops'].append({**op, 'removed_px_1to1': k})
+        else:
+            raise ValueError(op['op'])
     # 4. export
     W, H = size; W1, H1 = W // S, H // S
     piv1 = {n: [round(float(v[0]) / S, 1), round(float(v[1]) / S, 1)] for n, v in P.items()}

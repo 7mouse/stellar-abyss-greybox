@@ -11,3 +11,6 @@
 
 依赖：numpy、scipy、pillow、psd-tools（不需要 sklearn）。
 关节配置示例见 art_src/rigs/*/*_fix_v2.json。重叠范围（1:1）：small 4–8（前臂、小腿、手、耳、尾巴、芽），big 10–20（身体、头、大腿/上臂根部）。
+
+v2.1（2026-10-21b）：配置写 `"cap_version": 2` 用 round_cap2。上层部件的圆头只长在父部件上，并复制父部件像素；隐藏圆头只长在上层盖住的地方，先擦旧切口线，再逐列从内部取色。另外新增 `post_ops: erase_outline_over`（擦远腿上方的身体轮廓）和 `solidify`（补实半透明裂缝）。
+`rig_compare.py rotsheet OUT.png old_fix.json new_fix.json neck,knee_r,... --labels v2 v2.1` 出静止+±30° 对照；`rig_check.py ... --labels v2 v2.1`。示例配置见 `art_src/rigs/*/*_fix_v2_1.json`。

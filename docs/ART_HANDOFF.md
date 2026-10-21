@@ -182,3 +182,22 @@ docs/
 - 只提交到 `rig-trial`；**不用 LFS，单文件 <50MB，不 force-push**。
 - 推送：`git -c credential.helper= -c credential.helper='!/usr/local/bin/gh auth git-credential' push origin rig-trial`
 - 新原图放 `art_src/src/<批次>/`，提示词写进 `art_src/prompts/<批次>.md`，每批出清单 + 总览 + mock 到 `docs/`。
+
+---
+
+## 9. 工作机遗留文件（交接补充，2026-10-21 17:4x）
+- **`art_src/tools/scratch/`**：一次性辅助脚本和它们的输出日志（连通块标号、坐标网格、PSD 查看、关节洞位置 / 可视化、v2→v2.1 指标），说明见 [scratch/README.md](https://github.com/7mouse/stellar-abyss-greybox/blob/rig-trial/art_src/tools/scratch/README.md)。路径写死在旧工作机上，用前要改；日常请用 `art_src/tools/` 里的正式工具。
+- **`art_src/wip/debug/`**：保留的调试图（按原目录 l1/ rigv2/ v21/）：21c 原图连通块标号图、早期参考姿势图、部件总览、关节洞检查图、v2.1 洞位置图，说明见 [debug/README.md](https://github.com/7mouse/stellar-abyss-greybox/blob/rig-trial/art_src/wip/debug/README.md)。和仓库已有文件内容相同的没有重复提交。
+- `art_src/prompts/refs/21f_ref_base.png`、`21f_ref_sprout_fb.png`：21f 时拼好的参考图，记录里的提示词没有用到它们，仅存档。
+
+### 丢弃的文件（没有入库）及原因
+| 文件 | 原因 |
+|---|---|
+| l1/dm_chk1.png、fx_contact.png、h_contact.png、t_contact.png；v21/bd2.png | 和仓库里已有文件逐字节相同 |
+| l1/attach_sheet.png（4 MB） | 工作机上全部生成图的缩略图索引，原图已入库、提示词在 prompts/；可能混有作废探索图，没有价值 |
+| l1/b_v1、bb、bf、bfh、bsh、blink1、ear、ear2、face1、hf、hs、kfh、ksh、tail、mf、shell、shell_cut、sw、k2p、k2q、k_v2a、m_v1、m_v2、bars、bars2、bars3、t_tile、ov_small（.png） | 21c 切图时的一次性放大 / 单件预览、中间版本，最终结果已在 rigs/ terrain/ ui/ 的 preview / contact / overview 里 |
+| rigv2/b、f、s、b_arms、boar、boar2、boar3、hb2–hb4、hf2、hs2、hs3、pb、pf、mouth、zb1、zb2、zk、zk2、zs1、zs2（.png） | v2 拆件时的整图 / 局部放大预览，最终 v2 / v2.1 preview 和对照图已入库 |
+| rigv2/hero_palette_src.png、sprout_boar_palette_src.png、pal2.png | 早期色板草稿，已被 rigs/ 下的正式色板取代 |
+| v21/ 其余 png（boar_far*、boar_v2/v21_full/solo、fr_b*、hb/hf/hs_full_a/b、*_solo、dbg2、neck_s） | v2.1 对照图的中间渲染，最终版已入库为 `*_v2_vs_v2_1_*.png` |
+| v21/tmp/（26 MB：无圆头 PSD、部件 png、配准 PSD） | metrics.py 用的中间产物，可以用 rig_patch 关掉圆头重新生成；体积大、没有独立价值 |
+| v21/__pycache__/ | Python 缓存 |

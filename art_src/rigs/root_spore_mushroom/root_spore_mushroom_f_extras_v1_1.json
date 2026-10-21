@@ -1,0 +1,37 @@
+{
+ "src_psd2x": "art_src/rigs/root_spore_mushroom/root_spore_mushroom_parts_f_v1_src2x.psd",
+ "src_pivots": "art_src/rigs/root_spore_mushroom/root_spore_mushroom_parts_f_v1_pivots.json",
+ "out_dir": "art_src/rigs/root_spore_mushroom/",
+ "base": "root_spore_mushroom_parts_f_v1_1",
+ "parts_dir": "parts_f_v1_1",
+ "ops": [
+  {
+   "op": "blink",
+   "head": "stalk_f_mesh",
+   "suffix": "f",
+   "closed_only": true,
+   "eyes": [
+    {
+     "side": "r",
+     "open_layer": "eye_r_f",
+     "ellipse": [
+      105.0,
+      154.0,
+      11.0,
+      13.0
+     ]
+    },
+    {
+     "side": "l",
+     "open_layer": "eye_l_f",
+     "ellipse": [
+      147.5,
+      154.0,
+      11.5,
+      13.0
+     ]
+    }
+   ]
+  }
+ ]
+}

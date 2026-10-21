@@ -1,0 +1,15 @@
+{"source":"art_src/src/slime_deep_moss_partsheet_gen2.jpg","out_dir":"art_src/rigs/deep_moss_slime","base":"deep_moss_slime_parts_v1",
+"canvas2x":512,"canvas2x_h":384,"disp_scale":1.25,"k":0.96,
+"why":"variant of slime: same body/eyes/mouth parts (sheet has no separate deep-moss body), body recoloured by tool to the deep-moss body colours + stone/moss shell add-on (hidden when the shell breaks)",
+"pose_box":[587,46,918,306],
+"parts":[
+{"name":"puddle_mesh","pick":[420,466],"box":[630,280,880,306],"recolor_ref":[690,245,840,292]},
+{"name":"body_mesh","pick":[155,404],"box":[600,118,912,304],"recolor_ref":[690,245,840,292]},
+{"name":"highlight","pick":[416,341],"box":[660,158,712,192],"drop_dark":170,"alpha_mul":0.55},
+{"name":"eye_l","pick":[310,359],"box":[754,195,794,233]},
+{"name":"eye_r","pick":[310,434],"box":[662,195,702,233]},
+{"name":"mouth","pick":[414,404],"box":[726,226,770,242]},
+{"name":"shell","pick":[600,385],"box":[590,48,918,262],"cut_dark_in":[555,400,690,500,62]},
+{"name":"moss_tuft","pick":[877,427],"box":[640,30,740,95]}],
+"order":["puddle_mesh","body_mesh","highlight","eye_r","eye_l","mouth","shell","moss_tuft"],
+"pivots":{"root":[752,304],"body":[752,215],"eye_r":[682,214],"eye_l":[774,214],"mouth":[748,234],"highlight":[686,175],"shell_root":[752,160],"tuft_root":[690,80]}}

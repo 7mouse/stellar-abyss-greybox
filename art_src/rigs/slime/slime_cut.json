@@ -1,0 +1,13 @@
+{"source":"art_src/src/slime_deep_moss_partsheet_gen2.jpg","out_dir":"art_src/rigs/slime","base":"slime_parts_v1",
+"canvas2x":512,"canvas2x_h":384,"disp_scale":1.25,"k":0.96,
+"why":"gen2 picked over gen1: eyes/mouth/highlight come as separate parts, cleaner outline; 1 facing (spec §3)",
+"pose_box":[111,68,403,286],
+"parts":[
+{"name":"puddle_mesh","pick":[420,466],"box":[150,262,370,288],"note":"melt/death puddle + foot drips"},
+{"name":"body_mesh","pick":[155,404],"box":[112,72,400,284]},
+{"name":"highlight","pick":[416,341],"box":[168,88,232,132],"drop_dark":170,"alpha_mul":0.7},
+{"name":"eye_l","pick":[310,359],"box":[285,180,325,218]},
+{"name":"eye_r","pick":[310,434],"box":[185,180,225,218]},
+{"name":"mouth","pick":[414,404],"box":[234,210,276,228]}],
+"order":["puddle_mesh","body_mesh","highlight","eye_r","eye_l","mouth"],
+"pivots":{"root":[256,284],"body":[256,190],"eye_r":[205,199],"eye_l":[305,199],"mouth":[255,219],"highlight":[200,111]}}

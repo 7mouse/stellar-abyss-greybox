@@ -1,0 +1,354 @@
+{
+ "out": "art_src/ui/hud_v2",
+ "items": [
+  {
+   "name": "u02_bar_frame",
+   "group": "bars",
+   "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+   "pick": [
+    350,
+    97
+   ],
+   "fit_h": 32,
+   "kind": "nine",
+   "size": [
+    480,
+    32
+   ],
+   "spec": "U02 frame (draw under the fill)"
+  },
+  {
+   "name": "u02_fill",
+   "group": "bars",
+   "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+   "pick": [
+    350,
+    155
+   ],
+   "kind": "fill",
+   "height": 22,
+   "width": 8,
+   "fills": {
+    "u02_fill_hp": "#964038",
+    "u02_fill_mp": "#4C6E86",
+    "u02_fill_sp": "#968454",
+    "u10_fill_boss": "#7E3530"
+   },
+   "spec": "U02 fills, 8 px wide strips, stretch/clip in x"
+  },
+  {
+   "name": "u10_boss_bar_frame",
+   "group": "bars",
+   "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+   "pick": [
+    510,
+    260
+   ],
+   "fit_h": 48,
+   "kind": "nine",
+   "size": [
+    960,
+    48
+   ],
+   "spec": "U10 boss bar frame"
+  },
+  {
+   "name": "u10_boss_icon",
+   "group": "icons",
+   "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+   "pick": [
+    618,
+    411
+   ],
+   "kind": "fixed",
+   "size": [
+    64,
+    64
+   ],
+   "inset_png": "art_src/rigs/mosscrown_king_boar/parts_v2_1/head_f.png",
+   "inset_box": [
+    7,
+    7,
+    50,
+    50
+   ],
+   "spec": "U10 boss icon (head from the king boar v2 rig)",
+   "fill_alpha": 0.85
+  },
+  {
+   "name": "u07_slot",
+   "group": "frames",
+   "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+   "pick": [
+    237,
+    412
+   ],
+   "fit": 160,
+   "kind": "nine",
+   "size": [
+    160,
+    160
+   ],
+   "spec": "U07 consumable slot"
+  },
+  {
+   "name": "u15_quality_frame",
+   "group": "frames",
+   "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+   "pick": [
+    425,
+    412
+   ],
+   "fit": 128,
+   "kind": "nine",
+   "size": [
+    128,
+    128
+   ],
+   "tints": {
+    "grey": "#8C8A84",
+    "moss": "#7E9468",
+    "teal": "#5E9692",
+    "purple": "#86749A",
+    "gold": "#B09A62"
+   },
+   "spec": "U15 (line tinted by shader; 5 previews)"
+  },
+  {
+   "name": "u03_level_badge",
+   "group": "frames",
+   "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+   "pick": [
+    618,
+    411
+   ],
+   "kind": "fixed",
+   "size": [
+    96,
+    96
+   ],
+   "spec": "U03 (number drawn by the engine)",
+   "fill_alpha": 0.85
+  },
+  {
+   "name": "ui_panel_window",
+   "group": "panels",
+   "src": "art_src/src/ui_v2/ui_panels_gen1.jpg",
+   "pick": [
+    315,
+    140
+   ],
+   "kind": "nine",
+   "spec": "window panel for U11-U13"
+  },
+  {
+   "name": "ui_header_plate",
+   "group": "panels",
+   "src": "art_src/src/ui_v2/ui_panels_gen1.jpg",
+   "pick": [
+    737,
+    159
+   ],
+   "kind": "nine",
+   "spec": "title plate"
+  },
+  {
+   "name": "ui_button",
+   "group": "panels",
+   "src": "art_src/src/ui_v2/ui_panels_gen1.jpg",
+   "pick": [
+    621,
+    237
+   ],
+   "kind": "nine",
+   "spec": "button"
+  },
+  {
+   "name": "ui_button_hi",
+   "group": "panels",
+   "src": "art_src/src/ui_v2/ui_panels_gen1.jpg",
+   "pick": [
+    773,
+    237
+   ],
+   "kind": "nine",
+   "spec": "button highlighted"
+  },
+  {
+   "name": "u14_card",
+   "group": "panels",
+   "src": "art_src/src/ui_v2/ui_panels_gen1.jpg",
+   "pick": [
+    512,
+    450
+   ],
+   "kind": "nine",
+   "size": [
+    360,
+    520
+   ],
+   "margins": {
+    "left": 14,
+    "right": 14,
+    "top": 14,
+    "bottom": 14
+   },
+   "keep_feature": [
+    0.36,
+    0.1,
+    0.64,
+    0.25
+   ],
+   "feature_y_scale": 1.0,
+   "feature_scale": 1.6,
+   "spec": "U14 upgrade card"
+  },
+  {
+   "name": "u01_portrait_ring",
+   "group": "hud",
+   "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+   "pick": [
+    418,
+    368
+   ],
+   "kind": "fixed",
+   "size": [
+    256,
+    256
+   ],
+   "spec": "U01",
+   "hollow": 0.86
+  },
+  {
+   "name": "u04_minimap_ring",
+   "group": "hud",
+   "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+   "pick": [
+    615,
+    368
+   ],
+   "kind": "fixed",
+   "fit": 512,
+   "spec": "U04",
+   "hollow": 0.86
+  },
+  {
+   "name": "u05_attack",
+   "group": "hud",
+   "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+   "pick": [
+    171,
+    290
+   ],
+   "kind": "fixed",
+   "size": [
+    256,
+    256
+   ],
+   "spec": "U05",
+   "fill_alpha": 0.85
+  },
+  {
+   "name": "u06_heavy",
+   "group": "hud",
+   "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+   "pick": [
+    407,
+    162
+   ],
+   "kind": "fixed",
+   "size": [
+    160,
+    160
+   ],
+   "spec": "U06",
+   "fill_alpha": 0.85
+  },
+  {
+   "name": "u06_dash",
+   "group": "hud",
+   "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+   "pick": [
+    573,
+    163
+   ],
+   "kind": "fixed",
+   "size": [
+    160,
+    160
+   ],
+   "spec": "U06",
+   "fill_alpha": 0.85
+  },
+  {
+   "name": "u06_skill1",
+   "group": "hud",
+   "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+   "pick": [
+    739,
+    163
+   ],
+   "kind": "fixed",
+   "size": [
+    160,
+    160
+   ],
+   "spec": "U06",
+   "fill_alpha": 0.85
+  },
+  {
+   "name": "u06_skill2",
+   "group": "hud",
+   "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+   "pick": [
+    904,
+    163
+   ],
+   "kind": "fixed",
+   "size": [
+    160,
+    160
+   ],
+   "spec": "U06",
+   "fill_alpha": 0.85
+  },
+  {
+   "name": "u08_backpack",
+   "group": "hud",
+   "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+   "pick": [
+    766,
+    407
+   ],
+   "kind": "fixed",
+   "fit": 128,
+   "spec": "U08"
+  },
+  {
+   "name": "u08_shard",
+   "group": "hud",
+   "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+   "pick": [
+    861,
+    405
+   ],
+   "kind": "fixed",
+   "fit": 128,
+   "spec": "U08"
+  },
+  {
+   "name": "u08_pause",
+   "group": "hud",
+   "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+   "rect": [
+    920,
+    380,
+    976,
+    446
+   ],
+   "kind": "fixed",
+   "fit": 128,
+   "spec": "U08"
+  }
+ ]
+}

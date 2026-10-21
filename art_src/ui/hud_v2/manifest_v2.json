@@ -1,0 +1,247 @@
+{
+ "u02_bar_frame": {
+  "spec": "U02 frame (draw under the fill)",
+  "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+  "nine": {
+   "left": 10,
+   "right": 10,
+   "top": 8,
+   "bottom": 6
+  },
+  "size": [
+   480,
+   32
+  ]
+ },
+ "u02_fill": {
+  "spec": "U02 fills, 8 px wide strips, stretch/clip in x",
+  "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+  "fills": {
+   "u02_fill_hp": "#964038",
+   "u02_fill_mp": "#4C6E86",
+   "u02_fill_sp": "#968454",
+   "u10_fill_boss": "#7E3530"
+  }
+ },
+ "u10_boss_bar_frame": {
+  "spec": "U10 boss bar frame",
+  "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+  "nine": {
+   "left": 8,
+   "right": 8,
+   "top": 7,
+   "bottom": 6
+  },
+  "size": [
+   960,
+   48
+  ]
+ },
+ "u10_boss_icon": {
+  "spec": "U10 boss icon (head from the king boar v2 rig)",
+  "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+  "size": [
+   64,
+   64
+  ]
+ },
+ "u07_slot": {
+  "spec": "U07 consumable slot",
+  "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+  "nine": {
+   "left": 13,
+   "right": 13,
+   "top": 13,
+   "bottom": 12
+  },
+  "size": [
+   160,
+   160
+  ]
+ },
+ "u15_quality_frame": {
+  "spec": "U15 (line tinted by shader; 5 previews)",
+  "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+  "nine": {
+   "left": 13,
+   "right": 13,
+   "top": 13,
+   "bottom": 13
+  },
+  "tints": {
+   "grey": "#8C8A84",
+   "moss": "#7E9468",
+   "teal": "#5E9692",
+   "purple": "#86749A",
+   "gold": "#B09A62"
+  },
+  "size": [
+   128,
+   128
+  ]
+ },
+ "u03_level_badge": {
+  "spec": "U03 (number drawn by the engine)",
+  "src": "art_src/src/ui_v2/hud_frames_gen1.jpg",
+  "size": [
+   96,
+   96
+  ]
+ },
+ "ui_panel_window": {
+  "spec": "window panel for U11-U13",
+  "src": "art_src/src/ui_v2/ui_panels_gen1.jpg",
+  "nine": {
+   "left": 13,
+   "right": 15,
+   "top": 14,
+   "bottom": 14
+  },
+  "size": [
+   515,
+   300
+  ]
+ },
+ "ui_header_plate": {
+  "spec": "title plate",
+  "src": "art_src/src/ui_v2/ui_panels_gen1.jpg",
+  "nine": {
+   "left": 15,
+   "right": 16,
+   "top": 11,
+   "bottom": 11
+  },
+  "size": [
+   442,
+   80
+  ]
+ },
+ "ui_button": {
+  "spec": "button",
+  "src": "art_src/src/ui_v2/ui_panels_gen1.jpg",
+  "nine": {
+   "left": 14,
+   "right": 14,
+   "top": 12,
+   "bottom": 12
+  },
+  "size": [
+   152,
+   62
+  ]
+ },
+ "ui_button_hi": {
+  "spec": "button highlighted",
+  "src": "art_src/src/ui_v2/ui_panels_gen1.jpg",
+  "nine": {
+   "left": 14,
+   "right": 14,
+   "top": 11,
+   "bottom": 12
+  },
+  "size": [
+   152,
+   62
+  ]
+ },
+ "u14_card": {
+  "spec": "U14 upgrade card",
+  "src": "art_src/src/ui_v2/ui_panels_gen1.jpg",
+  "nine": {
+   "left": 14,
+   "right": 14,
+   "top": 14,
+   "bottom": 14
+  },
+  "feature_at": [
+   133,
+   32,
+   93,
+   78
+  ],
+  "size": [
+   360,
+   520
+  ]
+ },
+ "u01_portrait_ring": {
+  "spec": "U01",
+  "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+  "size": [
+   256,
+   256
+  ]
+ },
+ "u04_minimap_ring": {
+  "spec": "U04",
+  "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+  "size": [
+   507,
+   512
+  ]
+ },
+ "u05_attack": {
+  "spec": "U05",
+  "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+  "size": [
+   256,
+   256
+  ]
+ },
+ "u06_heavy": {
+  "spec": "U06",
+  "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+  "size": [
+   160,
+   160
+  ]
+ },
+ "u06_dash": {
+  "spec": "U06",
+  "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+  "size": [
+   160,
+   160
+  ]
+ },
+ "u06_skill1": {
+  "spec": "U06",
+  "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+  "size": [
+   160,
+   160
+  ]
+ },
+ "u06_skill2": {
+  "spec": "U06",
+  "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+  "size": [
+   160,
+   160
+  ]
+ },
+ "u08_backpack": {
+  "spec": "U08",
+  "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+  "size": [
+   115,
+   128
+  ]
+ },
+ "u08_shard": {
+  "spec": "U08",
+  "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+  "size": [
+   79,
+   128
+  ]
+ },
+ "u08_pause": {
+  "spec": "U08",
+  "src": "art_src/src/ui_v2/hud_buttons_gen1.jpg",
+  "size": [
+   104,
+   128
+  ]
+ }
+}

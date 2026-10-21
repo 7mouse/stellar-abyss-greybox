@@ -1,0 +1,5 @@
+{
+ "u11_backpack": "title 660,40 600x84; equipment panel 80,150 600x820 with 8 slots; bag panel 720,150 1120x620 (8x4 cells 116); info panel 720,790 1120x180; buttons 1440/1650,990",
+ "u12_extract_result": "panel 410,120 1100x840; title 610,80; stat plates 480,210/296/382 960x70; loot 7x2 cells 120 from 480,500; buttons 700/980,860",
+ "u13_vault_storage": "title 660,40; left panel 60,150 830x860 (6x5 cells 112); right panel 1030,150; transfer buttons 900,480/570 120x64"
+}

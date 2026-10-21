@@ -1,0 +1,140 @@
+{
+ "source": "art_src/src/ui_v2/u16_icons_gen1.jpg",
+ "items": {
+  "u16_glowmoss": {
+   "rect_src": [
+    6,
+    6,
+    335,
+    335
+   ],
+   "scale": 0.489,
+   "size": [
+    120,
+    128
+   ],
+   "file": "u16_glowmoss.png",
+   "spec": "U16"
+  },
+  "u16_glowmoss_essence": {
+   "rect_src": [
+    347,
+    6,
+    676,
+    335
+   ],
+   "scale": 0.489,
+   "size": [
+    69,
+    128
+   ],
+   "file": "u16_glowmoss_essence.png",
+   "spec": "U16"
+  },
+  "u16_shard": {
+   "rect_src": [
+    688,
+    6,
+    1018,
+    335
+   ],
+   "scale": 0.502,
+   "size": [
+    82,
+    128
+   ],
+   "file": "u16_shard.png",
+   "spec": "U16"
+  },
+  "u16_trinket_ring": {
+   "rect_src": [
+    6,
+    347,
+    335,
+    620
+   ],
+   "scale": 0.688,
+   "size": [
+    125,
+    128
+   ],
+   "file": "u16_trinket_ring.png",
+   "spec": "U16"
+  },
+  "u16_trinket_amulet": {
+   "rect_src": [
+    347,
+    347,
+    676,
+    640
+   ],
+   "scale": 0.465,
+   "size": [
+    78,
+    128
+   ],
+   "file": "u16_trinket_amulet.png",
+   "spec": "U16"
+  },
+  "u16_trinket_charm": {
+   "rect_src": [
+    688,
+    347,
+    1018,
+    676
+   ],
+   "scale": 0.437,
+   "size": [
+    79,
+    128
+   ],
+   "file": "u16_trinket_charm.png",
+   "spec": "U16"
+  },
+  "u16_return_talisman": {
+   "rect_src": [
+    6,
+    688,
+    335,
+    1018
+   ],
+   "scale": 0.476,
+   "size": [
+    100,
+    128
+   ],
+   "file": "u16_return_talisman.png",
+   "spec": "U16"
+  },
+  "u16_heal_potion": {
+   "rect_src": [
+    347,
+    688,
+    676,
+    1018
+   ],
+   "scale": 0.536,
+   "size": [
+    87,
+    128
+   ],
+   "file": "u16_heal_potion.png",
+   "spec": "U16"
+  },
+  "u16_mosscrown_tusk": {
+   "rect_src": [
+    688,
+    688,
+    1018,
+    1018
+   ],
+   "scale": 0.471,
+   "size": [
+    128,
+    106
+   ],
+   "file": "u16_mosscrown_tusk.png",
+   "spec": "U16"
+  }
+ }
+}

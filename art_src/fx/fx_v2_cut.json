@@ -1,0 +1,456 @@
+{
+ "source": "art_src/src/v21f/fx_set_gen2a.jpg",
+ "out_dir": "art_src/fx/fx_v2",
+ "disp_scale": 1.25,
+ "why": "21f missing FX: three AI sheets (v21f/fx_set_gen2a/b, fx_f01_finisher_gen1) cut on their 4-column grids; soft alpha from distance to white; no recolour (muted already); F14 from fx_f14_dust_gen1 (the gen2b dust row had a running beast drawn in, not used)",
+ "items": [
+  {
+   "name": "f01_slash_5",
+   "group": "f01_slash",
+   "rect": [
+    252,
+    25,
+    492,
+    258
+   ],
+   "soft": true,
+   "spec": "F01 3rd segment (finisher) frame 1 of 2",
+   "max": 256,
+   "source": "art_src/src/v21f/fx_f01_finisher_gen1.jpg"
+  },
+  {
+   "name": "f01_slash_6",
+   "group": "f01_slash",
+   "rect": [
+    762,
+    25,
+    1000,
+    258
+   ],
+   "soft": true,
+   "spec": "F01 3rd segment (finisher) frame 2 of 2",
+   "max": 256,
+   "source": "art_src/src/v21f/fx_f01_finisher_gen1.jpg"
+  },
+  {
+   "name": "f02_sweep_1",
+   "group": "f02_sweep",
+   "rect": [
+    40,
+    15,
+    258,
+    148
+   ],
+   "soft": true,
+   "spec": "F02 skill-1 spin sweep arc (4)",
+   "max": 384
+  },
+  {
+   "name": "f02_sweep_2",
+   "group": "f02_sweep",
+   "rect": [
+    290,
+    15,
+    497,
+    150
+   ],
+   "soft": true,
+   "spec": "F02 skill-1 spin sweep arc (4)",
+   "max": 384
+  },
+  {
+   "name": "f02_sweep_3",
+   "group": "f02_sweep",
+   "rect": [
+    528,
+    15,
+    725,
+    150
+   ],
+   "soft": true,
+   "spec": "F02 skill-1 spin sweep arc (4)",
+   "max": 384
+  },
+  {
+   "name": "f02_sweep_4",
+   "group": "f02_sweep",
+   "rect": [
+    768,
+    15,
+    972,
+    150
+   ],
+   "soft": true,
+   "spec": "F02 skill-1 spin sweep arc (4)",
+   "max": 384
+  },
+  {
+   "name": "f06_bullet_1",
+   "group": "f06_spore",
+   "rect": [
+    50,
+    290,
+    262,
+    388
+   ],
+   "soft": true,
+   "spec": "F06 spore bullet (2)",
+   "max": 128,
+   "note": "ball + trail; scale the ball to 64 in engine or use as-is with trail"
+  },
+  {
+   "name": "f06_bullet_2",
+   "group": "f06_spore",
+   "rect": [
+    282,
+    290,
+    492,
+    388
+   ],
+   "soft": true,
+   "spec": "F06 spore bullet (2)",
+   "max": 128
+  },
+  {
+   "name": "f06_burst_1",
+   "group": "f06_spore",
+   "rect": [
+    520,
+    282,
+    742,
+    392
+   ],
+   "soft": true,
+   "spec": "F06 spore burst (4)",
+   "max": 128
+  },
+  {
+   "name": "f06_burst_2",
+   "group": "f06_spore",
+   "rect": [
+    762,
+    282,
+    990,
+    392
+   ],
+   "soft": true,
+   "spec": "F06 spore burst (4)",
+   "max": 128
+  },
+  {
+   "name": "f06_burst_3",
+   "group": "f06_spore",
+   "rect": [
+    30,
+    402,
+    258,
+    535
+   ],
+   "soft": true,
+   "spec": "F06 spore burst (4)",
+   "max": 128
+  },
+  {
+   "name": "f06_burst_4",
+   "group": "f06_spore",
+   "rect": [
+    272,
+    420,
+    490,
+    540
+   ],
+   "soft": true,
+   "spec": "F06 spore burst (4)",
+   "max": 128
+  },
+  {
+   "name": "f07_sac_full",
+   "group": "f07_spore_sac",
+   "rect": [
+    525,
+    412,
+    728,
+    540
+   ],
+   "soft": true,
+   "spec": "F07 spore sac full",
+   "max": 144,
+   "note": "spec 72; kept 2x for crispness, scale in engine"
+  },
+  {
+   "name": "f07_sac_empty",
+   "group": "f07_spore_sac",
+   "rect": [
+    768,
+    412,
+    978,
+    540
+   ],
+   "soft": true,
+   "spec": "F07 spore sac deflated",
+   "max": 144
+  },
+  {
+   "name": "f10_pickup_1",
+   "group": "f10_pickup",
+   "rect": [
+    82,
+    48,
+    212,
+    147
+   ],
+   "soft": true,
+   "spec": "F10 pickup light (4), neutral cream: tint by quality in shader",
+   "max": 128,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg",
+   "alpha_gain": 2.2,
+   "tint": [
+    246,
+    240,
+    224
+   ]
+  },
+  {
+   "name": "f10_pickup_2",
+   "group": "f10_pickup",
+   "rect": [
+    292,
+    12,
+    458,
+    147
+   ],
+   "soft": true,
+   "spec": "F10 pickup light (4), neutral cream: tint by quality in shader",
+   "max": 128,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg",
+   "alpha_gain": 2.2,
+   "tint": [
+    246,
+    240,
+    224
+   ]
+  },
+  {
+   "name": "f10_pickup_3",
+   "group": "f10_pickup",
+   "rect": [
+    532,
+    0,
+    700,
+    147
+   ],
+   "soft": true,
+   "spec": "F10 pickup light (4), neutral cream: tint by quality in shader",
+   "max": 128,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg",
+   "alpha_gain": 2.2,
+   "tint": [
+    246,
+    240,
+    224
+   ]
+  },
+  {
+   "name": "f10_pickup_4",
+   "group": "f10_pickup",
+   "rect": [
+    787,
+    32,
+    922,
+    147
+   ],
+   "soft": true,
+   "spec": "F10 pickup light (4), neutral cream: tint by quality in shader",
+   "max": 128,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg",
+   "alpha_gain": 2.2,
+   "tint": [
+    246,
+    240,
+    224
+   ]
+  },
+  {
+   "name": "f11_activate_1",
+   "group": "f11_portal",
+   "rect": [
+    58,
+    182,
+    232,
+    282
+   ],
+   "soft": true,
+   "spec": "F11 portal activate (2)",
+   "max": 384,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg"
+  },
+  {
+   "name": "f11_activate_2",
+   "group": "f11_portal",
+   "rect": [
+    288,
+    155,
+    466,
+    287
+   ],
+   "soft": true,
+   "spec": "F11 portal activate (2)",
+   "max": 384,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg"
+  },
+  {
+   "name": "f11_teleport_1",
+   "group": "f11_portal",
+   "rect": [
+    523,
+    147,
+    707,
+    287
+   ],
+   "soft": true,
+   "spec": "F11 teleport (4)",
+   "max": 384,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg"
+  },
+  {
+   "name": "f11_teleport_2",
+   "group": "f11_portal",
+   "rect": [
+    768,
+    147,
+    948,
+    292
+   ],
+   "soft": true,
+   "spec": "F11 teleport (4)",
+   "max": 384,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg"
+  },
+  {
+   "name": "f11_teleport_3",
+   "group": "f11_portal",
+   "rect": [
+    62,
+    288,
+    232,
+    424
+   ],
+   "soft": true,
+   "spec": "F11 teleport (4)",
+   "max": 384,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg"
+  },
+  {
+   "name": "f11_teleport_4",
+   "group": "f11_portal",
+   "rect": [
+    288,
+    283,
+    462,
+    428
+   ],
+   "soft": true,
+   "spec": "F11 teleport (4)",
+   "max": 384,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg"
+  },
+  {
+   "name": "f13_spike_1",
+   "group": "f13_root_spike",
+   "rect": [
+    528,
+    292,
+    705,
+    424
+   ],
+   "soft": true,
+   "spec": "F13 root spikes (4)",
+   "max": 384,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg"
+  },
+  {
+   "name": "f13_spike_2",
+   "group": "f13_root_spike",
+   "rect": [
+    768,
+    287,
+    955,
+    424
+   ],
+   "soft": true,
+   "spec": "F13 root spikes (4)",
+   "max": 384,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg"
+  },
+  {
+   "name": "f13_spike_3",
+   "group": "f13_root_spike",
+   "rect": [
+    46,
+    427,
+    243,
+    558
+   ],
+   "soft": true,
+   "spec": "F13 root spikes (4)",
+   "max": 384,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg"
+  },
+  {
+   "name": "f13_spike_4",
+   "group": "f13_root_spike",
+   "rect": [
+    272,
+    418,
+    512,
+    558
+   ],
+   "soft": true,
+   "spec": "F13 root spikes (4)",
+   "max": 384,
+   "source": "art_src/src/v21f/fx_set_gen2b.jpg"
+  },
+  {
+   "name": "f14_dust_1",
+   "group": "f14_charge_dust",
+   "rect": [
+    28,
+    172,
+    364,
+    364
+   ],
+   "soft": true,
+   "source": "art_src/src/v21f/fx_f14_dust_gen1.jpg",
+   "spec": "F14 charge dust (3)",
+   "max": 256
+  },
+  {
+   "name": "f14_dust_2",
+   "group": "f14_charge_dust",
+   "rect": [
+    364,
+    178,
+    698,
+    364
+   ],
+   "soft": true,
+   "source": "art_src/src/v21f/fx_f14_dust_gen1.jpg",
+   "spec": "F14 charge dust (3)",
+   "max": 256
+  },
+  {
+   "name": "f14_dust_3",
+   "group": "f14_charge_dust",
+   "rect": [
+    698,
+    195,
+    1004,
+    364
+   ],
+   "soft": true,
+   "source": "art_src/src/v21f/fx_f14_dust_gen1.jpg",
+   "spec": "F14 charge dust (3)",
+   "max": 256
+  }
+ ]
+}

@@ -103,6 +103,7 @@ func _run() -> void:
 	await test_presentation()
 	test_audio()
 	await test_shop()
+	await test_rig()
 	print("\n结果：%d 通过，%d 失败" % [passes, fails])
 	Lineage.wipe()
 	Log.clear()
@@ -3820,4 +3821,64 @@ func _shop_text(panel: Node) -> String:
 	for l in panel.find_children("*", "Label", true, false):
 		t += str(l.text)
 	return t
+
+func test_rig() -> void:
+	print("== T12 骨骼 ==")
+	await make_arena()
+	var p := await make_player()
+	var boar := await make_enemy("mushling", Vector2(480, 0))
+	var shot := await make_enemy("rootshot", Vector2(-480, 40))
+	var sk := p.find_child("Skeleton", true, false)
+	var bsk := boar.find_child("Skeleton", true, false)
+	var poly: Polygon2D = null
+	if sk:
+		for c in sk.get_children():
+			if c is Polygon2D:
+				poly = c
+				break
+	check(sk is Skeleton2D and bsk is Skeleton2D and shot.find_child("Skeleton", true, false) == null, "场景里主角和野猪是 Skeleton2D，孢子菇仍是占位图")
+	check(poly != null and poly.has_meta("skin") and String(poly.skeleton) == "", "网格权重在 CPU 上算，没有挂 GPU 骨骼")
+	var hv := p.find_child("View", true, false) as SubViewport
+	var bv := boar.find_child("View", true, false) as SubViewport
+	check(hv != null and bv != null and hv.size.x < 400 and hv.size.y < 400 and bv.size.x < 400 and bv.size.y < 400, "骨骼视口按角色裁过，不是 512 的空画布")
+	p.sim_move = Vector2.RIGHT
+	p.sim_aim = Vector2.RIGHT
+	await frames(3)
+	check(p.state == Player.S.MOVE and p.rig.anim_playing() == "move" and p.rig.facing_code() == "s", "主角向右移动播放 move，朝向侧面")
+	p.sim_move = Vector2.DOWN
+	p.sim_aim = Vector2.DOWN
+	await frames(2)
+	check(p.rig.facing_code() == "f" and p.rig.anim_playing() == "idle", "纯向下用正面；正面没有移动片段，回落到 idle")
+	p.sim_aim = Vector2.UP
+	p.sim_move = Vector2.UP
+	await frames(2)
+	check(p.rig.facing_code() == "b", "纯向上用背面")
+	p.sim_aim = Vector2.LEFT
+	p.sim_move = Vector2.LEFT
+	await frames(2)
+	check(p.rig.facing_code() == "l", "向左是侧面镜像")
+	p.rig.set_facing(Vector2.RIGHT)
+	p.rig.set_facing(Vector2.from_angle(PI * 0.5 - deg_to_rad(20.0)))
+	check(p.rig.facing_code() == "s", "离正下 20 度仍留在侧面")
+	p.rig.set_facing(Vector2.from_angle(PI * 0.5 - deg_to_rad(5.0)))
+	check(p.rig.facing_code() == "f", "离正下 5 度才切到正面")
+	p.sim_move = Vector2.ZERO
+	p.sim_aim = Vector2.ZERO
+	p.input_enabled = false
+	await frames(2)
+	check(p.try_attack() and p.state == Player.S.ATTACK, "可以普攻")
+	await frames(2)
+	check(p.rig.anim_playing() == "attack_1", "普攻播放 attack_1")
+	p.hurt_t = 1.0
+	p.state = Player.S.HURT
+	await frames(2)
+	check(p.state == Player.S.HURT and p.rig.anim_playing() == "hit", "受击播放 hit")
+	check(boar.state == EnemyBase.S.CHASE and boar.rig.anim_playing() == "move" and boar.rig.facing_code() == "l", "野猪追击播放 move，朝左是侧面镜像")
+	boar.aggro = false
+	boar._go(EnemyBase.S.WINDUP)
+	await frames(2)
+	check(boar.state == EnemyBase.S.WINDUP and boar.rig.anim_playing() == "idle", "野猪没有的状态回落到 idle")
+	p.input_enabled = true
+	shot.queue_free()
+	boar.queue_free()
 

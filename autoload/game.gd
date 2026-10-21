@@ -408,5 +408,9 @@ func _update_web() -> void:
 		_logic_ms = lerpf(_logic_ms, ms, 0.05)
 		_js_obj.logicMs = _logic_ms
 		_js_obj.enemies = get_tree().get_nodes_in_group("enemies").size()
+		var actor := get_tree().get_first_node_in_group("player")
+		if actor:
+			_js_obj.hp = actor.hp
+			_js_obj.state = actor.state
 	if _js_obj and get_tree().current_scene:
 		_js_obj.currentScene = get_tree().current_scene.scene_file_path

@@ -123,7 +123,8 @@ func _pick(dir: Vector2) -> String:
 	var vert := "f" if from_down <= from_up else "b"
 	if (_code == "f" or _code == "b") and _code == vert and near < EXIT:
 		return _code
-	if not (_code == "f" or _code == "b") and near < ENTER:
+	# Inside the enter cone of the nearer vertical, including a jump from front to back.
+	if near < ENTER:
 		return vert
 	return "l" if d.x < 0.0 else "s"
 

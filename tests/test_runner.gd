@@ -3879,7 +3879,12 @@ func test_rig() -> void:
 	p.state = Player.S.HURT
 	await frames(2)
 	check(p.state == Player.S.HURT and p.rig.anim_playing() == "hit", "受击播放 hit")
-	check(boar.state == EnemyBase.S.CHASE and boar.rig.anim_playing() == "move" and boar.rig.facing_code() == "l", "野猪追击播放 move，朝左是侧面镜像")
+	boar.global_position = Vector2(480, 0)
+	p.global_position = Vector2.ZERO
+	boar._go(EnemyBase.S.CHASE)
+	boar.facing = Vector2.LEFT
+	boar._sync_visual()
+	check(boar.state == EnemyBase.S.CHASE and boar.rig.anim_playing() == "move" and boar.rig.facing_code() == "l" and boar.rig.scale.x < 0.0, "野猪追击播放 move，朝左是侧面镜像")
 	boar.facing = Vector2.DOWN
 	boar._sync_visual()
 	var bopen := boar.find_child("eye_open_l_f", true, false) as CanvasItem
@@ -3900,6 +3905,8 @@ func test_rig() -> void:
 	g.facing = Vector2.DOWN
 	g._sync_visual()
 	check(g.rig.facing_code() == "f", "苔冠王向下是正面")
+	g.facing = Vector2.RIGHT
+	g._sync_visual()
 	g.facing = Vector2.UP
 	g._sync_visual()
 	var crown := g.find_child("crown", true, false)

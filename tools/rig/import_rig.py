@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """把拆件 PNG + 枢轴 JSON 收成 Skeleton2D 清单（拆件规范 §11 / §12）。
 
-素材按 v2 原图位置使用：不再把围巾、手臂、小臂或野猪腿做程序位移。
+素材按 v2.1 原图位置使用，枢轴以 *_pivots.json 为准，不再做程序位移。
 清掉半透明杂边和孤立杂点，关节盖同色圆垫。
 网格部件只做很小的权重弯曲（拉伸控制在 15% 以内）。
-描边色用色板第一格。上层部件压在下层上的圆头线改成自身填色，
-延长段里的旧切口暗纹抹平。
+描边色用色板第一格。上层部件末端压在父部件上的关节暗线改成自身填色。
 
 用法：
   python3 tools/rig/import_rig.py --src art_src/rigs
@@ -383,44 +382,10 @@ def boar_seats() -> list[dict]:
     return []
 
 
-# 只在这些部件上抹旧切口。头和躯干上的暗线是五官、衣服，不动。
-_CREASE_PARTS = {
-    "arm_upper_r", "arm_upper_l", "forearm_r", "forearm_l",
-    "thigh_r", "thigh_l", "shin_r", "shin_l",
-    "leg_front_r", "leg_front_l", "leg_hind_r", "leg_hind_l", "tail",
-}
-
-
 def palette_outline(src: str, rel: str) -> list[float]:
     doc = json.load(open(os.path.join(src, rel), encoding="utf-8"))
     rgb = doc["colors"][0]["rgb"]
     return [round(rgb[0] / 255.0, 4), round(rgb[1] / 255.0, 4), round(rgb[2] / 255.0, 4), 1.0]
-
-
-def soften_cut_creases(img: np.ndarray, centers: list[tuple[float, float]]) -> int:
-    """延长段里横在肢体上的旧切口是一条窄暗纹，换成旁边的填色。"""
-    m = img[..., 3] > 160
-    if not m.any() or not centers:
-        return 0
-    din = nd.distance_transform_edt(m)
-    lum = img[..., :3].astype(float) @ np.array([0.2126, 0.7152, 0.0722])
-    h, w = m.shape
-    yy, xx = np.mgrid[:h, :w]
-    near = np.zeros_like(m)
-    for x, y in centers:
-        near |= (xx - x) ** 2 + (yy - y) ** 2 <= 12.0 ** 2
-    local_max = nd.maximum_filter(np.where(m, lum, 0), size=5)
-    valley = m & near & (din >= 2.0) & ((local_max - lum) >= 34.0) & (lum < 140.0)
-    if not valley.any():
-        return 0
-    valley &= nd.distance_transform_edt(valley) <= 1.6
-    src = m & ~valley
-    n = int(valley.sum())
-    if n == 0 or not src.any():
-        return 0
-    _, (iy, ix) = nd.distance_transform_edt(~src, return_indices=True)
-    img[valley, :3] = img[iy[valley], ix[valley], :3]
-    return n
 
 
 def suppress_covered_outline(cleaned: dict, pivots: dict, joints: list, line_rgb: list[float]) -> None:
@@ -787,15 +752,15 @@ def joints_for(kind: str, facing: str):
     if kind == "hero":
         hand = "r" if facing == "s" else "l"
         rows = [
-            ("neck", "head", "torso", "head", 10),
+            ("neck", "head", "torso", "head", 8),
             ("shoulder_r", "upper_r", "torso", "arm_upper_r", 6),
             ("shoulder_l", "upper_l", "torso", "arm_upper_l", 6),
             ("elbow_r", "forearm_r", "arm_upper_r", "forearm_r", 5),
             ("elbow_l", "forearm_l", "arm_upper_l", "forearm_l", 5),
             ("hip_r", "thigh_r", "torso", "thigh_r", 7),
             ("hip_l", "thigh_l", "torso", "thigh_l", 7),
-            ("knee_r", "shin_r", "thigh_r", "shin_r", 8),
-            ("knee_l", "shin_l", "thigh_l", "shin_l", 8),
+            ("knee_r", "shin_r", "thigh_r", "shin_r", 6),
+            ("knee_l", "shin_l", "thigh_l", "shin_l", 6),
             ("sword_grip", "sword", f"forearm_{hand}", "sword", 5),
             ("scarf_root", "scarf0", "torso", "scarf", 6),
         ]
@@ -819,7 +784,6 @@ def process_rig(spec, src, out_root, preview_dir):
     parts_dir = os.path.join(src, spec["parts_dir"])
     order = spec["order"]
     cleaned = {}
-    masks = {}
     for name in order:
         fp = os.path.join(parts_dir, name + ".png")
         if not os.path.exists(fp):
@@ -830,20 +794,6 @@ def process_rig(spec, src, out_root, preview_dir):
             print("  空部件", name)
             continue
         cleaned[name] = img
-        masks[logical_name(name)] = img[..., 3] > ALPHA_CUT
-    # v2 不再按缝去推部件。背面右手比正面低一截，整条前臂连肘、腕枢轴上移。
-    if spec["id"] == "hero_b" and "forearm_r_b" in cleaned:
-        cleaned["forearm_r_b"] = shift_arr(cleaned["forearm_r_b"], 0, -7)
-        for key in ("elbow_r", "wrist_r"):
-            piv[key] = (piv[key][0], piv[key][1] - 7)
-        print("  背面右手上移 7px")
-    centers = list(piv.values())
-    for name, img in cleaned.items():
-        if logical_name(name) not in _CREASE_PARTS:
-            continue
-        n = soften_cut_creases(img, centers)
-        if n:
-            print(f"  旧切口 {name} {n}px")
     line_rgb = [c * 255.0 for c in spec["outline"][:3]]
     suppress_covered_outline(cleaned, piv, joints_for(spec["kind"], spec["facing"]), line_rgb)
     part_world = {}
@@ -982,36 +932,36 @@ def write_pad(path: str) -> None:
 
 
 def specs_for(src: str) -> list[dict]:
-    hero = "hero/hero_parts_{f}_v2_pivots.json"
+    hero = "hero/hero_parts_{f}_v2_1_pivots.json"
     hero_line = palette_outline(src, "hero/hero_palette_src.json")
     boar_line = palette_outline(src, "sprout_boar/sprout_boar_palette_src.json")
     return [
         {
             "id": "hero_s", "kind": "hero", "facing": "s", "asset_dir": "hero/s",
             "scene": "res://scenes/rigs/hero_s.tscn",
-            "pivots": hero.format(f="s"), "parts_dir": "hero/parts_v2",
+            "pivots": hero.format(f="s"), "parts_dir": "hero/parts_v2_1",
             "order": HERO_ORDER["s"], "seats": lambda: hero_seats("s"),
             "anims": lambda: hero_anims("s"), "outline": hero_line,
         },
         {
             "id": "hero_f", "kind": "hero", "facing": "f", "asset_dir": "hero/f",
             "scene": "res://scenes/rigs/hero_f.tscn",
-            "pivots": hero.format(f="f"), "parts_dir": "hero/parts_v2",
+            "pivots": hero.format(f="f"), "parts_dir": "hero/parts_v2_1",
             "order": HERO_ORDER["f"], "seats": lambda: hero_seats("f"),
             "anims": lambda: hero_anims("f"), "outline": hero_line,
         },
         {
             "id": "hero_b", "kind": "hero", "facing": "b", "asset_dir": "hero/b",
             "scene": "res://scenes/rigs/hero_b.tscn",
-            "pivots": hero.format(f="b"), "parts_dir": "hero/parts_v2",
+            "pivots": hero.format(f="b"), "parts_dir": "hero/parts_v2_1",
             "order": HERO_ORDER["b"], "seats": lambda: hero_seats("b"),
             "anims": lambda: hero_anims("b"), "outline": hero_line,
         },
         {
             "id": "mushling_s", "kind": "boar", "facing": "s", "asset_dir": "mushling/s",
             "scene": "res://scenes/rigs/mushling_s.tscn",
-            "pivots": "sprout_boar/sprout_boar_parts_s_v2_pivots.json",
-            "parts_dir": "sprout_boar/parts_v2", "order": BOAR_ORDER,
+            "pivots": "sprout_boar/sprout_boar_parts_s_v2_1_pivots.json",
+            "parts_dir": "sprout_boar/parts_v2_1", "order": BOAR_ORDER,
             "seats": boar_seats, "anims": boar_anims, "outline": boar_line,
         },
     ]

@@ -103,6 +103,7 @@ func _run() -> void:
 	await test_presentation()
 	test_audio()
 	await test_shop()
+	await test_atmosphere()
 	print("\n结果：%d 通过，%d 失败" % [passes, fails])
 	Lineage.wipe()
 	Log.clear()
@@ -3820,4 +3821,66 @@ func _shop_text(panel: Node) -> String:
 	for l in panel.find_children("*", "Label", true, false):
 		t += str(l.text)
 	return t
+
+# ---------------- 氛围和第一关地表 ----------------
+func test_atmosphere() -> void:
+	print("== 氛围和第一关地表 ==")
+	var atmo: Atmosphere = load("res://data/atmosphere.tres")
+	check(atmo.enabled and atmo.grade_screen and is_equal_approx(atmo.brightness, -0.14) and is_equal_approx(atmo.contrast, 1.28) and is_equal_approx(atmo.vignette, 0.62) and is_equal_approx(atmo.fog, 0.40) and is_equal_approx(atmo.back_parallax, 0.40) and is_equal_approx(atmo.front_parallax, 1.20) and is_equal_approx(atmo.cliff_scale, 0.92), "氛围资源：压暗 -0.14、对比 1.28、暗角 0.62、雾 0.40")
+	var props := ["enabled", "grade_screen", "brightness", "contrast", "vignette", "vignette_radius", "vignette_soft", "fog", "fog_start", "fog_color", "vignette_color", "back_parallax", "front_parallax", "back_modulate", "front_modulate", "cliff_scale"]
+	var missing := props.filter(func(k): return DP.find_editor(atmo, k) == null)
+	check(missing.is_empty(), "氛围参数都在 F1 画面分组里")
+	var seen := {}
+	for ty in 24:
+		for tx in 24:
+			seen[Floor1DressScript_atmo().variant_of(tx, ty, 424242)] = true
+	check(seen.size() == 3, "石板三变体都会被铺到")
+	Game.enter_floor(1)
+	check(await wait_scene(Game.SCN_FLOOR), "进第一关看氛围")
+	var f := scene()
+	await frames(2)
+	var layer: Node = f.get_node("Atmosphere")
+	check(layer.shader_path().ends_with("atmosphere.gdshader") and is_equal_approx(float(layer.param("contrast")), atmo.contrast) and is_equal_approx(float(layer.param("vignette")), atmo.vignette) and is_equal_approx(float(layer.param("fog")), atmo.fog), "屏幕调色、暗角和雾已经写进着色器")
+	atmo.contrast = 1.55
+	atmo.vignette = 0.2
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(is_equal_approx(float(layer.param("contrast")), 1.55) and is_equal_approx(float(layer.param("vignette")), 0.2), "F1 改对比和暗角，当前层马上跟上")
+	atmo.grade_screen = false
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(str(layer.shader_path()).ends_with("atmosphere_overlay.gdshader"), "关掉屏幕采样后改成叠加暗角")
+	atmo.contrast = 1.28
+	atmo.vignette = 0.62
+	atmo.grade_screen = true
+	await frames(1)
+	var dress: Node = f.get_node("Floor1Dress")
+	var tex: Texture2D = f.terrain_sprites[0].texture
+	check(bool(f.terrain_sprites[0].get_meta("floor1_stones", false)) and tex.get_width() > 2000, "第一关路面烘焙成细图")
+	check(dress.piece_count() == 6 and dress.back_sprites.size() >= 4 and dress.front_sprites.size() >= 4, "崖壁 6 件都用上，前后景树林各至少 4 丛")
+	var back0: Sprite2D = dress.back_sprites[0]
+	var anchor: Vector2 = dress.anchor_of(back0)
+	atmo.back_parallax = 0.25
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var center: Vector2 = dress.last_center
+	var expect: Vector2 = anchor + (center - anchor) * (1.0 - dress.last_back)
+	check(is_equal_approx(dress.last_back, 0.25) and back0.global_position.distance_to(expect) < 1.5, "后景视差跟着 F1 的系数走")
+	atmo.cliff_scale = 1.15
+	await frames(1)
+	var cliff0: Sprite2D = dress.cliff_sprites[0]
+	check(is_equal_approx(cliff0.scale.x, 1.15), "崖壁缩放跟着 F1 走")
+	atmo.back_parallax = 0.40
+	atmo.cliff_scale = 0.92
+	check(f.hud.get_node_or_null("paper_hp") != null and f.hud.get_node_or_null("paper_portrait") != null and f.hud.get_node_or_null("paper_status") != null, "血条和头像用纸纹框")
+	check(f.hud.potion_btn.get_theme_stylebox("normal") is StyleBoxTexture, "消耗品格是纸纹槽")
+	check(f.minimap.get_node_or_null("paper_ring") != null, "小地图有纸纹环")
+	Game.enter_floor(2)
+	check(await wait_scene(Game.SCN_FLOOR), "第 2 层不换地表")
+	var f2 := scene()
+	await frames(2)
+	check(f2.get_node_or_null("Floor1Dress") == null and f2.get_node_or_null("Atmosphere") != null and not bool(f2.terrain_sprites[0].get_meta("floor1_stones", false)), "氛围每一层都有，石板路只在第一关")
+
+func Floor1DressScript_atmo() -> GDScript:
+	return load("res://scenes/floor/floor1_dress.gd")
 

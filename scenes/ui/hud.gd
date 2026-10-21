@@ -5,7 +5,13 @@ extends CanvasLayer
 
 const BAG_SLOTS := 12 ## 画面上的容量。灰盒背包还没有这个上限
 const CREAM := Color(0.9, 0.86, 0.76)
-const INK := Color(0.08, 0.07, 0.06, 0.82)
+const PAPER := "res://art_src/ui/hud_v2/panels/ui_paper_grain_tile_256.png"
+const BAR_FRAME := "res://art_src/ui/hud_v2/bars/u02_bar_frame.png"
+const BOSS_FRAME := "res://art_src/ui/hud_v2/bars/u10_boss_bar_frame.png"
+const SLOT := "res://art_src/ui/hud_v2/frames/u07_slot.png"
+const BADGE := "res://art_src/ui/hud_v2/frames/u03_level_badge.png"
+const PORTRAIT_RING := "res://art_src/ui/hud_v2/hud/u01_portrait_ring.png"
+const PAUSE_PANEL := "res://art_src/ui/hud_v2/panels/ui_panel_window.png"
 const HP_COLOR := Color(0.78, 0.16, 0.18)
 const MP_COLOR := Color(0.22, 0.45, 0.86)
 const SP_COLOR := Color(0.86, 0.62, 0.16)
@@ -38,6 +44,7 @@ var skill2_btn: Button
 var pause_dim: ColorRect
 var pause_label: Label
 var pause_box: VBoxContainer
+var paper_pause: NinePatchRect
 var quality_frame: ColorRect
 var potion_btn: Button
 var potion_count: Label
@@ -51,7 +58,8 @@ func _ready() -> void:
 	_build_actions()
 	prompt = UI.label(self, "", Vector2(560, 800), 30, Color(1, 0.95, 0.7))
 	toast = UI.label(self, "", Vector2(640, 180), 34, Color(0.9, 1, 0.86))
-	boss_back = UI.rect(self, Vector2(560, 28), Vector2(640, 18), Color(0.15, 0.08, 0.08, 0.85))
+	_nine(BOSS_FRAME, Vector2(548, 16), Vector2(664, 40), 8, 7, 8, 6, "paper_boss")
+	boss_back = UI.rect(self, Vector2(560, 28), Vector2(640, 18), Color(0.15, 0.08, 0.08, 0.55))
 	boss_bar = UI.rect(self, Vector2(560, 28), Vector2(640, 18), HP_COLOR)
 	boss_name = UI.label(self, "", Vector2(560, 50), 24, CREAM)
 	boons_label = UI.label(self, "", Vector2(36, 150), 20, Color(0.86, 0.84, 0.78))
@@ -69,6 +77,19 @@ func _ready() -> void:
 	show_boss(null)
 
 func _build_status() -> void:
+	var plate := TextureRect.new()
+	plate.name = "paper_status"
+	plate.texture = load(PAPER)
+	plate.position = Vector2(8, 4)
+	plate.size = Vector2(430, 156)
+	plate.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	plate.stretch_mode = TextureRect.STRETCH_TILE
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plate.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	add_child(plate)
+	_nine(BAR_FRAME, Vector2(124, 12), Vector2(304, 42), 10, 8, 10, 6, "paper_hp")
+	_nine(BAR_FRAME, Vector2(124, 44), Vector2(304, 34), 10, 8, 10, 6, "paper_mp")
+	_nine(BAR_FRAME, Vector2(124, 68), Vector2(304, 34), 10, 8, 10, 6, "paper_sp")
 	var portrait := TextureRect.new()
 	portrait.texture = Art.portrait()
 	portrait.position = Vector2(24, 18)
@@ -78,22 +99,40 @@ func _build_status() -> void:
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(portrait)
+	var ring := TextureRect.new()
+	ring.name = "paper_portrait"
+	ring.texture = load(PORTRAIT_RING)
+	ring.position = Vector2(12, 6)
+	ring.size = Vector2(120, 120)
+	ring.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ring.stretch_mode = TextureRect.STRETCH_SCALE
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ring.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	add_child(ring)
 	var badge := _Badge.new()
-	badge.position = Vector2(12, 8)
-	badge.size = Vector2(36, 36)
+	badge.position = Vector2(84, 72)
+	badge.size = Vector2(52, 52)
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(badge)
+	var badge_tex := TextureRect.new()
+	badge_tex.texture = load(BADGE)
+	badge_tex.position = Vector2.ZERO
+	badge_tex.size = badge.size
+	badge_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	badge_tex.stretch_mode = TextureRect.STRETCH_SCALE
+	badge_tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.add_child(badge_tex)
 	level_label = UI.label(badge, "1", Vector2.ZERO, 18, CREAM)
 	level_label.size = badge.size
 	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hp_back = UI.rect(self, Vector2(136, 22), Vector2(280, 24), Color(0.18, 0.08, 0.08, 0.9))
+	hp_back = UI.rect(self, Vector2(136, 22), Vector2(280, 24), Color(0, 0, 0, 0))
 	hp_bar = UI.rect(self, Vector2(136, 22), Vector2(280, 24), HP_COLOR)
 	hp_text = UI.label(self, "HP", Vector2(144, 22), 18, CREAM)
-	UI.rect(self, Vector2(136, 52), Vector2(280, 18), Color(0.08, 0.1, 0.16, 0.9))
+	UI.rect(self, Vector2(136, 52), Vector2(280, 18), Color(0, 0, 0, 0))
 	mp_bar = UI.rect(self, Vector2(136, 52), Vector2(280, 18), MP_COLOR)
 	UI.label(self, "MP  100 / 100", Vector2(144, 50), 14, CREAM)
-	UI.rect(self, Vector2(136, 76), Vector2(280, 18), Color(0.16, 0.12, 0.06, 0.9))
+	UI.rect(self, Vector2(136, 76), Vector2(280, 18), Color(0, 0, 0, 0))
 	sp_bar = UI.rect(self, Vector2(136, 76), Vector2(224, 18), SP_COLOR)
 	UI.label(self, "SP  80 / 100", Vector2(144, 74), 14, CREAM)
 	floor_label = UI.label(self, "", Vector2(1360, 24), 28, CREAM)
@@ -116,6 +155,9 @@ func _build_status() -> void:
 	pause_box.visible = false
 	pause_box.z_index = 2
 	add_child(pause_box)
+	paper_pause = _nine(PAUSE_PANEL, Vector2(640, 300), Vector2(640, 460), 13, 14, 15, 14, "paper_pause")
+	paper_pause.visible = false
+	paper_pause.z_index = 1
 	pause_b.z_index = 2
 	pause_label.z_index = 2
 
@@ -153,20 +195,19 @@ func _btn(pos: Vector2, sz: Vector2, icon_name: String, cb: Callable) -> Button:
 	b.icon = Art.icon(icon_name)
 	b.expand_icon = true
 	b.add_theme_constant_override("icon_max_width", int(sz.x * 0.62))
-	var radius := int(sz.x / 2)
 	for st in ["normal", "hover", "pressed", "focus", "disabled"]:
-		var sb := StyleBoxFlat.new()
-		sb.bg_color = INK
-		sb.corner_radius_top_left = radius
-		sb.corner_radius_top_right = radius
-		sb.corner_radius_bottom_left = radius
-		sb.corner_radius_bottom_right = radius
-		sb.set_border_width_all(2)
-		sb.border_color = CREAM
+		var sb := StyleBoxTexture.new()
+		sb.texture = load(SLOT)
+		sb.texture_margin_left = 13
+		sb.texture_margin_right = 13
+		sb.texture_margin_top = 13
+		sb.texture_margin_bottom = 12
+		sb.set_content_margin_all(8)
 		match st:
-			"hover": sb.bg_color = INK.lightened(0.15)
-			"pressed": sb.bg_color = INK.lightened(0.28)
-			"disabled": sb.bg_color = Color(0.05, 0.05, 0.05, 0.7)
+			"hover": sb.modulate_color = Color(1.12, 1.08, 1.0, 1)
+			"pressed": sb.modulate_color = Color(0.82, 0.78, 0.7, 1)
+			"disabled": sb.modulate_color = Color(0.45, 0.45, 0.45, 0.8)
+			_: sb.modulate_color = Color.WHITE
 		b.add_theme_stylebox_override(st, sb)
 	b.pressed.connect(cb)
 	add_child(b)
@@ -190,6 +231,8 @@ func _toggle_pause() -> void:
 	pause_dim.visible = _we_paused
 	pause_label.visible = _we_paused
 	pause_box.visible = _we_paused
+	if paper_pause:
+		paper_pause.visible = _we_paused
 	if _we_paused:
 		SettingsControls.fill(pause_box)
 		if pause_box.get_child_count() > 0 and pause_box.get_child(0) is Control:
@@ -288,7 +331,20 @@ func _prof_process(delta: float) -> void:
 func skill_text() -> String:
 	return skill_label.text
 
+func _nine(path: String, pos: Vector2, sz: Vector2, left: int, top: int, right: int, bottom: int, node_name: String) -> NinePatchRect:
+	var n := NinePatchRect.new()
+	n.name = node_name
+	n.texture = load(path)
+	n.position = pos
+	n.size = sz
+	n.patch_margin_left = left
+	n.patch_margin_top = top
+	n.patch_margin_right = right
+	n.patch_margin_bottom = bottom
+	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(n)
+	return n
+
 class _Badge extends Control:
 	func _draw() -> void:
-		draw_circle(size * 0.5, size.x * 0.5 - 1.0, Color(0.1, 0.09, 0.08, 0.94))
-		draw_arc(size * 0.5, size.x * 0.5 - 1.5, 0, TAU, 24, Color(0.9, 0.86, 0.76), 2.0, true)
+		pass

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="Atmosphere" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/atmosphere.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+enabled = true
+grade_screen = true
+brightness = -0.14
+contrast = 1.28
+vignette = 0.62
+vignette_radius = 0.48
+vignette_soft = 0.7
+fog = 0.4
+fog_start = 0.28
+fog_color = Color(0.08, 0.1, 0.09, 1)
+vignette_color = Color(0.01, 0.012, 0.01, 1)
+back_parallax = 0.4
+front_parallax = 1.2
+back_modulate = 0.86
+front_modulate = 0.78
+cliff_scale = 0.92

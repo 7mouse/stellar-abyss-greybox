@@ -44,6 +44,18 @@ func setup(f: Node) -> void:
 	_disc.set("fog", fog_tex)
 	_disc.z_index = -1
 	add_child(_disc)
+	var ring := TextureRect.new()
+	ring.name = "paper_ring"
+	ring.texture = load("res://art_src/ui/hud_v2/hud/u04_minimap_ring.png")
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ring.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ring.stretch_mode = TextureRect.STRETCH_SCALE
+	ring.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	var pad := 48.0
+	ring.position = Vector2(-pad * 0.5, -pad * 0.5)
+	ring.size = size + Vector2(pad, pad)
+	ring.z_index = 2
+	add_child(ring)
 
 func reveal(pos: Vector2) -> void:
 	var changed := false

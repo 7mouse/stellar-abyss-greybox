@@ -11,6 +11,7 @@ const TYPE_NAMES := {"start": "起点", "guard": "层主区", "camp": "营地", 
 const TYPE_COLORS := {"start": Color(0.16, 0.2, 0.18), "guard": Color(0.22, 0.12, 0.14), "camp": Color(0.2, 0.15, 0.12),
 	"shrine": Color(0.14, 0.15, 0.24), "field": Color(0.15, 0.17, 0.15), "grove": Color(0.12, 0.18, 0.13), "ruin": Color(0.17, 0.16, 0.15)}
 const AGGRO_DEFAULT := preload("res://data/aggro_rules.tres")
+const Floor1DressScript := preload("res://scenes/floor/floor1_dress.gd")
 
 var fd: FloorData
 var _first_run := true
@@ -116,6 +117,7 @@ func _ready() -> void:
 	add_child(cam)
 	cam.make_current()
 	cam.snap()
+	_attach_look()
 	hud = Hud.new()
 	hud.player = player
 	add_child(hud)
@@ -135,13 +137,19 @@ func _build_map() -> void:
 	var imgs := MapGen.terrain_images(layout)
 	var comp: Image = imgs[0]
 	comp.blend_rect(imgs[1], Rect2i(Vector2i.ZERO, comp.get_size()), Vector2i.ZERO)
+	var tex_scale := MapGen.TCELL
+	if depth == 1:
+		comp = Floor1DressScript.bake(layout, comp, int(Game.run.seed))
+		tex_scale = Floor1DressScript.WORLD_PER_TEX
 	var spr := Sprite2D.new()
 	spr.texture = ImageTexture.create_from_image(comp)
 	spr.centered = false
-	spr.scale = Vector2.ONE * MapGen.TCELL
+	spr.scale = Vector2.ONE * tex_scale
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	spr.z_index = -10
 	add_child(spr)
+	if depth == 1:
+		spr.set_meta("floor1_stones", true)
 	terrain_sprites.append(spr)
 	for r in layout.border:
 		_solid(r, Color(0.22, 0.19, 0.16))
@@ -1098,6 +1106,17 @@ func _draw_aggro_overlay() -> void:
 		aggro_overlay.draw_arc(e.global_position, e.rules.sense_radius, 0, TAU, 32, Color(1, 1, 1, 0.3), 2)
 	for n in noises:
 		aggro_overlay.draw_arc(n[0], n[1], 0, TAU, 64, Color(0.4, 0.8, 1, clampf(n[2], 0, 1)), 4)
+
+func _attach_look() -> void:
+	var layer := preload("res://scenes/floor/atmosphere_layer.gd").new()
+	layer.name = "Atmosphere"
+	add_child(layer)
+	if depth != 1:
+		return
+	var dress: Node = Floor1DressScript.new()
+	dress.name = "Floor1Dress"
+	add_child(dress)
+	dress.call("build", self, cam, layout)
 
 ## 网页性能检查：主角周围刷 n 只地图怪并开打（greybox.perfRing()）
 ## 性能实验：按名字隐藏一类画面（terrain / obstacles_tex / minimap / hud / world / solids）

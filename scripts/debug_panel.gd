@@ -73,6 +73,7 @@ func _ready() -> void:
 	_section("线索", "#0000 墓志铭 epitaph_0000.tres", load("res://data/lore/epitaph_0000.tres"))
 	_section("村落", "village_layout.tres", load("res://data/village_layout.tres"))
 	_section("画面", "presentation.tres", load("res://data/presentation.tres"))
+	_section("画面", "atmosphere.tres", load("res://data/atmosphere.tres"))
 	_section("音频", "music_rules.tres", load("res://data/audio/music_rules.tres"))
 	_section("商店", "shop_rules.tres", load("res://data/shop_rules.tres"))
 	_section("回村符", "紧急回村符 recall_charm.tres", g.recall)
@@ -188,7 +189,7 @@ func _group(name: String, open := false) -> VBoxContainer:
 	groups[name] = g
 	return g
 
-## 列出 Resource 的 int/float/bool/String 导出变量，生成可编辑控件（改动即时写回 Resource）
+## 列出 Resource 的 int/float/bool/String/Color 导出变量，生成可编辑控件（改动即时写回 Resource）
 func _section(group: String, title: String, res: Resource) -> void:
 	var g := _group(group)
 	var h := _row(g)
@@ -198,12 +199,29 @@ func _section(group: String, title: String, res: Resource) -> void:
 		if not (p.usage & PROPERTY_USAGE_SCRIPT_VARIABLE):
 			continue
 		var t: int = p.type
-		if not t in [TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_STRING]:
+		if not t in [TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_STRING, TYPE_COLOR]:
 			continue
 		var row := _row(g)
 		var l := _lbl(row, p.name, 18)
 		l.custom_minimum_size.x = 300
 		var pname: String = p.name
+		if t == TYPE_COLOR:
+			var col: Color = res.get(pname)
+			var spins: Array[SpinBox] = []
+			for ci in 4:
+				var cs := SpinBox.new()
+				cs.min_value = 0.0
+				cs.max_value = 1.0
+				cs.step = 0.01
+				cs.value = col[ci]
+				cs.custom_minimum_size = Vector2(90, 0)
+				cs.set_meta("res", res)
+				cs.set_meta("prop", pname)
+				spins.append(cs)
+				row.add_child(cs)
+			for cs2 in spins:
+				cs2.value_changed.connect(_set_color.bind(res, pname, spins))
+			continue
 		var c: Control
 		if t == TYPE_STRING:
 			var le := LineEdit.new()
@@ -228,6 +246,9 @@ func _section(group: String, title: String, res: Resource) -> void:
 		c.set_meta("res", res)
 		c.set_meta("prop", pname)
 		row.add_child(c)
+
+func _set_color(_v: float, res: Resource, prop: String, spins: Array[SpinBox]) -> void:
+	res.set(prop, Color(spins[0].value, spins[1].value, spins[2].value, spins[3].value))
 
 func _affix_toggles(group: String, gd: GuardData) -> void:
 	var r := _row(_group(group))

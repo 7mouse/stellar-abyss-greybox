@@ -15,7 +15,7 @@
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_qfla8"]
 shader = ExtResource("12_wulm6")
-shader_parameter/outline_color = Color(0.175, 0.145, 0.108, 1)
+shader_parameter/outline_color = Color(0.1294, 0.0902, 0.0235, 1)
 shader_parameter/outline_width = 1.5
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_kxmes"]
@@ -251,200 +251,200 @@ _data = {
 &"move": SubResource("Animation_xn4ci")
 }
 
-[node name="mushling_s" type="Node2D" unique_id=644783342]
+[node name="mushling_s" type="Node2D" unique_id=1273938125]
 script = ExtResource("1_bs12y")
 
-[node name="View" type="SubViewport" parent="." unique_id=661150831]
+[node name="View" type="SubViewport" parent="." unique_id=504734092]
 disable_3d = true
 transparent_bg = true
 render_target_update_mode = 4
 
-[node name="Motion" type="Node2D" parent="View" unique_id=1626453444]
+[node name="Motion" type="Node2D" parent="View" unique_id=290364099]
 position = Vector2(256, 450)
 
-[node name="Bob" type="Node2D" parent="View/Motion" unique_id=413403469]
+[node name="Bob" type="Node2D" parent="View/Motion" unique_id=1413264485]
 
-[node name="Skeleton" type="Skeleton2D" parent="View/Motion/Bob" unique_id=869468124]
+[node name="Skeleton" type="Skeleton2D" parent="View/Motion/Bob" unique_id=644476472]
 
-[node name="root" type="Bone2D" parent="View/Motion/Bob/Skeleton" unique_id=283817571]
+[node name="root" type="Bone2D" parent="View/Motion/Bob/Skeleton" unique_id=1313809395]
 rest = Transform2D(1, 0, 0, 1, 0, 0)
 auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 0.0
 
-[node name="spine" type="Bone2D" parent="View/Motion/Bob/Skeleton/root" unique_id=747179000]
+[node name="spine" type="Bone2D" parent="View/Motion/Bob/Skeleton/root" unique_id=467457302]
 position = Vector2(-38.1, -39.25)
 rest = Transform2D(1, 0, 0, 1, -38.1, -39.25)
 auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 0.0
 
-[node name="chest" type="Bone2D" parent="View/Motion/Bob/Skeleton/root/spine" unique_id=1494958344]
-position = Vector2(85.95, -0.65)
-rest = Transform2D(1, 0, 0, 1, 85.95, -0.65)
+[node name="chest" type="Bone2D" parent="View/Motion/Bob/Skeleton/root/spine" unique_id=1704624048]
+position = Vector2(85.8, -2.15)
+rest = Transform2D(1, 0, 0, 1, 85.8, -2.15)
 auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 0.0
 
-[node name="head" type="Bone2D" parent="View/Motion/Bob/Skeleton/root/spine/chest" unique_id=216127225]
-position = Vector2(-14.15, -55.2)
-rest = Transform2D(1, 0, 0, 1, -14.15, -55.2)
+[node name="head" type="Bone2D" parent="View/Motion/Bob/Skeleton/root/spine/chest" unique_id=914306124]
+position = Vector2(-14, -53.7)
+rest = Transform2D(1, 0, 0, 1, -14, -53.7)
 auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 0.0
 
-[node name="ear" type="Bone2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/head" unique_id=2084772873]
+[node name="ear" type="Bone2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/head" unique_id=923897391]
 position = Vector2(-24.5, -9.2)
 rest = Transform2D(1, 0, 0, 1, -24.5, -9.2)
 auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 0.0
 
-[node name="ear_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/head/ear" unique_id=1667266132]
+[node name="ear_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/head/ear" unique_id=2052990164]
 z_index = 7
 texture_filter = 2
 position = Vector2(-0.2, -16.2)
 texture = ExtResource("2_mvgjw")
 
-[node name="pad_ear_root" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/head/ear" unique_id=77334798]
-modulate = Color(0.843, 0.722, 0.573, 1)
+[node name="pad_ear_root" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/head/ear" unique_id=875145927]
+modulate = Color(0.8, 0.702, 0.561, 1)
 z_index = 6
 texture_filter = 2
 scale = Vector2(0.25, 0.25)
 texture = ExtResource("3_dxy2x")
 
-[node name="head_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/head" unique_id=675137945]
+[node name="head_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/head" unique_id=381956241]
 z_index = 6
 texture_filter = 2
 position = Vector2(38.3, 2.1)
 texture = ExtResource("4_yixd1")
 
-[node name="pad_neck" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/head" unique_id=561385362]
+[node name="pad_neck" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/head" unique_id=187713459]
 modulate = Color(0.749, 0.663, 0.525, 1)
 z_index = 3
 texture_filter = 2
 scale = Vector2(0.4375, 0.4375)
 texture = ExtResource("3_dxy2x")
 
-[node name="sprout" type="Bone2D" parent="View/Motion/Bob/Skeleton/root/spine/chest" unique_id=700368603]
-position = Vector2(-46.05, -101.2)
-rest = Transform2D(1, 0, 0, 1, -46.05, -101.2)
+[node name="sprout" type="Bone2D" parent="View/Motion/Bob/Skeleton/root/spine/chest" unique_id=1436706132]
+position = Vector2(-45.9, -99.7)
+rest = Transform2D(1, 0, 0, 1, -45.9, -99.7)
 auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 0.0
 
-[node name="sprout_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/sprout" unique_id=1795745594]
+[node name="sprout_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/sprout" unique_id=18683492]
 z_index = 8
 texture_filter = 2
-position = Vector2(-0.3, -18.9)
+position = Vector2(-0.3, -18.4)
 texture = ExtResource("5_1rlp0")
 
-[node name="pad_sprout_root" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/sprout" unique_id=1207281736]
-modulate = Color(0.376, 0.408, 0.169, 1)
+[node name="pad_sprout_root" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/chest/sprout" unique_id=1448747038]
+modulate = Color(0.4, 0.424, 0.18, 1)
 z_index = 3
 texture_filter = 2
 scale = Vector2(0.25, 0.25)
 texture = ExtResource("3_dxy2x")
 
-[node name="tail" type="Bone2D" parent="View/Motion/Bob/Skeleton/root/spine" unique_id=993950481]
+[node name="tail" type="Bone2D" parent="View/Motion/Bob/Skeleton/root/spine" unique_id=830734547]
 position = Vector2(-40.5, -34.35)
 rest = Transform2D(1, 0, 0, 1, -40.5, -34.35)
 auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 0.0
 
-[node name="tail_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/tail" unique_id=575292779]
+[node name="tail_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/tail" unique_id=2010397121]
 z_index = 2
 texture_filter = 2
-position = Vector2(-10.4, 5.6)
+position = Vector2(-7.9, 5.6)
 texture = ExtResource("6_hl36a")
 
-[node name="pad_tail_root" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/tail" unique_id=776991637]
-modulate = Color(0.365, 0.31, 0.251, 1)
+[node name="pad_tail_root" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/spine/tail" unique_id=414259979]
+modulate = Color(0.518, 0.427, 0.314, 1)
 z_index = 2
 texture_filter = 2
 scale = Vector2(0.3125, 0.3125)
 texture = ExtResource("3_dxy2x")
 
-[node name="hind_r" type="Bone2D" parent="View/Motion/Bob/Skeleton/root" unique_id=1622451414]
+[node name="hind_r" type="Bone2D" parent="View/Motion/Bob/Skeleton/root" unique_id=1900037907]
 position = Vector2(-56.5, -39.9)
 rest = Transform2D(1, 0, 0, 1, -56.5, -39.9)
 auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 0.0
 
-[node name="leg_hind_r_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/hind_r" unique_id=562296453]
+[node name="leg_hind_r_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/hind_r" unique_id=267554366]
 z_index = 4
 texture_filter = 2
-position = Vector2(-1, 18.4)
+position = Vector2(-1, 17.9)
 texture = ExtResource("7_0mryd")
 
-[node name="pad_hip_r" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/hind_r" unique_id=517390075]
+[node name="pad_hip_r" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/hind_r" unique_id=453096649]
 modulate = Color(0.776, 0.663, 0.498, 1)
 z_index = 3
 texture_filter = 2
 scale = Vector2(0.375, 0.375)
 texture = ExtResource("3_dxy2x")
 
-[node name="hind_l" type="Bone2D" parent="View/Motion/Bob/Skeleton/root" unique_id=1521941579]
+[node name="hind_l" type="Bone2D" parent="View/Motion/Bob/Skeleton/root" unique_id=1544]
 position = Vector2(-19.7, -38.6)
 rest = Transform2D(1, 0, 0, 1, -19.7, -38.6)
 auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 0.0
 
-[node name="leg_hind_l_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/hind_l" unique_id=1648505794]
+[node name="leg_hind_l_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/hind_l" unique_id=728022134]
 texture_filter = 2
-position = Vector2(-0.3, 16.1)
+position = Vector2(-0.3, 13.6)
 texture = ExtResource("8_xaxiw")
 
-[node name="pad_hip_l" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/hind_l" unique_id=1611257158]
-modulate = Color(0.8, 0.675, 0.51, 1)
+[node name="pad_hip_l" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/hind_l" unique_id=2105923314]
+modulate = Color(0.773, 0.663, 0.494, 1)
 texture_filter = 2
 scale = Vector2(0.375, 0.375)
 texture = ExtResource("3_dxy2x")
 
-[node name="front_r" type="Bone2D" parent="View/Motion/Bob/Skeleton/root" unique_id=81411611]
+[node name="front_r" type="Bone2D" parent="View/Motion/Bob/Skeleton/root" unique_id=1753958972]
 position = Vector2(29.4, -39.9)
 rest = Transform2D(1, 0, 0, 1, 29.4, -39.9)
 auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 0.0
 
-[node name="leg_front_r_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/front_r" unique_id=528540808]
+[node name="leg_front_r_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/front_r" unique_id=1586317618]
 z_index = 5
 texture_filter = 2
-position = Vector2(0.6, 20.9)
+position = Vector2(0.6, 18.9)
 texture = ExtResource("9_r8umg")
 
-[node name="pad_shoulder_r" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/front_r" unique_id=1629072015]
-modulate = Color(0.725, 0.604, 0.443, 1)
+[node name="pad_shoulder_r" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/front_r" unique_id=377960804]
+modulate = Color(0.731, 0.618, 0.455, 1)
 z_index = 3
 texture_filter = 2
 scale = Vector2(0.375, 0.375)
 texture = ExtResource("3_dxy2x")
 
-[node name="front_l" type="Bone2D" parent="View/Motion/Bob/Skeleton/root" unique_id=1469087792]
-position = Vector2(66.3, -39.9)
-rest = Transform2D(1, 0, 0, 1, 66.3, -39.9)
+[node name="front_l" type="Bone2D" parent="View/Motion/Bob/Skeleton/root" unique_id=1301489895]
+position = Vector2(66, -42.9)
+rest = Transform2D(1, 0, 0, 1, 66, -42.9)
 auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 0.0
 
-[node name="leg_front_l_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/front_l" unique_id=242599849]
+[node name="leg_front_l_s" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/front_l" unique_id=1282035387]
 z_index = 1
 texture_filter = 2
-position = Vector2(-5.8, 16.9)
+position = Vector2(0, 14.9)
 texture = ExtResource("10_p6wbk")
 
-[node name="pad_shoulder_l" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/front_l" unique_id=893488284]
-modulate = Color(0.773, 0.647, 0.486, 1)
+[node name="pad_shoulder_l" type="Sprite2D" parent="View/Motion/Bob/Skeleton/root/front_l" unique_id=1439283259]
+modulate = Color(0.671, 0.553, 0.402, 1)
 z_index = 1
 texture_filter = 2
 scale = Vector2(0.375, 0.375)
 texture = ExtResource("3_dxy2x")
 
-[node name="body_s_mesh" type="Polygon2D" parent="View/Motion/Bob/Skeleton" unique_id=1934991672]
+[node name="body_s_mesh" type="Polygon2D" parent="View/Motion/Bob/Skeleton" unique_id=105903014]
 z_index = 3
 texture_filter = 2
 texture = ExtResource("11_in1qq")
@@ -454,15 +454,15 @@ polygons = [PackedInt32Array(0, 1, 5), PackedInt32Array(1, 6, 5), PackedInt32Arr
 metadata/skin = {
 "paths": ["../root/spine", "../root/spine/chest"],
 "rest": PackedVector2Array(-83, -156, -46.25, -156, -9.5, -156, 27.25, -156, 64, -156, -83, -128.8, -46.25, -128.8, -9.5, -128.8, 27.25, -128.8, 64, -128.8, -83, -101.6, -46.25, -101.6, -9.5, -101.6, 27.25, -101.6, 64, -101.6, -83, -74.4, -46.25, -74.4, -9.5, -74.4, 27.25, -74.4, 64, -74.4, -83, -47.2, -46.25, -47.2, -9.5, -47.2, 27.25, -47.2, 64, -47.2, -83, -20, -46.25, -20, -9.5, -20, 27.25, -20, 64, -20),
-"weights": [PackedFloat32Array(0.942, 0.836, 0.607, 0.344, 0.19, 0.955, 0.85, 0.612, 0.333, 0.168, 0.959, 0.854, 0.615, 0.331, 0.161, 0.96, 0.855, 0.616, 0.332, 0.163, 0.956, 0.852, 0.616, 0.337, 0.171, 0.943, 0.839, 0.612, 0.35, 0.195), PackedFloat32Array(0.058, 0.164, 0.393, 0.656, 0.81, 0.045, 0.15, 0.388, 0.667, 0.832, 0.041, 0.146, 0.385, 0.669, 0.839, 0.04, 0.145, 0.384, 0.668, 0.837, 0.044, 0.148, 0.384, 0.663, 0.829, 0.057, 0.161, 0.388, 0.65, 0.805)]
+"weights": [PackedFloat32Array(0.938, 0.829, 0.596, 0.331, 0.179, 0.953, 0.844, 0.601, 0.322, 0.159, 0.958, 0.85, 0.607, 0.323, 0.155, 0.959, 0.853, 0.611, 0.327, 0.159, 0.956, 0.852, 0.614, 0.335, 0.17, 0.943, 0.839, 0.612, 0.349, 0.195), PackedFloat32Array(0.062, 0.171, 0.404, 0.669, 0.821, 0.047, 0.156, 0.399, 0.678, 0.841, 0.042, 0.15, 0.393, 0.677, 0.845, 0.041, 0.147, 0.389, 0.673, 0.841, 0.044, 0.148, 0.386, 0.665, 0.83, 0.057, 0.161, 0.388, 0.651, 0.805)]
 }
 
-[node name="Outline" type="Sprite2D" parent="." unique_id=13540695]
+[node name="Outline" type="Sprite2D" parent="." unique_id=439580699]
 texture_filter = 2
 material = SubResource("ShaderMaterial_qfla8")
 position = Vector2(0, -194)
 texture = SubResource("ViewportTexture_kxmes")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=166624406]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=729111254]
 libraries/ = SubResource("AnimationLibrary_4b6k1")
 autoplay = &"idle"

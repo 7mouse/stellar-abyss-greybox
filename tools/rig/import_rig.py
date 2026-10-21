@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """把拆件 PNG + 枢轴 JSON 收成 Skeleton2D 清单（拆件规范 §11 / §12）。
 
-素材是 AI 直出：清掉半透明杂边和孤立杂点，关节盖同色圆垫，
+素材按 v2 原图位置使用：不再把围巾、手臂、小臂或野猪腿做程序位移。
+清掉半透明杂边和孤立杂点，关节盖同色圆垫。
 网格部件只做很小的权重弯曲（拉伸控制在 15% 以内）。
-正面围巾偏右、手臂悬空时，按图层坐标和枢轴把它们收回来。
+描边色用色板第一格。上层部件压在下层上的圆头线改成自身填色，
+延长段里的旧切口暗纹抹平。
 
 用法：
-  python3 tools/rig/import_rig.py --src /cursor/stores/bot/rigs
+  python3 tools/rig/import_rig.py --src art_src/rigs
   godot --headless --path . --script res://tools/rig/build_scenes.gd
 
 依赖：pillow、numpy、scipy。不要跑 tools/data/gen_data.py。
@@ -36,7 +38,7 @@ HERO_ORDER = {
     ],
     "f": [
         "shin_r_f", "shin_l_f", "thigh_r_f", "thigh_l_f", "torso_f_mesh",
-        "arm_upper_r_f", "forearm_r_f", "arm_upper_l_f", "head_f", "scarf_f_mesh",
+        "forearm_r_f", "arm_upper_l_f", "head_f", "scarf_f_mesh", "arm_upper_r_f",
         "sword_f", "forearm_l_f",
     ],
     "b": [
@@ -371,56 +373,87 @@ def seat_parts(masks, pivots, seats) -> dict[str, np.ndarray]:
     return shifts
 
 
-def hero_seats(facing: str) -> list[dict]:
-    seats = []
-    for side in ("r", "l"):
-        seats.append({
-            "movers": [f"forearm_{side}"],
-            "target": f"arm_upper_{side}",
-            "cover": {f"forearm_{side}": [f"elbow_{side}", f"wrist_{side}"]},
-            "overlap": 4, "max_shift": 12,
-        })
-        seats.append({
-            "movers": [f"arm_upper_{side}", f"forearm_{side}"],
-            "target": "torso",
-            "cover": {
-                f"arm_upper_{side}": [f"shoulder_{side}", f"elbow_{side}"],
-                f"forearm_{side}": [f"elbow_{side}", f"wrist_{side}"],
-            },
-            "overlap": 3, "max_shift": 10,
-        })
-        seats.append({
-            "movers": [f"shin_{side}"],
-            "target": f"thigh_{side}",
-            "cover": {f"shin_{side}": [f"knee_{side}", f"ankle_{side}"]},
-            "overlap": 3, "max_shift": 8,
-        })
-    hand = "r" if facing == "s" else "l"
-    seats.append({
-        "movers": ["sword"],
-        "target": f"forearm_{hand}",
-        "cover": {"sword": ["sword_grip"]},
-        "overlap": 2, "max_shift": 8,
-    })
-    if facing == "f":
-        seats.append({"collar": "scarf", "pivot": "neck", "root_pivot": "scarf_root"})
-    return seats
+def hero_seats(_facing: str) -> list[dict]:
+    # v2 原图已经把围巾、右臂和小臂接到位。
+    return []
 
 
 def boar_seats() -> list[dict]:
-    seats = []
-    for leg, piv_a, piv_b in (
-        ("leg_front_l", "shoulder_l", "hoof_l_front"),
-        ("leg_front_r", "shoulder_r", "hoof_r_front"),
-        ("leg_hind_l", "hip_l", "hoof_l_hind"),
-        ("leg_hind_r", "hip_r", "hoof_r_hind"),
-    ):
-        seats.append({
-            "movers": [leg], "target": "body",
-            "cover": {leg: [piv_a, piv_b]},
-            "overlap": 3, "max_shift": 10,
-        })
-    return seats
+    # v2 原图已经把远侧前腿接进肚子。
+    return []
+
+
+# 只在这些部件上抹旧切口。头和躯干上的暗线是五官、衣服，不动。
+_CREASE_PARTS = {
+    "arm_upper_r", "arm_upper_l", "forearm_r", "forearm_l",
+    "thigh_r", "thigh_l", "shin_r", "shin_l",
+    "leg_front_r", "leg_front_l", "leg_hind_r", "leg_hind_l", "tail",
+}
+
+
+def palette_outline(src: str, rel: str) -> list[float]:
+    doc = json.load(open(os.path.join(src, rel), encoding="utf-8"))
+    rgb = doc["colors"][0]["rgb"]
+    return [round(rgb[0] / 255.0, 4), round(rgb[1] / 255.0, 4), round(rgb[2] / 255.0, 4), 1.0]
+
+
+def soften_cut_creases(img: np.ndarray, centers: list[tuple[float, float]]) -> int:
+    """延长段里横在肢体上的旧切口是一条窄暗纹，换成旁边的填色。"""
+    m = img[..., 3] > 160
+    if not m.any() or not centers:
+        return 0
+    din = nd.distance_transform_edt(m)
+    lum = img[..., :3].astype(float) @ np.array([0.2126, 0.7152, 0.0722])
+    h, w = m.shape
+    yy, xx = np.mgrid[:h, :w]
+    near = np.zeros_like(m)
+    for x, y in centers:
+        near |= (xx - x) ** 2 + (yy - y) ** 2 <= 12.0 ** 2
+    local_max = nd.maximum_filter(np.where(m, lum, 0), size=5)
+    valley = m & near & (din >= 2.0) & ((local_max - lum) >= 34.0) & (lum < 140.0)
+    if not valley.any():
+        return 0
+    valley &= nd.distance_transform_edt(valley) <= 1.6
+    src = m & ~valley
+    n = int(valley.sum())
+    if n == 0 or not src.any():
+        return 0
+    _, (iy, ix) = nd.distance_transform_edt(~src, return_indices=True)
+    img[valley, :3] = img[iy[valley], ix[valley], :3]
+    return n
+
+
+def suppress_covered_outline(cleaned: dict, pivots: dict, joints: list, line_rgb: list[float]) -> None:
+    """子部件在关节圆头上的描边，如果压住父部件，就改成自己的填色。"""
+    line = np.array(line_rgb[:3], float)
+    by_l = {logical_name(name): img for name, img in cleaned.items()}
+    for joint, _bone, parent_l, child_l, _radius in joints:
+        if joint not in pivots or child_l not in by_l or parent_l not in by_l:
+            continue
+        img = by_l[child_l]
+        parent = by_l[parent_l][..., 3] > 40
+        m = img[..., 3] > 140
+        if not m.any():
+            continue
+        h, w = m.shape
+        yy, xx = np.mgrid[:h, :w]
+        x, y = pivots[joint]
+        near = (xx - x) ** 2 + (yy - y) ** 2 <= 15.0 ** 2
+        din = nd.distance_transform_edt(m)
+        rgb = img[..., :3].astype(float)
+        dist = np.linalg.norm(rgb - line, axis=2)
+        lum = rgb @ np.array([0.2126, 0.7152, 0.0722])
+        dark = (dist <= 42.0) | (lum < 100.0)
+        hit = m & near & parent & (din <= 2.6) & dark
+        n = int(hit.sum())
+        if not n:
+            continue
+        src = m & ~hit & (lum >= 90.0)
+        if not src.any():
+            continue
+        _, (iy, ix) = nd.distance_transform_edt(~src, return_indices=True)
+        img[hit, :3] = img[iy[hit], ix[hit], :3]
+        print(f"  盖住的圆头线 {child_l}@{joint} {n}px")
 
 
 def median_color(img: np.ndarray, x: float, y: float) -> list[float]:
@@ -754,15 +787,15 @@ def joints_for(kind: str, facing: str):
     if kind == "hero":
         hand = "r" if facing == "s" else "l"
         rows = [
-            ("neck", "head", "torso", "head", 8),
+            ("neck", "head", "torso", "head", 10),
             ("shoulder_r", "upper_r", "torso", "arm_upper_r", 6),
             ("shoulder_l", "upper_l", "torso", "arm_upper_l", 6),
             ("elbow_r", "forearm_r", "arm_upper_r", "forearm_r", 5),
             ("elbow_l", "forearm_l", "arm_upper_l", "forearm_l", 5),
             ("hip_r", "thigh_r", "torso", "thigh_r", 7),
             ("hip_l", "thigh_l", "torso", "thigh_l", 7),
-            ("knee_r", "shin_r", "thigh_r", "shin_r", 6),
-            ("knee_l", "shin_l", "thigh_l", "shin_l", 6),
+            ("knee_r", "shin_r", "thigh_r", "shin_r", 8),
+            ("knee_l", "shin_l", "thigh_l", "shin_l", 8),
             ("sword_grip", "sword", f"forearm_{hand}", "sword", 5),
             ("scarf_root", "scarf0", "torso", "scarf", 6),
         ]
@@ -798,16 +831,21 @@ def process_rig(spec, src, out_root, preview_dir):
             continue
         cleaned[name] = img
         masks[logical_name(name)] = img[..., 3] > ALPHA_CUT
-    seats = spec["seats"]()
-    # seat 用逻辑名
-    shifts_l = seat_parts(masks, piv, seats)
-    shifts = {}
-    for name in list(cleaned):
-        s = shifts_l[logical_name(name)]
-        shifts[name] = s
-        if abs(s[0]) + abs(s[1]) >= 0.5:
-            cleaned[name] = shift_arr(cleaned[name], s[0], s[1])
-    bridge_gaps(cleaned, seats)
+    # v2 不再按缝去推部件。背面右手比正面低一截，整条前臂连肘、腕枢轴上移。
+    if spec["id"] == "hero_b" and "forearm_r_b" in cleaned:
+        cleaned["forearm_r_b"] = shift_arr(cleaned["forearm_r_b"], 0, -7)
+        for key in ("elbow_r", "wrist_r"):
+            piv[key] = (piv[key][0], piv[key][1] - 7)
+        print("  背面右手上移 7px")
+    centers = list(piv.values())
+    for name, img in cleaned.items():
+        if logical_name(name) not in _CREASE_PARTS:
+            continue
+        n = soften_cut_creases(img, centers)
+        if n:
+            print(f"  旧切口 {name} {n}px")
+    line_rgb = [c * 255.0 for c in spec["outline"][:3]]
+    suppress_covered_outline(cleaned, piv, joints_for(spec["kind"], spec["facing"]), line_rgb)
     part_world = {}
     for name, img in cleaned.items():
         part_world[logical_name(name)] = {
@@ -904,7 +942,7 @@ def process_rig(spec, src, out_root, preview_dir):
     manifest = {
         "id": spec["id"],
         "scene": spec["scene"],
-        "outline_color": outline_color(saved_imgs),
+        "outline_color": spec["outline"],
         "outline_width": 1.5,
         "bones": bones,
         "sprites": sprites,
@@ -930,12 +968,6 @@ def _debug_composite(rid, cleaned, shifts, piv, pads, preview_dir):
         canvas[..., :3] = (canvas[..., :3] * (1 - a) + placed[..., :3] * a).astype(np.uint8)
         canvas[..., 3] = np.maximum(canvas[..., 3], placed[..., 3])
     im = Image.fromarray(canvas)
-    dr = ImageDraw.Draw(im)
-    for pad in pads:
-        # 垫片画在枢轴上，仅作预览（真正的前后关系在引擎里）
-        pass
-    for name, (x, y) in piv.items():
-        dr.ellipse((x - 1.5, y - 1.5, x + 1.5, y + 1.5), fill=(255, 0, 255, 255))
     os.makedirs(preview_dir, exist_ok=True)
     im.save(os.path.join(preview_dir, f"{rid}.png"))
 
@@ -950,42 +982,44 @@ def write_pad(path: str) -> None:
 
 
 def specs_for(src: str) -> list[dict]:
-    hero = "hero/hero_parts_{f}_v1_pivots.json"
+    hero = "hero/hero_parts_{f}_v2_pivots.json"
+    hero_line = palette_outline(src, "hero/hero_palette_src.json")
+    boar_line = palette_outline(src, "sprout_boar/sprout_boar_palette_src.json")
     return [
         {
             "id": "hero_s", "kind": "hero", "facing": "s", "asset_dir": "hero/s",
             "scene": "res://scenes/rigs/hero_s.tscn",
-            "pivots": hero.format(f="s"), "parts_dir": "hero/parts",
+            "pivots": hero.format(f="s"), "parts_dir": "hero/parts_v2",
             "order": HERO_ORDER["s"], "seats": lambda: hero_seats("s"),
-            "anims": lambda: hero_anims("s"),
+            "anims": lambda: hero_anims("s"), "outline": hero_line,
         },
         {
             "id": "hero_f", "kind": "hero", "facing": "f", "asset_dir": "hero/f",
             "scene": "res://scenes/rigs/hero_f.tscn",
-            "pivots": hero.format(f="f"), "parts_dir": "hero/parts",
+            "pivots": hero.format(f="f"), "parts_dir": "hero/parts_v2",
             "order": HERO_ORDER["f"], "seats": lambda: hero_seats("f"),
-            "anims": lambda: hero_anims("f"),
+            "anims": lambda: hero_anims("f"), "outline": hero_line,
         },
         {
             "id": "hero_b", "kind": "hero", "facing": "b", "asset_dir": "hero/b",
             "scene": "res://scenes/rigs/hero_b.tscn",
-            "pivots": hero.format(f="b"), "parts_dir": "hero/parts",
+            "pivots": hero.format(f="b"), "parts_dir": "hero/parts_v2",
             "order": HERO_ORDER["b"], "seats": lambda: hero_seats("b"),
-            "anims": lambda: hero_anims("b"),
+            "anims": lambda: hero_anims("b"), "outline": hero_line,
         },
         {
             "id": "mushling_s", "kind": "boar", "facing": "s", "asset_dir": "mushling/s",
             "scene": "res://scenes/rigs/mushling_s.tscn",
-            "pivots": "sprout_boar/sprout_boar_parts_s_v1_pivots.json",
-            "parts_dir": "sprout_boar/parts", "order": BOAR_ORDER,
-            "seats": boar_seats, "anims": boar_anims,
+            "pivots": "sprout_boar/sprout_boar_parts_s_v2_pivots.json",
+            "parts_dir": "sprout_boar/parts_v2", "order": BOAR_ORDER,
+            "seats": boar_seats, "anims": boar_anims, "outline": boar_line,
         },
     ]
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--src", default="/cursor/stores/bot/rigs")
+    ap.add_argument("--src", default="art_src/rigs")
     ap.add_argument("--out", default=".")
     args = ap.parse_args()
     if not os.path.isdir(args.src):

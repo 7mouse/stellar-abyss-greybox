@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AffixData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/affix_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "rootspike"
+display_name = "根刺"
+spike_windup = 0.8
+spike_lines = 3
+spike_spread_deg = 30.0
+spike_len = 360.0
+spike_width = 60.0
+spike_damage = 12
+spike_cd = 9.0

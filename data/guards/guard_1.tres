@@ -2,28 +2,51 @@
 
 [ext_resource type="Script" path="res://scripts/resources/guard_data.gd" id="s"]
 [ext_resource type="Script" path="res://scripts/resources/affix_data.gd" id="sa"]
-[ext_resource type="Resource" path="res://data/enemies/shellbug.tres" id="r0"]
+[ext_resource type="Resource" path="res://data/enemies/mushling.tres" id="r0"]
 [ext_resource type="Resource" path="res://data/loot_tables/guard_1.tres" id="r1"]
-[ext_resource type="Resource" path="res://data/guards/affix_hardshell.tres" id="r2"]
-
-[ext_resource type="Resource" path="res://data/guards/affix_spore.tres" id="r9"]
+[ext_resource type="Resource" path="res://data/guards/affix_rootspike.tres" id="r2"]
+[ext_resource type="Resource" path="res://data/guards/affix_summon_boar.tres" id="r3"]
 [ext_resource type="Resource" path="res://data/hazards/spore_pod.tres" id="h1"]
 
 [resource]
 script = ExtResource("s")
 id = "guard_1"
-display_name = "菌母·苔根巨菇"
+display_name = "苔冠王野猪"
 base_enemy = ExtResource("r0")
-hp_mult = 5.7143
-dmg_mult = 0.8333
+hp_mult = 13.3333
+dmg_mult = 1.6667
 attack_interval = 1.8
-scale = 1.8
-color = Color(0.75, 0.3, 0.3, 1)
-affixes = Array[ExtResource("sa")]([ExtResource("r2"), ExtResource("r9")])
-phase2_hp_ratio = 0.0
+scale = 1.6
+color = Color(0.42, 0.48, 0.22, 1)
+ignore_floor_dmg_mult = true
+poise_override = 60.0
+affixes = Array[ExtResource("sa")]([ExtResource("r2"), ExtResource("r3")])
+phase2_hp_ratio = 0.5
+phase2_sec = 1.2
 xp = 30
 loot_table = ExtResource("r1")
-moves = PackedStringArray("重砸（前摇 0.9 秒）", "孢子云")
-minions = ""
+moves = PackedStringArray("冲撞", "根刺", "号令", "拱击")
+minions = "piglet:2"
 arena_hazard = ExtResource("h1")
 arena_hazard_count = 4
+charge_windup = 0.8
+charge_len = 480.0
+charge_width = 90.0
+charge_speed = 600.0
+charge_cd = 5.0
+charge_wall_stun = 1.5
+charge_kb = 180.0
+gore_windup = 0.5
+gore_arc_deg = 150.0
+gore_radius = 130.0
+gore_damage = 8
+gore_cd = 4.0
+gore_kb = 160.0
+p2_attack_interval = 1.5
+p2_charge_chain = 2
+p2_rechain_windup = 0.4
+p2_spike_lines = 5
+p2_spike_windup = 0.6
+p2_summon_every = 12.0
+p2_summon_count = 3
+p2_summon_cap = 5

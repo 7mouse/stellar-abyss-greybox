@@ -435,9 +435,11 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 	state = S.HURT
 	hurt_t = 0.15
 	var dir := knockback.normalized() if knockback.length() > 0.01 else Vector2.ZERO
-	var kb_px := HitFeedback.knockback_px("player_hurt")
-	if kb_px < 0.0:
-		kb_px = stats.hurt_knockback
+	var kb_px := knockback.length()
+	if not (src is Guard and kb_px > 1.0):
+		kb_px = HitFeedback.knockback_px("player_hurt")
+		if kb_px < 0.0:
+			kb_px = stats.hurt_knockback
 	kb_vel = dir * kb_px / 0.15 * 1.4
 	return true
 

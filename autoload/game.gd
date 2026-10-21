@@ -17,7 +17,7 @@ var skill: AttackData = preload("res://data/attacks/skill_sweep.tres")
 var skill2: AttackData = preload("res://data/attacks/skill_thrust.tres")
 var enemies := {"mushling": preload("res://data/enemies/mushling.tres"), "rootshot": preload("res://data/enemies/rootshot.tres"), "shellbug": preload("res://data/enemies/shellbug.tres")}
 var floors: Array[FloorData] = [preload("res://data/floors/floor_1.tres"), preload("res://data/floors/floor_2.tres"), preload("res://data/floors/floor_3.tres")]
-var affixes := {"frenzy": preload("res://data/guards/affix_frenzy.tres"), "summon": preload("res://data/guards/affix_summon.tres"), "hardshell": preload("res://data/guards/affix_hardshell.tres"), "spore": preload("res://data/guards/affix_spore.tres"), "thickmoss": preload("res://data/guards/affix_thickmoss.tres"), "elite": preload("res://data/guards/affix_elite.tres")}
+var affixes := {"frenzy": preload("res://data/guards/affix_frenzy.tres"), "summon": preload("res://data/guards/affix_summon.tres"), "hardshell": preload("res://data/guards/affix_hardshell.tres"), "spore": preload("res://data/guards/affix_spore.tres"), "thickmoss": preload("res://data/guards/affix_thickmoss.tres"), "elite": preload("res://data/guards/affix_elite.tres"), "rootspike": preload("res://data/guards/affix_rootspike.tres")}
 var clues: LoreClues = preload("res://data/lore/clues.tres")
 var hit_feel: HitFeel = preload("res://data/feel/hit_feel.tres")
 var recall: RecallCharm ## load() in _ready; a parse-time preload cycles with this script and breaks the web build

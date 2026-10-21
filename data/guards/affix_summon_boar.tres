@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AffixData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/affix_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "summon"
+display_name = "号令"
+summon_every = 15.0
+summon_count = 2
+summon_cap = 4
+minion_id = "piglet"

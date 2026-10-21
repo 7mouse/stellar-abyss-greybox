@@ -8,6 +8,8 @@ extends Resource
 @export var summon_every := 0.0 ## 召唤：每 N 秒
 @export var summon_count := 0
 @export var summon_enemy := "mushling"
+@export var summon_cap := 0 ## 场上上限；0 = 不限。层主招式组才读这个
+@export var minion_id := "" ## 非空时招式组召这种，不再用 summon_enemy
 @export var poise_pct := 0.0 ## 硬壳：+1.0 = poise +100%
 @export var back_damage_mult := 1.0 ## 硬壳：背后受伤 ×1.5
 @export var spore_on_slam: HazardData ## 孢子：重砸后在落点留下孢子云（用这个机关的效果参数）
@@ -34,3 +36,11 @@ extends Resource
 @export var leash_px := 0.0 ## >0 时离开出生点这么远就回归
 @export var loot_table: LootTable
 @export var xp_mult := 1.0
+@export_group("根刺")
+@export var spike_windup := 0.8
+@export var spike_lines := 3
+@export var spike_spread_deg := 30.0
+@export var spike_len := 360.0
+@export var spike_width := 60.0
+@export var spike_damage := 12
+@export var spike_cd := 9.0

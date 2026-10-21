@@ -815,6 +815,224 @@ func test_enemies() -> void:
 	check(not get_tree().paused, "T4 结束时游戏没有被弹窗暂停")
 
 # ---------------- T5 层主 + T6 撤离 + T14 线索 2 ----------------
+func _park_boar(f: Node, g: Guard, player_at: Vector2) -> void:
+	g.hold_moves = true
+	g.abort_move()
+	g.global_position = f.guard_rect.get_center()
+	f.player.global_position = player_at
+	f.player.iframe_left = 0.0
+	f.player.dash_iframe_left = 0.0
+	if f.player.state != Player.S.DEAD:
+		f.player.state = Player.S.IDLE
+	g.target = f.player
+	g.cooldown = 0.0
+	g.stun_left = 0.0
+	g.last_move = ""
+	for k in ["A", "B", "C", "D"]:
+		g.move_cd[k] = 0.0
+
+func _freeze_piglets(f: Node) -> void:
+	for e in f.guard_zone_enemies():
+		e.aggro = false
+		e.state = EnemyBase.S.IDLE
+		e.set_physics_process(false)
+
+func _test_boar_lord(f: Node) -> void:
+	print("== 苔冠王野猪招式 ==")
+	var g: Guard = f.guard
+	var god := Game.god_mode
+	Game.god_mode = false
+	for e in f.guard_zone_enemies():
+		e.queue_free()
+	await frames(2)
+	g.phase = 1
+	g.phase2_t = -1.0
+	g.invulnerable = false
+	g.hp = g.max_hp
+	g.attack_interval = g.gdata.attack_interval
+	var center: Vector2 = f.guard_rect.get_center()
+	_park_boar(f, g, center + Vector2(0, 280))
+	f.player.heal(999)
+	var pig: EnemyData = load("res://data/enemies/piglet.tres")
+	check(pig.max_hp == 12 and pig.damage == 5 and is_equal_approx(pig.move_speed, 190.0) and is_equal_approx(pig.windup, 0.4) and is_equal_approx(pig.attack_interval, 1.6) and pig.size == Vector2(28, 30) and pig.xp == 1 and pig.loot_table == null, "小猪：HP 12、伤害 5、移速 190、前摇 0.4、间隔 1.6、体型 28×30、不掉落、XP 1")
+	check(g.gdata.display_name == "苔冠王野猪" and g.gdata.base_enemy.id == "mushling" and is_equal_approx(g.gdata.scale, 1.6) and is_equal_approx(g.size.x, 64.0) and absf(g.size.y - 70.4) < 0.05, "底模发芽野猪、缩放 1.6（碰撞 %.0f×%.1f）" % [g.size.x, g.size.y])
+	var sp: AffixData = null
+	var sm: AffixData = null
+	for a in g.active_affixes:
+		if a.id == "rootspike":
+			sp = a
+		if a.id == "summon":
+			sm = a
+	check(sp != null and sp.spike_lines == 3 and is_equal_approx(sp.spike_windup, 0.8) and is_equal_approx(sp.spike_spread_deg, 30.0) and is_equal_approx(sp.spike_len, 360.0) and is_equal_approx(sp.spike_width, 60.0) and sp.spike_damage == 12 and is_equal_approx(sp.spike_cd, 9.0), "根刺：3 条 ±30°、长 360 宽 60、伤害 12、冷却 9 秒")
+	check(sm != null and is_equal_approx(sm.summon_every, 15.0) and sm.summon_count == 2 and sm.summon_cap == 4 and sm.minion_id == "piglet", "号令：15 秒 2 只小猪，上限 4")
+	check(is_equal_approx(g.gdata.charge_windup, 0.8) and is_equal_approx(g.gdata.charge_len, 480.0) and is_equal_approx(g.gdata.charge_width, 90.0) and is_equal_approx(g.gdata.charge_speed, 600.0) and is_equal_approx(g.gdata.charge_cd, 5.0) and is_equal_approx(g.gdata.charge_wall_stun, 1.5), "冲撞：0.8 秒、480×90、600px/s、冷却 5 秒、撞墙眩晕 1.5 秒")
+	check(is_equal_approx(g.gdata.gore_windup, 0.5) and is_equal_approx(g.gdata.gore_arc_deg, 150.0) and is_equal_approx(g.gdata.gore_radius, 130.0) and g.gdata.gore_damage == 8 and is_equal_approx(g.gdata.gore_cd, 4.0) and is_equal_approx(g.gdata.gore_kb, 160.0), "拱击：0.5 秒、150° 半径 130、伤害 8、击退 160、冷却 4 秒")
+	var fang := false
+	var loot_rng := RandomNumberGenerator.new()
+	loot_rng.seed = 1
+	for st in g.gdata.loot_table.roll(loot_rng, 1.0):
+		if st.item and st.item.id == "moss_fang" and st.count >= 1:
+			fang = true
+	check(fang and Items.get_item("moss_fang").display_name == "苔冠獠牙", "掉落苔冠獠牙 ×1")
+	g.last_move = "C"
+	g.move_cd["C"] = 9.0
+	check(g.pick_move(100.0) == "D" and g.pick_move(200.0) == "B" and g.pick_move(400.0) == "A", "距离选招：≤140 拱击，140–320 根刺，更远冲撞")
+	g.last_move = "D"
+	g.move_cd["D"] = 0.0
+	check(g.pick_move(80.0) != "D" and g.pick_move(80.0) != "", "同一招不连用：刚用过拱击就换一招")
+	g.last_move = "A"
+	for k in ["A", "B", "C", "D"]:
+		g.move_cd[k] = 0.0 if k == "A" else 9.0
+	check(g.pick_move(500.0) == "", "只剩刚用过的冲撞时宁可等待")
+	g.last_move = ""
+	for k in ["A", "B", "C", "D"]:
+		g.move_cd[k] = 0.0
+	check(g.pick_move(40.0) == "C" and g.alive_piglets() == 0, "号令就绪且没到上限时优先召唤")
+	# A 前摇 + 躲开
+	var saved_len := g.gdata.charge_len
+	g.gdata.charge_len = 24.0
+	_park_boar(f, g, center + Vector2(400, 0))
+	Tutorial._charge_dodged = false
+	g.start_move("A")
+	check(is_equal_approx(float(g.move_cd["A"]), g.gdata.charge_cd) and g.tele.visible, "冲撞一开始就进入 %.0f 秒冷却，预警线亮起" % g.gdata.charge_cd)
+	check(await until(func(): return g.state == EnemyBase.S.ATTACK, 2.0), "冲撞前摇能走完")
+	check(absf(g.last_windup_sec - 0.8) <= 1.0 / 60.0 + 0.001, "冲撞前摇 %.3f 秒（0.8 ± 1 帧）" % g.last_windup_sec)
+	check(await until(func(): return g.state == EnemyBase.S.RECOVER or g.state == EnemyBase.S.WINDUP, 2.0) and Tutorial._charge_dodged, "没打中就通知躲开冲撞")
+	g.abort_move()
+	g.gdata.charge_len = saved_len
+	# B 前摇和伤害
+	_park_boar(f, g, center + Vector2(180, 0))
+	var hp0: int = f.player.hp
+	g.start_move("B")
+	check(g.spike_line_count() == 3, "一阶段根刺 3 条")
+	check(await until(func(): return g.state == EnemyBase.S.ATTACK, 2.0), "根刺前摇能走完")
+	check(absf(g.last_windup_sec - 0.8) <= 1.0 / 60.0 + 0.001 and hp0 - f.player.hp == 12, "根刺前摇 %.3f 秒，实伤 12（%d→%d）" % [g.last_windup_sec, hp0, f.player.hp])
+	g.abort_move()
+	# D
+	_park_boar(f, g, center + Vector2(80, 0))
+	f.player.heal(999)
+	hp0 = f.player.hp
+	g.start_move("D")
+	check(is_equal_approx(float(g.move_cd["D"]), g.gdata.gore_cd), "拱击冷却 %.0f 秒" % g.gdata.gore_cd)
+	check(await until(func(): return g.state == EnemyBase.S.ATTACK, 2.0), "拱击前摇能走完")
+	check(absf(g.last_windup_sec - 0.5) <= 1.0 / 60.0 + 0.001 and hp0 - f.player.hp == 8, "拱击前摇 %.3f 秒，实伤 8（%d→%d）" % [g.last_windup_sec, hp0, f.player.hp])
+	g.abort_move()
+	# 冲撞实伤 10
+	_park_boar(f, g, center + Vector2(16, 0))
+	f.player.heal(999)
+	hp0 = f.player.hp
+	g.start_move("A")
+	check(await until(func(): return f.player.hp < hp0, 2.0) and hp0 - f.player.hp == 10, "冲撞对主角实伤 10（%d→%d），不吃 0.6" % [hp0, f.player.hp])
+	g.abort_move()
+	# 撞墙眩晕
+	_park_boar(f, g, center + Vector2(-500, 0))
+	var wall := StaticBody2D.new()
+	wall.collision_layer = 1
+	wall.collision_mask = 0
+	var cs := CollisionShape2D.new()
+	var sh := RectangleShape2D.new()
+	sh.size = Vector2(80, 240)
+	cs.shape = sh
+	wall.add_child(cs)
+	f.world.add_child(wall)
+	wall.global_position = g.global_position + Vector2(-74, 0)
+	g.stun_elapsed = 0.0
+	g.start_move("A")
+	var hit_wall: bool = await until(func(): return g.stun_left > 0.2, 3.0)
+	var seen: float = g.stun_left
+	check(hit_wall and seen > 1.4, "冲撞撞上障碍就眩晕（剩余 %.2f 秒）" % seen)
+	check(await until(func(): return g.stun_left <= 0.0, 3.0) and absf(g.stun_elapsed - 1.5) <= 1.0 / 60.0 + 0.02, "眩晕时长 %.3f 秒（1.5）" % g.stun_elapsed)
+	wall.queue_free()
+	g.abort_move()
+	# 号令上限 4
+	_park_boar(f, g, center + Vector2(0, 260))
+	g.start_move("C")
+	check(is_equal_approx(float(g.move_cd["C"]), 15.0), "号令冷却 15 秒")
+	check(await until(func(): return g.state == EnemyBase.S.ATTACK, 2.5), "号令前摇能走完")
+	check(absf(g.last_windup_sec - 1.0) <= 1.0 / 60.0 + 0.001, "号令前摇 %.3f 秒" % g.last_windup_sec)
+	await frames(2)
+	_freeze_piglets(f)
+	var n1 := g.alive_piglets()
+	var near := n1 > 0
+	var dist0 := -1.0
+	for e in f.guard_zone_enemies():
+		dist0 = e.global_position.distance_to(g.global_position)
+		near = near and e.data.id == "piglet" and dist0 <= 130.0 and e.damage == 3
+	check(n1 == 2 and near, "第一次号令召 %d 只小猪（实伤 3），最近一只 %.0f px" % [n1, dist0])
+	g.abort_move()
+	g.move_cd["C"] = 0.0
+	g.last_move = "A"
+	g.start_move("C")
+	check(await until(func(): return g.state == EnemyBase.S.ATTACK, 2.5), "第二次号令能出手")
+	await frames(2)
+	_freeze_piglets(f)
+	check(g.alive_piglets() == 4, "两轮之后场上 4 只，顶到上限")
+	g.abort_move()
+	g.move_cd["C"] = 0.0
+	g.last_move = "A"
+	var before := g.alive_piglets()
+	g.start_move("C")
+	check(await until(func(): return g.state == EnemyBase.S.ATTACK, 2.5), "上限后再号令一次")
+	await frames(2)
+	check(g.alive_piglets() == before, "到上限后不再多召（仍是 %d）" % g.alive_piglets())
+	g.abort_move()
+	# 二阶段只进一次
+	var starts := [0]
+	g.phase2_started.connect(func(): starts[0] += 1)
+	var pod: SporePod = f._spawn_hazard(load("res://data/hazards/spore_pod.tres"), center + Vector2(0, 160), true)
+	var src := Src.new()
+	f.add_child(src)
+	g.hp = int(g.max_hp * 0.5) + 40
+	g.poise_acc = 0.0
+	g.take_hit(50, src, Vector2.ZERO)
+	check(starts[0] == 1 and g.phase == 2 and g.invulnerable and pod.spent, "HP 过半进入二阶段，孢子囊一起爆开")
+	check(g.take_hit(30, src, Vector2.ZERO) == false, "咆哮期间不受伤")
+	var t0 := Time.get_ticks_msec()
+	check(await until(func(): return not g.invulnerable, 3.0), "二阶段咆哮会结束")
+	var dur := (Time.get_ticks_msec() - t0) / 1000.0 * Game.base_time_scale
+	check(absf(dur - 1.2) < 0.12 and is_equal_approx(g.attack_interval, 1.5) and g.spike_line_count() == 5, "咆哮 %.2f 秒，之后间隔 1.5、根刺 5 条" % dur)
+	g.take_hit(10, src, Vector2.ZERO)
+	check(starts[0] == 1 and g.phase == 2 and not g.invulnerable, "二阶段只进一次")
+	_park_boar(f, g, center + Vector2(400, 0))
+	g.phase = 2
+	g.gdata.charge_len = 20.0
+	g.move_cd["A"] = 0.0
+	g.last_move = ""
+	g._chain_after = 0
+	g.start_move("A")
+	check(is_equal_approx(g.windup, 0.8), "二阶段第一次冲撞前摇仍是 0.8 秒")
+	check(await until(func(): return g.state == EnemyBase.S.ATTACK, 2.0), "连冲的第一段能出手")
+	check(await until(func(): return g.state == EnemyBase.S.WINDUP and is_equal_approx(g.windup, 0.4), 2.0), "第二段重新瞄准，前摇 0.4 秒")
+	check(await until(func(): return g.state == EnemyBase.S.ATTACK, 2.0), "第二段能出手")
+	check(absf(g.last_windup_sec - 0.4) <= 1.0 / 60.0 + 0.001, "连冲第二段前摇 %.3f 秒" % g.last_windup_sec)
+	check(await until(func(): return g.state == EnemyBase.S.RECOVER, 2.0), "两段之后停，不再连第三段")
+	g.abort_move()
+	g.gdata.charge_len = saved_len
+	_park_boar(f, g, center + Vector2(0, 240))
+	g.phase = 2
+	g.move_cd["C"] = 0.0
+	g.last_move = "A"
+	g.start_move("C")
+	check(is_equal_approx(float(g.move_cd["C"]), 12.0), "二阶段号令冷却 12 秒")
+	check(await until(func(): return g.state == EnemyBase.S.ATTACK, 2.5), "二阶段号令能出手")
+	await frames(2)
+	_freeze_piglets(f)
+	check(g.alive_piglets() == 5, "上限提到 5：4 只时再召 1 只（现在 %d）" % g.alive_piglets())
+	g.abort_move()
+	g.move_cd["C"] = 0.0
+	g.last_move = "A"
+	g.start_move("C")
+	check(await until(func(): return g.state == EnemyBase.S.ATTACK, 2.5), "顶到 5 之后再号令")
+	await frames(2)
+	check(g.alive_piglets() == 5, "二阶段小猪也不超过 5")
+	g.abort_move()
+	g.hold_moves = false
+	g.invulnerable = false
+	g.phase2_t = -1.0
+	if g.hp < 1:
+		g.hp = 1
+	Game.god_mode = god
+
 func kill_guard(f: Node) -> void:
 	var src := Src.new()
 	f.add_child(src)
@@ -828,7 +1046,7 @@ func test_guards_and_exit() -> void:
 	var f := scene()
 	check(DP.find_editor(Game.floors[0].guard, "affix_frenzy") != null, "词缀可以在面板上勾选组合")
 	DP.set_guard_affix(Game.floors[0].guard, Game.affixes.frenzy, true)
-	check(Game.floors[0].guard.affixes.size() == 3, "勾选“狂暴”后第 1 层层主 = 硬壳 + 孢子 + 狂暴")
+	check(Game.floors[0].guard.affixes.size() == 3, "勾选“狂暴”后第 1 层层主 = 根刺 + 号令 + 狂暴")
 	DP.set_guard_affix(Game.floors[0].guard, Game.affixes.frenzy, false)
 	f.debug_guard()
 	await frames(3)
@@ -836,6 +1054,7 @@ func test_guards_and_exit() -> void:
 	f.debug_enter_guard_zone()
 	await secs(0.5)
 	check(f.guard != null and f.fence_up(), "OM2 走进层主区入口线：开口升起能量栅栏，层主出现")
+	f.guard.hold_moves = true
 	var ent: Dictionary = f.layout.guard_entrances[0]
 	var fence_r: Rect2 = ent.gap
 	f.player.global_position = fence_r.get_center() - Vector2(ent.dir) * 80.0
@@ -846,11 +1065,12 @@ func test_guards_and_exit() -> void:
 	check(dpos < 0.0 and f.guard_rect.has_point(f.player.global_position), "OM2-3 层主战期间栅栏不能穿过（朝外走 1.5 秒，主角停在栅栏内侧 %.0f px）" % -dpos)
 	f.player.global_position = f.guard_entry_pos(true)
 	await frames(2)
-	check(f.guard.max_hp == 400 and f.guard.damage == 10 and f.guard.poise == 60.0 and is_equal_approx(f.guard.back_mult, 1.5), "第 1 层层主：HP 400、伤害 10、poise 60（硬壳 +100%）、背后 ×1.5")
+	check(f.guard.max_hp == 400 and f.guard.damage == 10 and f.guard.poise == 60.0 and is_equal_approx(f.guard.back_mult, 1.0) and f.guard.gdata.ignore_floor_dmg_mult, "第 1 层层主：HP 400、伤害 10、poise 60（poise_override）、背后 ×1、豁免楼层伤害")
 	check(not f.exit_active and f.nearest_interactable().get("id", "") != "exit", "层主没死时撤离点不能互动")
 	f.player.global_position = f.exit_pos
 	await frames(2)
 	check(not f.interact() or f.nearest_interactable().get("id", "") != "exit", "站在撤离点上也互动不了")
+	await _test_boar_lord(f)
 	var t_kill := Time.get_ticks_msec()
 	await kill_guard(f)
 	await frames(1)
@@ -1993,7 +2213,7 @@ func _avg_share(fd: FloorData, seeds: Array) -> Dictionary:
 func test_ecology() -> void:
 	print("== M4 生态 × 层主 ==")
 	var want := [
-		["fungal_grove", "菌褶林", "菌母·苔根巨菇", "shellbug", ["hardshell", "spore"], 400, 10, 1.8, {"mushling": 0.60, "rootshot": 0.25, "shellbug": 0.15}, "spore_pod", 6, "spore_pod", 4],
+		["fungal_grove", "菌褶林", "苔冠王野猪", "mushling", ["rootspike", "summon"], 400, 10, 1.8, {"mushling": 0.60, "rootshot": 0.25, "shellbug": 0.15}, "spore_pod", 6, "spore_pod", 4],
 		["root_gorge", "根须深谷", "根须射手王", "rootshot", ["summon"], 400, 12, 1.7, {"rootshot": 0.50, "mushling": 0.35, "shellbug": 0.15}, "root_snare", 5, "root_pillar", 4],
 		["flooded_ruin", "积水甲虫废墟", "狂暴硬壳甲虫", "shellbug", ["hardshell", "frenzy"], 1200, 9, 1.95, {"shellbug": 0.35, "mushling": 0.40, "rootshot": 0.25}, "falling_rock", 4, "falling_rock", 3],
 	]
@@ -2161,17 +2381,21 @@ func _test_spore(f: Node, src: Node) -> void:
 	# 层主：孢子词缀 + 场地 4 个孢子囊
 	var g: Guard = await _lord_fight(f)
 	var arena: Array = f.arena_hazards
-	check(arena.size() == 4 and arena.all(func(h): return h is SporePod and f.guard_rect.has_point(h.global_position)), "菌母·苔根巨菇：场地内 %d 个孢子囊" % arena.size())
-	g.attack_dir = Vector2.RIGHT
-	g._begin_attack()
-	await frames(2)
-	var gc: Array = get_tree().get_nodes_in_group("spore_clouds")
-	check(g.has_affix("spore") and g.spore_clouds == 1 and gc.size() == 1 and is_equal_approx(gc[0].sec, 2.0), "新词缀“孢子”：重砸后落点留下 %.0f 秒孢子云" % (gc[0].sec if gc.size() else 0.0))
-	g.hitbox.end()
-	arena[0].burst()
-	g.global_position = arena[0].global_position
-	await frames(3)
-	check(g.hazard_speed_mult() < 1.0, "打爆场地孢子囊可以减速层主（×%.2f）" % g.hazard_speed_mult())
+	check(arena.size() == 4 and arena.all(func(h): return h is SporePod and f.guard_rect.has_point(h.global_position)), "苔冠王野猪：场地内 %d 个孢子囊" % arena.size())
+	check(not g.has_affix("spore") and g.has_affix("rootspike") and g.has_affix("summon"), "层主词缀是根刺 + 号令，不再带孢子")
+	var boss_pod: SporePod = arena[0]
+	g.hold_moves = true
+	g.abort_move()
+	g.global_position = f.guard_rect.get_center()
+	boss_pod.global_position = g.global_position + Vector2(80, 0)
+	f.player.global_position = g.global_position + Vector2(420, 0)
+	g.target = f.player
+	g.move_cd["A"] = 0.0
+	g.last_move = ""
+	g.start_move("A")
+	await until(func(): return boss_pod.spent, 3.0)
+	check(boss_pod.spent and is_equal_approx(g.hazard_speed_mult(), 0.7), "冲撞撞爆孢子囊，自己减速 30%%（×%.2f）" % g.hazard_speed_mult())
+	g.abort_move()
 	await kill_guard(f)
 	await until(func(): return f.exit_active)
 	check(f.arena_hazards.is_empty(), "层主死后场地机关清掉，撤离点亮起")

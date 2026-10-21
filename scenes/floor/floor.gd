@@ -372,9 +372,15 @@ func spawn_elite(pos: Vector2, group := "") -> EnemyBase:
 	e.make_thickmoss_elite()
 	return e
 
+func enemy_data(eid: String) -> EnemyData:
+	if Game.enemies.has(eid):
+		return Game.enemies[eid]
+	return load("res://data/enemies/%s.tres" % eid)
+
 func spawn_enemy(eid: String, pos: Vector2, group := "") -> EnemyBase:
+	var data := enemy_data(eid)
 	var e := EnemyBase.new()
-	e.setup(Game.enemies[eid], depth, fd)
+	e.setup(data, depth, fd)
 	e.position = pos
 	e.home_pos = pos
 	e.use_nav = nav_ready
@@ -692,8 +698,12 @@ func zone_point(min_player_dist := 160.0) -> Vector2:
 
 func _on_summon(eid: String, n: int) -> void:
 	for i in n:
-		var e := spawn_enemy(eid, zone_point(160.0), "summon")
+		var pos := zone_point(160.0)
+		if eid == "piglet" and guard != null:
+			pos = guard.global_position + Vector2.from_angle(TAU * float(i) / maxf(1.0, float(n))) * 120.0
+		var e := spawn_enemy(eid, pos, "summon")
 		e.set_meta("summoned", true)
+		e.set_meta("lord", guard.get_instance_id() if guard else 0)
 
 ## 层主区入口（第一个开口）内侧 / 外侧的点
 func guard_entry_pos(inside := true) -> Vector2:

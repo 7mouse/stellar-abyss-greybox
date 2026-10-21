@@ -10,6 +10,8 @@ extends Resource
 @export var attack_interval := 1.8 ## 词缀前的出手间隔（数值表给的是最终值，狂暴会再除以 1.3）
 @export var scale := 1.8
 @export var color := Color(0.9, 0.3, 0.3)
+@export var ignore_floor_dmg_mult := false ## 伤害不再乘楼层 enemy_dmg_mult
+@export var poise_override := 0.0 ## >0 时韧度用这个，不再吃词缀 poise_pct
 @export var affixes: Array[AffixData] = []
 @export var phase2_hp_ratio := 0.0 ## 0 = 无二阶段
 @export var phase2_affix: AffixData
@@ -26,3 +28,27 @@ extends Resource
 @export var arena_hazard: HazardData ## 场地机关
 @export var arena_hazard_count := 0
 @export var arena_hazard_phase2_only := false ## 只在二阶段出现
+@export_group("冲撞")
+@export var charge_windup := 0.8
+@export var charge_len := 0.0 ## >0 才启用层主四招；0 = 旧的模板攻击
+@export var charge_width := 90.0
+@export var charge_speed := 600.0
+@export var charge_cd := 5.0
+@export var charge_wall_stun := 1.5
+@export var charge_kb := 180.0
+@export_group("拱击")
+@export var gore_windup := 0.5
+@export var gore_arc_deg := 150.0
+@export var gore_radius := 130.0
+@export var gore_damage := 8
+@export var gore_cd := 4.0
+@export var gore_kb := 160.0
+@export_group("二阶段招式")
+@export var p2_attack_interval := 0.0
+@export var p2_charge_chain := 1
+@export var p2_rechain_windup := 0.4
+@export var p2_spike_lines := 5
+@export var p2_spike_windup := 0.6
+@export var p2_summon_every := 0.0
+@export var p2_summon_count := 0
+@export var p2_summon_cap := 0

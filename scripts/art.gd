@@ -10,12 +10,15 @@ const ENEMY := {
 	"mushling": "res://assets/actors/boar.png",
 	"rootshot": "res://assets/actors/shroom.png",
 	"shellbug": "res://assets/actors/slime.png",
+	"piglet": "res://assets/actors/boar.png",
 }
 ## 只影响画出来的高度，不改碰撞和 data.size
 const VISUAL_H := {
 	"mushling": 78.0,
 	"rootshot": 86.0,
 	"shellbug": 56.0,
+	"piglet": 54.6, ## 发芽野猪 ×0.7
+	"guard_1": 320.0, ## 苔冠王野猪画布
 }
 
 static func hero() -> Texture2D:

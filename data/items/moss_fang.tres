@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/item_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "moss_fang"
+display_name = "苔冠獠牙"
+category = "rare_material"
+color = Color(0.72, 0.62, 0.32, 1)
+stat_mods = {}

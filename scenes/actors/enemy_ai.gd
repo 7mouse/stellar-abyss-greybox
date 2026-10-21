@@ -161,6 +161,20 @@ func _to_alert(src: Vector2, from_noise: bool) -> void:
 	if not from_noise:
 		Tutorial.notify("spotted", e)
 
+## 萤苔泉光照内，视野确认比本层参数少 sight_cut 秒。光外不变。
+func confirm_sec() -> float:
+	var cut := 0.0
+	if floor_node != null and floor_node.get("layout") is Dictionary:
+		var layout: Dictionary = floor_node.layout
+		for lm in layout.get("landmarks", []):
+			if str(lm.get("id", "")) != "lm_spring":
+				continue
+			var light := float(lm.get("light", 0.0))
+			if light > 0.0 and e.global_position.distance_to(lm.pos) <= light:
+				cut = float(lm.get("sight_cut", 0.0))
+				break
+	return maxf(0.05, R.sight_confirm_sec - cut)
+
 func tick_alert(delta: float) -> void:
 	alert_t += delta
 	if _sight_tick(delta):
@@ -168,7 +182,7 @@ func tick_alert(delta: float) -> void:
 			seen_t += R.sight_interval
 			alert_src = target_pos()
 			alert_t = 0.0
-			if seen_t >= R.sight_confirm_sec - 0.001:
+			if seen_t >= confirm_sec() - 0.001:
 				enter_chase("sight")
 				return
 		else:

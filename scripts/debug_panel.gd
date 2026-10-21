@@ -58,6 +58,8 @@ func _ready() -> void:
 		_section("层主", "词缀：" + g.affixes[id].display_name, g.affixes[id])
 	for fd in g.floors:
 		_section("楼层", "第 %d 层" % fd.depth, fd)
+		for lm in fd.landmarks:
+			_section("地标", "第 %d 层 %s" % [fd.depth, lm.display_name], lm)
 	_section("仇恨", "全局仇恨参数 aggro_rules.tres（= 第 3 层）", load("res://data/aggro_rules.tres"))
 	for fd in g.floors:
 		if fd.aggro_override:

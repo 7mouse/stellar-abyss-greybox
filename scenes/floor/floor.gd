@@ -13,6 +13,7 @@ const TYPE_COLORS := {"start": Color(0.16, 0.2, 0.18), "guard": Color(0.22, 0.12
 const AGGRO_DEFAULT := preload("res://data/aggro_rules.tres")
 
 var fd: FloorData
+var _first_run := true
 var layout: Dictionary
 var depth := 1
 var player: Player
@@ -77,8 +78,9 @@ func _ready() -> void:
 	director.rng.seed = hash([Game.run.seed, depth, "aggro"])
 	add_child(director)
 	NoiseBus.noise.connect(_on_noise)
+	var first_run := _floor1_first_run()
 	var t0 := Time.get_ticks_usec()
-	layout = MapGen.generate(Game.run.seed, depth, fd)
+	layout = MapGen.generate(Game.run.seed, depth, fd, first_run)
 	gen_ms = (Time.get_ticks_usec() - t0) / 1000.0
 	_apply_floor_memory()
 	rng.seed = hash([Game.run.seed, depth, "floor"])
@@ -100,6 +102,7 @@ func _ready() -> void:
 	player.dashed.connect(_on_dashed)
 	_spawn_patrols()
 	_spawn_camps()
+	_spawn_landmarks()
 	_build_aggro_overlay()
 	cam = FollowCam.new()
 	cam.target = player
@@ -409,6 +412,74 @@ func _on_tracked_died(e: EnemyBase) -> void:
 	var id := str(e.get_meta("rid", ""))
 	if id != "" and not killed_ids.has(id):
 		killed_ids.append(id)
+
+## 地标演员：不进 spawn_points，所以宝箱 / 资源点 / 机关 / 巡逻的数量统计不变。
+func _spawn_landmarks() -> void:
+	var hd: HazardData = load("res://data/hazards/spore_pod.tres")
+	for lm in layout.get("landmarks", []):
+		_draw_landmark(lm)
+		match str(lm.id):
+			"lm_first_fight":
+				var posts: Array = lm.get("posts", [lm.pos, lm.pos])
+				for p in posts:
+					var e := _map_enemy("mushling", p, "lm_first_fight", "post")
+					e.set_meta("landmark", true)
+			"lm_spring":
+				var r := UI.rect(self, lm.pos - Vector2(28, 28), Vector2(56, 56), Color(0.35, 0.9, 0.6))
+				r.z_index = -5
+				var hold: float = float(lm.get("interact", 2.5))
+				_add_interact(lm.pos, "采集萤苔泉", _take_node.bind("lm_spring", r), func(): return not used.has("lm_spring"), "node", "lm_spring", hold)
+			"lm_fallen_tree":
+				if lm.has("chest"):
+					var cpos: Vector2 = lm.chest
+					var r := UI.rect(self, cpos - Vector2(36, 26), Vector2(72, 52), Color(0.85, 0.7, 0.25))
+					r.z_index = -5
+					_add_interact(cpos, "打开宝箱", _open_chest.bind("lm_tree_chest", r), func(): return not used.has("lm_tree_chest"), "chest", "lm_tree_chest", 0.6)
+			"lm_fairy_ring":
+				for p in lm.get("pods", []):
+					var h := _spawn_hazard(hd, p, false)
+					if h:
+						h.set_meta("landmark", true)
+				var elite := _map_enemy("shellbug", lm.pos, "lm_fairy", "post")
+				elite.make_thickmoss_elite()
+				elite.set_meta("landmark", true)
+			"lm_epitaph":
+				pass
+
+func _draw_landmark(lm: Dictionary) -> void:
+	match str(lm.id):
+		"lm_crater":
+			var s := float(lm.radius) * 2.0
+			var r := UI.rect(self, lm.pos - Vector2(s, s) * 0.5, Vector2(s, s), Color(0.22, 0.18, 0.14, 0.45))
+			r.z_index = -6
+			UI.label(self, lm.name, lm.pos + Vector2(-40, 20), 22, Color(0.75, 0.7, 0.6))
+		"lm_first_fight":
+			var r := UI.rect(self, lm.pos - Vector2(16, 40), Vector2(32, 48), Color(0.45, 0.32, 0.16))
+			r.z_index = -6
+			UI.label(self, lm.name, lm.pos + Vector2(-48, -70), 22, Color(0.8, 0.7, 0.5))
+		"lm_spring":
+			var light := float(lm.get("light", 300.0))
+			var glow := UI.rect(self, lm.pos - Vector2(light, light), Vector2(light, light) * 2.0, Color(0.45, 0.95, 0.6, 0.08))
+			glow.z_index = -7
+			UI.label(self, lm.name, lm.pos + Vector2(-40, -48), 22, Color(0.6, 1.0, 0.75))
+		"lm_fallen_tree":
+			if lm.has("bar"):
+				var bar: Rect2 = lm.bar
+				var r := UI.rect(self, bar.position, bar.size, Color(0.28, 0.16, 0.08))
+				r.z_index = -6
+			for b in lm.get("bushes", []):
+				var bush := UI.rect(self, b - Vector2(16, 12), Vector2(32, 24), Color(0.18, 0.42, 0.16))
+				bush.z_index = -6
+			UI.label(self, lm.name, lm.pos + Vector2(-48, -36), 22, Color(0.7, 0.85, 0.55))
+		"lm_fairy_ring":
+			var s := float(lm.radius) * 2.0
+			var r := UI.rect(self, lm.pos - Vector2(s, s) * 0.5, Vector2(s, s), Color(0.45, 0.25, 0.6, 0.18))
+			r.z_index = -6
+			UI.label(self, lm.name, lm.pos + Vector2(-24, -20), 22, Color(0.8, 0.6, 1.0))
+		"lm_epitaph":
+			var r := UI.rect(self, lm.pos - Vector2(18, 48), Vector2(36, 72), Color(0.62, 0.62, 0.66))
+			r.z_index = -6
+			UI.label(self, "#0000", lm.pos + Vector2(-28, -78), 22, Color(0.85, 0.85, 0.9))
 
 func _spawn_patrols() -> void:
 	var gi := 0
@@ -894,7 +965,22 @@ func _snapshot_floor() -> void:
 		"picked": picked,
 		"guard_dead": guard_dead,
 		"corpse_taken": corpse_taken,
+		"first_run": _first_run,
 	}
+
+## 首局墓碑必出。回到同一层时沿用当时的首局标记，地图和巡逻点才跟种子一致。
+func _floor1_first_run() -> bool:
+	_first_run = true
+	if depth != 1 or Game.run == null:
+		return true
+	var mem: Dictionary = Game.run.floor_memory.get(depth, {})
+	if mem.has("first_run"):
+		_first_run = bool(mem.first_run)
+		return _first_run
+	_first_run = int(Lineage.flags.get("floor1_visits", 0)) == 0
+	Lineage.flags["floor1_visits"] = int(Lineage.flags.get("floor1_visits", 0)) + 1
+	Lineage.save()
+	return _first_run
 
 func _apply_floor_memory() -> void:
 	var mem: Dictionary = Game.run.floor_memory.get(depth, {})

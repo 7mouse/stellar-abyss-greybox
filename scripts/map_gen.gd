@@ -18,12 +18,12 @@ const SAFE_START_PX := 720.0 ## 巡逻点离主角出生点的最小距离（> �
 const FIRE_SAFE_PX := 400.0 ## 巡逻点离篝火的最小距离（篝火旁不站巡逻）
 const LOOT_ROUTE_DIST := 150.0 ## 宝箱/资源点离路线点 ≥ 150px
 
-static func generate(seed: int, depth: int, fd: FloorData) -> Dictionary:
+static func generate(seed: int, depth: int, fd: FloorData, first_run := true) -> Dictionary:
 	var L := {}
 	for attempt in MAX_RETRY + 1:
 		var rng := RandomNumberGenerator.new()
 		rng.seed = hash([seed, depth, "map"]) if attempt == 0 else hash([seed, depth, "map", attempt])
-		L = _try(rng, fd)
+		L = _try(rng, fd, first_run)
 		L["seed"] = seed
 		L["depth"] = depth
 		L["attempt"] = attempt
@@ -37,7 +37,7 @@ static func cheb(a: Vector2i, b: Vector2i) -> int:
 static func _ekey(a: Vector2i, b: Vector2i) -> String:
 	return "%d,%d|%d,%d" % ([a.x, a.y, b.x, b.y] if (a.x < b.x or (a.x == b.x and a.y < b.y)) else [b.x, b.y, a.x, a.y])
 
-static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
+static func _try(rng: RandomNumberGenerator, fd: FloorData, first_run: bool) -> Dictionary:
 	var W := fd.grid_w
 	var H := fd.grid_h
 	var cp := fd.chunk_px
@@ -200,10 +200,24 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 	L["campfire_pos"] = fire
 	L["guard_pos"] = gc
 	L["exit_pos"] = gc - d0 * 300.0
-	# 5. 刷怪点、宝箱、资源点
-	var spawn := {"patrol": [], "camp": [], "chest": [], "node": []}
 	var start_pos := chunk_rect(chunks[L.start_chunk], cp).get_center()
 	L["start_pos"] = start_pos
+	L["landmarks"] = []
+	# 地标在篝火之后、巡逻之前。没有地标的层不消耗随机数，地形和后面的摆放都不变。
+	if not fd.landmarks.is_empty():
+		if not _place_landmarks(rng, L, fd, grid, first_run):
+			L.ok = false
+		solids = all_solids(L)
+		grid = reach_grid(L)
+		_nudge_pods(L, grid)
+		if _chunks_blocked(L, grid) and _remove_tree(L):
+			solids = all_solids(L)
+			grid = reach_grid(L)
+			_nudge_pods(L, grid)
+		if not _anchors_ok(L, grid):
+			L.ok = false
+	# 5. 刷怪点、宝箱、资源点
+	var spawn := {"patrol": [], "camp": [], "chest": [], "node": []}
 	var routes := {} ## chunk id -> [Vector2]
 	for ch in chunks:
 		if not NORMAL.has(ch.type) or rng.randf() >= fd.patrol_chance:
@@ -215,7 +229,7 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 			if pts.size() >= want:
 				break
 			var p := Vector2(rng.randf_range(rc.position.x, rc.end.x), rng.randf_range(rc.position.y, rc.end.y))
-			if point_reachable(grid, p) and is_free(p, solids, PATROL_OBS_MARGIN) and p.distance_to(start_pos) >= SAFE_START_PX and p.distance_to(fire) >= FIRE_SAFE_PX and pts.all(func(q): return q.distance_to(p) >= 160.0):
+			if point_reachable(grid, p) and is_free(p, solids, PATROL_OBS_MARGIN) and not _landmark_blocks(L, p) and p.distance_to(start_pos) >= SAFE_START_PX and p.distance_to(fire) >= FIRE_SAFE_PX and pts.all(func(q): return q.distance_to(p) >= 160.0):
 				pts.append(p)
 		if pts.size() < 2:
 			continue
@@ -228,7 +242,7 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 	for kind in ["chest", "node"]:
 		var n_want: int = fd.chests if kind == "chest" else fd.resource_nodes
 		for i in n_want:
-			var p := _loot_point(rng, chunks, loot_chunks, routes, taken, solids, cp, grid)
+			var p := _loot_point(rng, chunks, loot_chunks, routes, taken, solids, cp, grid, L)
 			taken.append(p)
 			spawn[kind].append(p)
 	# 6. 环境机关（§8.1）：普通区块空地上，离巡逻路线点 ≥ 150px
@@ -245,7 +259,7 @@ static func _try(rng: RandomNumberGenerator, fd: FloorData) -> Dictionary:
 					var ch: Dictionary = norm[rng.randi_range(0, norm.size() - 1)]
 					var ir := chunk_rect(ch, cp).grow(-120)
 					var p := Vector2(rng.randf_range(ir.position.x, ir.end.x), rng.randf_range(ir.position.y, ir.end.y))
-					if not point_reachable(grid, p) or not is_free(p, solids, hz.radius + 20.0):
+					if not point_reachable(grid, p) or not is_free(p, solids, hz.radius + 20.0) or _landmark_blocks(L, p):
 						continue
 					if all_route.any(func(q): return q.distance_to(p) < HAZARD_ROUTE_DIST) or htaken.any(func(q): return q.distance_to(p) < 180.0):
 						continue
@@ -279,7 +293,7 @@ static func _mark_traps(rng: RandomNumberGenerator, L: Dictionary, fd: FloorData
 			traps.append(pool[i].id)
 	L["traps"] = traps
 
-static func _loot_point(rng: RandomNumberGenerator, chunks: Array, loot_chunks: Array, routes: Dictionary, taken: Array, solids: Array, cp: float, grid: Dictionary) -> Vector2:
+static func _loot_point(rng: RandomNumberGenerator, chunks: Array, loot_chunks: Array, routes: Dictionary, taken: Array, solids: Array, cp: float, grid: Dictionary, L: Dictionary) -> Vector2:
 	var last := Vector2.ZERO
 	for t in 120:
 		var ch: Dictionary = chunks[loot_chunks[rng.randi_range(0, loot_chunks.size() - 1)]]
@@ -287,7 +301,7 @@ static func _loot_point(rng: RandomNumberGenerator, chunks: Array, loot_chunks: 
 		var ir := rc.grow(-90)
 		var p := Vector2(rng.randf_range(ir.position.x, ir.end.x), rng.randf_range(ir.position.y, ir.end.y))
 		last = p
-		if not point_reachable(grid, p) or not is_free(p, solids, 50.0):
+		if not point_reachable(grid, p) or not is_free(p, solids, 50.0) or _landmark_blocks(L, p):
 			continue
 		if routes.get(ch.id, []).any(func(q): return q.distance_to(p) < LOOT_ROUTE_DIST):
 			continue
@@ -504,6 +518,16 @@ static func unreachable_points(layout: Dictionary, radius := 24.0) -> Array:
 		pts.append(c.center)
 	pts += layout.spawn_points.chest
 	pts += layout.spawn_points.node
+	for lm in layout.get("landmarks", []):
+		if lm.has("bar"):
+			if lm.has("chest"):
+				pts.append(lm.chest)
+		else:
+			pts.append(lm.pos)
+		for pod in lm.get("pods", []):
+			pts.append(pod)
+		for post in lm.get("posts", []):
+			pts.append(post)
 	return pts.filter(func(p): return not point_reachable(grid, p))
 
 ## 地图统计（F1 面板“地图统计”、测试）
@@ -828,3 +852,491 @@ static func _carve_line(g: PackedByteArray, nx: int, ny: int, a: Vector2, b: Vec
 				if Vector2((xx + 0.5) * TCELL, (yy + 0.5) * TCELL).distance_squared_to(c) <= r * r:
 					g[yy * nx + xx] = 0
 	return g
+
+# ---------- 地标（第 1 层；空列表的层不会进这里） ----------
+static func _want_landmark(rng: RandomNumberGenerator, lm: LandmarkData, first_run: bool) -> bool:
+	if lm.guarantee_first_run and first_run:
+		return true
+	if lm.probability >= 0.999:
+		return true
+	return rng.randf() < lm.probability
+
+static func _must_place(lm: LandmarkData, first_run: bool) -> bool:
+	if lm.guarantee_first_run and first_run:
+		return true
+	return lm.required
+
+static func _place_landmarks(rng: RandomNumberGenerator, L: Dictionary, fd: FloorData, grid: Dictionary, first_run: bool) -> bool:
+	var placed: Array = []
+	L["landmarks"] = placed
+	var bars: Array = []
+	var poly := _path_poly(L)
+	var road: Vector2 = L.guard_pos - L.start_pos
+	var vertical_bar := absf(road.x) >= absf(road.y)
+	for lm in fd.landmarks:
+		if not _want_landmark(rng, lm, first_run):
+			continue
+		var spot := {}
+		match lm.id:
+			"lm_crater":
+				spot = _spot_crater(lm, L)
+			"lm_first_fight":
+				spot = _spot_first_fight(L, grid, poly, lm, placed)
+			"lm_spring":
+				spot = _spot_spring(L, grid, lm, placed)
+			"lm_fallen_tree":
+				spot = _spot_tree(L, lm, placed, bars, vertical_bar, poly)
+			"lm_fairy_ring":
+				spot = _spot_fairy(L, lm, placed, bars)
+			"lm_epitaph":
+				spot = _spot_epitaph(L, grid, poly, lm, placed, bars)
+		if spot.is_empty():
+			if _must_place(lm, first_run):
+				return false
+			continue
+		placed.append(spot)
+	return true
+
+static func _lm_pack(lm: LandmarkData, pos: Vector2, relaxed: bool) -> Dictionary:
+	return {"id": lm.id, "name": lm.display_name, "pos": pos, "radius": lm.radius, "min_patrol": lm.min_patrol,
+		"light": lm.light_radius, "sight_cut": lm.sight_confirm_cut, "interact": lm.interact_sec, "relaxed": relaxed, "placed": true}
+
+static func _spot_crater(lm: LandmarkData, L: Dictionary) -> Dictionary:
+	return _lm_pack(lm, L.start_pos, false)
+
+static func _spot_first_fight(L: Dictionary, grid: Dictionary, poly: Array, lm: LandmarkData, placed: Array) -> Dictionary:
+	var solids := all_solids(L)
+	for relax in [false, true]:
+		var hi: float = lm.band_max if not relax else lm.band_max + 400.0
+		var d: float = lm.band_min
+		while d <= hi:
+			var sample := _poly_sample(poly, d)
+			var road := _road_at(grid, solids, sample, 320.0)
+			if not is_inf(road.x) and road.distance_to(L.start_pos) >= lm.min_start and (relax or road.distance_to(L.start_pos) <= lm.band_max + 1.0) and _lm_ok(road, lm, L, placed):
+				var pack := _lm_pack(lm, road, relax)
+				var posts: Array = []
+				for s in [1.0, -1.0]:
+					var q: Vector2 = road + sample.perp * 36.0 * s
+					posts.append(q if point_reachable(grid, q) and is_free(q, solids, 8.0) else road)
+				pack["posts"] = posts
+				return pack
+			d += 40.0
+	return {}
+
+static func _spot_spring(L: Dictionary, grid: Dictionary, lm: LandmarkData, placed: Array) -> Dictionary:
+	var solids := all_solids(L)
+	for relax in [false, true]:
+		var p := _scan_free(L, grid, solids, _spring_chunks(L, lm, relax), lm, placed)
+		if not is_inf(p.x):
+			return _lm_pack(lm, p, relax)
+	return {}
+
+static func _spring_chunks(L: Dictionary, lm: LandmarkData, relax: bool) -> Array:
+	var ids: Array = []
+	var near: int = lm.near_path if not relax else lm.near_path + 1
+	var c0: int = lm.column_min - 1 if not relax else maxi(0, lm.column_min - 2)
+	var c1: int = lm.column_max - 1 if not relax else mini(int(L.grid_w) - 1, lm.column_max)
+	for ch in L.chunks:
+		var cell: Vector2i = ch.cell
+		if cell.x < c0 or cell.x > c1 or not _near_path(L, cell, near):
+			continue
+		ids.append(ch.id)
+	ids.sort()
+	return ids
+
+static func _scan_free(L: Dictionary, grid: Dictionary, solids: Array, ids: Array, lm: LandmarkData, placed: Array) -> Vector2:
+	for id in ids:
+		var rc: Rect2 = chunk_rect(L.chunks[id], L.chunk_px).grow(-64)
+		if rc.size.x < 32.0 or rc.size.y < 32.0:
+			continue
+		var y := rc.position.y
+		while y <= rc.end.y:
+			var x := rc.position.x
+			while x <= rc.end.x:
+				var p := Vector2(x, y)
+				if point_reachable(grid, p) and is_free(p, solids, 28.0) and _lm_ok(p, lm, L, placed):
+					return p
+				x += 64.0
+			y += 64.0
+	return Vector2(INF, INF)
+
+static func _spot_tree(L: Dictionary, lm: LandmarkData, placed: Array, bars: Array, vertical: bool, poly: Array) -> Dictionary:
+	var bar := _orient(lm.bar_w, lm.bar_h, vertical)
+	var foot := _orient(lm.footprint_w, lm.footprint_h, vertical)
+	var tries := 0
+	for relax in [false, true]:
+		for id in _tree_chunks(L, relax):
+			var ch: Dictionary = L.chunks[id]
+			var rc: Rect2 = chunk_rect(ch, L.chunk_px).grow(-36)
+			var center: Vector2 = chunk_rect(ch, L.chunk_px).get_center()
+			if rc.size.x < bar.x or rc.size.y < bar.y:
+				continue
+			for off in [Vector2(300, 280), Vector2(-300, 280), Vector2(300, -280), Vector2(-300, -280), Vector2(360, 0), Vector2(-360, 0), Vector2(0, 360), Vector2(0, -360)]:
+				var c: Vector2 = center + off
+				c.x = clampf(c.x, rc.position.x + bar.x * 0.5, rc.end.x - bar.x * 0.5)
+				c.y = clampf(c.y, rc.position.y + bar.y * 0.5, rc.end.y - bar.y * 0.5)
+				var rect := Rect2(c - bar * 0.5, bar)
+				if rect.grow(30).has_point(center) or not _lm_ok(c, lm, L, placed) or _hits_poly(rect, poly, 80.0):
+					continue
+				tries += 1
+				if tries > 8:
+					return {}
+				ch.obstacles.append(rect)
+				ch.obstacle_kinds.append(T_ROCK)
+				var chest := _outside_rect(rect, center)
+				bars.append(rect)
+				var pack := _lm_pack(lm, c, relax)
+				pack["bar"] = rect
+				pack["block_rect"] = Rect2(c - foot * 0.5, foot)
+				pack["chest"] = chest
+				var side := Vector2(-off.y, off.x)
+				if side.length() < 1.0:
+					side = Vector2.RIGHT
+				side = side.normalized()
+				pack["bushes"] = [c + side * 70.0, c - side * 70.0]
+				return pack
+	return {}
+
+static func _tree_chunks(L: Dictionary, relax: bool) -> Array:
+	var ids: Array = []
+	var x_max := int(L.grid_w) - 4 if not relax else int(L.grid_w) - 3
+	for ch in L.chunks:
+		if not NORMAL.has(ch.type) or L.path.has(ch.id) or ch.cell.x > x_max:
+			continue
+		ids.append(ch.id)
+	ids.sort()
+	return ids
+
+static func _spot_fairy(L: Dictionary, lm: LandmarkData, placed: Array, bars: Array) -> Dictionary:
+	var found := {}
+	var relaxed := false
+	for relax in [false, true]:
+		found = _best_fairy_point(L, _fairy_chunks(L, lm, relax), lm, placed)
+		if not found.is_empty():
+			relaxed = relax
+			break
+	if found.is_empty():
+		return {}
+	var pos: Vector2 = found.pos
+	var cid: int = found.chunk
+	_carve_disk(L, pos, lm.radius)
+	var cells: PackedByteArray = _carve_line(L.terrain.cells, L.terrain.nx, L.terrain.ny, pos, chunk_rect(L.chunks[cid], L.chunk_px).get_center(), 130.0)
+	L.terrain.cells = cells
+	_commit_bars(L, bars)
+	var solids := all_solids(L)
+	if not is_free(pos, solids, 8.0):
+		return {}
+	var pods: Array = []
+	for i in 4:
+		var pod := pos + Vector2.from_angle(PI * 0.25 + float(i) * PI * 0.5) * 200.0
+		while pod.distance_to(pos) > 24.0 and not is_free(pod, solids, 6.0):
+			pod = pod.move_toward(pos, 24.0)
+		pods.append(pod)
+	var pack := _lm_pack(lm, pos, relaxed)
+	pack["pods"] = pods
+	return pack
+
+static func _fairy_chunks(L: Dictionary, lm: LandmarkData, relax: bool) -> Array:
+	var col := int(L.grid_w) - 2
+	var ids: Array = []
+	for ch in L.chunks:
+		var cell: Vector2i = ch.cell
+		if cell == L.chunks[L.guard_chunk].cell:
+			continue
+		var col_ok: bool = cell.x == col if not relax else (cell.x == col or cell.x == col - 1)
+		if not col_ok:
+			continue
+		var near: int = lm.near_path if not relax else lm.near_path + 1
+		if near > 0 and not _near_path(L, cell, near):
+			continue
+		ids.append(ch.id)
+	ids.sort()
+	return ids
+
+static func _best_fairy_point(L: Dictionary, ids: Array, lm: LandmarkData, placed: Array) -> Dictionary:
+	var best := {}
+	var best_d := 1e9
+	for id in ids:
+		var rc: Rect2 = chunk_rect(L.chunks[id], L.chunk_px).grow(-48)
+		var center: Vector2 = chunk_rect(L.chunks[id], L.chunk_px).get_center()
+		var y := rc.position.y
+		while y <= rc.end.y:
+			var x := rc.position.x
+			while x <= rc.end.x:
+				var p := Vector2(x, y)
+				if _lm_ok(p, lm, L, placed):
+					var d := p.distance_to(center)
+					if d < best_d:
+						best_d = d
+						best = {"pos": p, "chunk": id}
+				x += 48.0
+			y += 48.0
+	return best
+
+static func _spot_epitaph(L: Dictionary, grid: Dictionary, poly: Array, lm: LandmarkData, placed: Array, bars: Array) -> Dictionary:
+	var solids := all_solids(L)
+	var length := _poly_len(poly)
+	var free_hit := {}
+	var raw_hit := {}
+	var free_relax := {}
+	var raw_relax := {}
+	for relax in [false, true]:
+		var lo: float = (lm.band_min if not relax else maxf(0.2, lm.band_min - 0.1)) * length
+		var hi: float = (lm.band_max if not relax else minf(0.8, lm.band_max + 0.12)) * length
+		var omin: float = lm.offset_min if not relax else maxf(40.0, lm.offset_min - 40.0)
+		var omax: float = lm.offset_max if not relax else lm.offset_max + 120.0
+		var d: float = lo
+		while d <= hi:
+			var sample := _poly_sample(poly, d)
+			var road := _road_at(grid, solids, sample, 320.0)
+			if not is_inf(road.x):
+				var off: float = omin
+				while off <= omax + 0.1:
+					for sign in [1.0, -1.0]:
+						var p: Vector2 = road + sample.perp * sign * off
+						if not _lm_ok(p, lm, L, placed):
+							continue
+						var free := point_reachable(grid, p) and is_free(p, solids, 12.0)
+						var info := {"pos": p, "road": road}
+						if not relax:
+							if free and free_hit.is_empty():
+								free_hit = info
+							elif raw_hit.is_empty():
+								raw_hit = info
+						elif free and free_relax.is_empty():
+							free_relax = info
+						elif raw_relax.is_empty():
+							raw_relax = info
+					if not free_hit.is_empty():
+						break
+					off += 40.0
+			if not free_hit.is_empty():
+				break
+			d += 64.0
+		if not free_hit.is_empty():
+			break
+	var chosen: Dictionary = free_hit if not free_hit.is_empty() else (raw_hit if not raw_hit.is_empty() else (free_relax if not free_relax.is_empty() else raw_relax))
+	if chosen.is_empty():
+		return {}
+	var pos: Vector2 = chosen.pos
+	if not (point_reachable(grid, pos) and is_free(pos, all_solids(L), 12.0)):
+		_carve_disk(L, pos, 72.0)
+		var cells: PackedByteArray = _carve_line(L.terrain.cells, L.terrain.nx, L.terrain.ny, pos, chosen.road, 56.0)
+		L.terrain.cells = cells
+		_commit_bars(L, bars)
+	return _lm_pack(lm, pos, free_hit.is_empty() and raw_hit.is_empty())
+
+static func _chunks_blocked(L: Dictionary, grid: Dictionary) -> bool:
+	for c in L.chunks:
+		if not point_reachable(grid, chunk_rect(c, L.chunk_px).get_center()):
+			return true
+	return false
+
+## 倒伏巨树挡路时拿掉。碰撞条中心不必走到，宝箱要走到。
+static func _remove_tree(L: Dictionary) -> bool:
+	var idx := -1
+	for i in L.landmarks.size():
+		if L.landmarks[i].id == "lm_fallen_tree":
+			idx = i
+			break
+	if idx < 0:
+		return false
+	var rect: Rect2 = L.landmarks[idx].bar
+	L.landmarks.remove_at(idx)
+	var cid := chunk_at(L, rect.get_center())
+	if cid >= 0:
+		var ch: Dictionary = L.chunks[cid]
+		for j in range(ch.obstacles.size() - 1, -1, -1):
+			if ch.obstacles[j] == rect:
+				ch.obstacles.remove_at(j)
+				ch.obstacle_kinds.remove_at(j)
+				break
+	return true
+
+static func _nudge_pods(L: Dictionary, grid: Dictionary) -> void:
+	for lm in L.landmarks:
+		if not lm.has("pods"):
+			continue
+		var pos: Vector2 = lm.pos
+		var pods: Array = lm.pods
+		for i in pods.size():
+			var pod: Vector2 = pods[i]
+			var steps := 0
+			while not point_reachable(grid, pod) and pod.distance_to(pos) > 48.0 and steps < 8:
+				pod = pod.move_toward(pos, 16.0)
+				steps += 1
+			pods[i] = pod
+
+static func _anchors_ok(L: Dictionary, grid: Dictionary) -> bool:
+	if _chunks_blocked(L, grid):
+		return false
+	for lm in L.landmarks:
+		var pts: Array = []
+		if lm.has("bar"):
+			if lm.has("chest"):
+				pts.append(lm.chest)
+		else:
+			pts.append(lm.pos)
+		for p in lm.get("pods", []):
+			pts.append(p)
+		for p in lm.get("posts", []):
+			pts.append(p)
+		for p in pts:
+			if not point_reachable(grid, p):
+				if lm.has("bar") and _remove_tree(L):
+					return _anchors_ok(L, reach_grid(L))
+				return false
+	return true
+
+static func _lm_ok(p: Vector2, lm: LandmarkData, L: Dictionary, placed: Array) -> bool:
+	if not (L.bounds as Rect2).grow(-48).has_point(p):
+		return false
+	if lm.min_start > 0.0 and p.distance_to(L.start_pos) < lm.min_start:
+		return false
+	if lm.min_campfire > 0.0 and p.distance_to(L.campfire_pos) < lm.min_campfire:
+		return false
+	if lm.min_camp > 0.0:
+		for k in L.camps:
+			if p.distance_to(chunk_rect(L.chunks[k], L.chunk_px).get_center()) < lm.min_camp:
+				return false
+	if lm.min_entrance > 0.0:
+		for en in L.guard_entrances:
+			if p.distance_to((en.gap as Rect2).get_center()) < lm.min_entrance:
+				return false
+	if lm.min_guard_wall > 0.0:
+		for w in L.chunks[L.guard_chunk].walls:
+			if dist_to_rect(p, w) < lm.min_guard_wall:
+				return false
+	if lm.min_landmark > 0.0:
+		for o in placed:
+			if p.distance_to(o.pos) < lm.min_landmark:
+				return false
+	for o in placed:
+		if _lm_overlap(p, lm, o):
+			return false
+	return true
+
+static func _lm_overlap(p: Vector2, lm: LandmarkData, o: Dictionary) -> bool:
+	var reach: float = lm.radius
+	if lm.footprint_w > 0.0:
+		reach = maxf(reach, maxf(lm.footprint_w, lm.footprint_h) * 0.5)
+	if o.has("block_rect") and (o.block_rect as Rect2).grow(reach).has_point(p):
+		return true
+	var rad := float(o.get("radius", 0.0))
+	return rad > 0.0 and p.distance_to(o.pos) < rad + reach
+
+static func dist_to_rect(p: Vector2, r: Rect2) -> float:
+	var q := Vector2(clampf(p.x, r.position.x, r.end.x), clampf(p.y, r.position.y, r.end.y))
+	return p.distance_to(q)
+
+static func _path_poly(L: Dictionary) -> Array:
+	var out: Array = []
+	for id in L.path:
+		out.append(chunk_rect(L.chunks[id], L.chunk_px).get_center())
+	return out
+
+static func _poly_len(poly: Array) -> float:
+	var n := 0.0
+	for i in range(1, poly.size()):
+		n += (poly[i - 1] as Vector2).distance_to(poly[i])
+	return n
+
+static func _poly_sample(poly: Array, dist: float) -> Dictionary:
+	var acc := 0.0
+	for i in range(1, poly.size()):
+		var a: Vector2 = poly[i - 1]
+		var b: Vector2 = poly[i]
+		var seg := a.distance_to(b)
+		if seg < 0.001:
+			continue
+		if acc + seg >= dist or i == poly.size() - 1:
+			var dir := (b - a).normalized()
+			return {"pos": a.lerp(b, clampf((dist - acc) / seg, 0.0, 1.0)), "perp": Vector2(-dir.y, dir.x)}
+		acc += seg
+	return {"pos": poly[-1], "perp": Vector2.UP}
+
+static func _road_at(grid: Dictionary, solids: Array, sample: Dictionary, max_off: float) -> Vector2:
+	var best := Vector2(INF, INF)
+	var best_d := 1e9
+	var off := -max_off
+	while off <= max_off + 0.1:
+		var p: Vector2 = sample.pos + sample.perp * off
+		if point_reachable(grid, p) and is_free(p, solids, 24.0) and absf(off) < best_d:
+			best = p
+			best_d = absf(off)
+		off += 32.0
+	return best
+
+static func _near_path(L: Dictionary, cell: Vector2i, n: int) -> bool:
+	if n <= 0:
+		return true
+	for id in L.path:
+		if cheb(L.chunks[id].cell, cell) <= n:
+			return true
+	return false
+
+static func _orient(long_side: float, short_side: float, vertical: bool) -> Vector2:
+	return Vector2(short_side, long_side) if vertical else Vector2(long_side, short_side)
+
+static func _hits_poly(rect: Rect2, poly: Array, margin: float) -> bool:
+	var g := rect.grow(margin)
+	for i in range(1, poly.size()):
+		var a: Vector2 = poly[i - 1]
+		var b: Vector2 = poly[i]
+		var steps := int(a.distance_to(b) / 40.0) + 1
+		for s in steps + 1:
+			if g.has_point(a.lerp(b, float(s) / float(steps))):
+				return true
+	return false
+
+static func _outside_rect(rect: Rect2, toward: Vector2) -> Vector2:
+	var c := rect.get_center()
+	var dir := (toward - c).normalized()
+	if dir.length() < 0.01:
+		dir = Vector2.DOWN
+	var p := c
+	for i in 24:
+		p += dir * 20.0
+		if not rect.grow(16).has_point(p):
+			return p
+	return p
+
+static func _carve_disk(L: Dictionary, center: Vector2, radius: float) -> void:
+	var T: Dictionary = L.terrain
+	var g: PackedByteArray = T.cells
+	var nx: int = T.nx
+	var ny: int = T.ny
+	var r2 := radius * radius
+	var guard: Rect2 = chunk_rect(L.chunks[L.guard_chunk], L.chunk_px).grow(4)
+	var x0 := maxi(0, int((center.x - radius) / TCELL))
+	var x1 := mini(nx - 1, int((center.x + radius) / TCELL))
+	var y0 := maxi(0, int((center.y - radius) / TCELL))
+	var y1 := mini(ny - 1, int((center.y + radius) / TCELL))
+	for y in range(y0, y1 + 1):
+		for x in range(x0, x1 + 1):
+			var c := Vector2((x + 0.5) * TCELL, (y + 0.5) * TCELL)
+			if c.distance_squared_to(center) > r2 or guard.has_point(c):
+				continue
+			g[y * nx + x] = T_OPEN
+	T.cells = g
+
+static func _commit_bars(L: Dictionary, bars: Array) -> void:
+	_apply_obstacles(L, L.terrain)
+	for rect in bars:
+		var cid := chunk_at(L, rect.get_center())
+		if cid < 0:
+			continue
+		L.chunks[cid].obstacles.append(rect)
+		L.chunks[cid].obstacle_kinds.append(T_ROCK)
+
+static func _landmark_blocks(L: Dictionary, p: Vector2) -> bool:
+	for lm in L.get("landmarks", []):
+		var mp := float(lm.get("min_patrol", 0.0))
+		if mp > 0.0 and p.distance_to(lm.pos) < mp:
+			return true
+		if lm.has("block_rect") and (lm.block_rect as Rect2).has_point(p):
+			return true
+		var rad := float(lm.get("radius", 0.0))
+		if rad > 0.0 and p.distance_to(lm.pos) < rad:
+			return true
+	return false

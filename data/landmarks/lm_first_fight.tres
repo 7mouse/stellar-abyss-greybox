@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="LandmarkData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/landmark_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "lm_first_fight"
+display_name = "塌倒路标"
+probability = 1.0
+required = true
+radius = 120.0
+min_start = 600.0
+min_camp = 700.0
+band_min = 600.0
+band_max = 900.0

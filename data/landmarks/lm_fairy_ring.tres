@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="LandmarkData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/landmark_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "lm_fairy_ring"
+display_name = "菌环"
+probability = 1.0
+required = true
+radius = 260.0
+min_campfire = 700.0
+min_camp = 600.0
+min_entrance = 900.0
+near_path = 1
+guard_column = true

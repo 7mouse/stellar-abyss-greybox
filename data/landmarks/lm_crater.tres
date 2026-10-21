@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LandmarkData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/landmark_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "lm_crater"
+display_name = "坠落坑"
+probability = 1.0
+required = true
+radius = 160.0

@@ -101,6 +101,82 @@ func _run() -> void:
 	get_tree().quit(0 if fails == 0 else 1)
 
 # ---------------- OM1 开放地图生成 / OM4 分布 ----------------
+func _landmark_problems(L: Dictionary, first_run: bool) -> String:
+	if not L.ok:
+		return "生成失败 attempt %s" % str(L.get("attempt", "?"))
+	var ids := {}
+	for lm in L.get("landmarks", []):
+		ids[lm.id] = lm
+	if int(L.depth) != 1:
+		return "" if ids.is_empty() else "非第 1 层有地标"
+	for id in ["lm_crater", "lm_first_fight", "lm_fairy_ring"]:
+		if not ids.has(id):
+			return "缺 %s（attempt %s）" % [id, str(L.attempt)]
+	if first_run and not ids.has("lm_epitaph"):
+		return "首局缺墓碑 attempt %s" % str(L.attempt)
+	var camps: Array = []
+	for k in L.camps:
+		camps.append(MapGen.chunk_rect(L.chunks[k], L.chunk_px).get_center())
+	var start: Vector2 = L.start_pos
+	var fire: Vector2 = L.campfire_pos
+	if ids["lm_crater"].pos.distance_to(start) > 1.0:
+		return "坠落坑不在出生点"
+	var ff: Vector2 = ids["lm_first_fight"].pos
+	if ff.distance_to(start) < 600.0:
+		return "第一战离起点 %.0f" % ff.distance_to(start)
+	for c in camps:
+		if ff.distance_to(c) < 700.0:
+			return "第一战离营地 %.0f" % ff.distance_to(c)
+	if ids["lm_first_fight"].get("posts", []).size() != 2:
+		return "第一战站岗点不是 2 个"
+	if ids.has("lm_spring"):
+		var sp: Vector2 = ids["lm_spring"].pos
+		if sp.distance_to(start) < 900.0:
+			return "泉离起点 %.0f" % sp.distance_to(start)
+		if sp.distance_to(fire) < 600.0:
+			return "泉离篝火 %.0f" % sp.distance_to(fire)
+		for c in camps:
+			if sp.distance_to(c) < 400.0:
+				return "泉离营地 %.0f" % sp.distance_to(c)
+		if float(ids["lm_spring"].get("light", 0.0)) < 299.0:
+			return "泉光照不足"
+	if ids.has("lm_fallen_tree"):
+		var tp: Vector2 = ids["lm_fallen_tree"].pos
+		if tp.distance_to(start) < 700.0:
+			return "树离起点 %.0f" % tp.distance_to(start)
+		for w in L.chunks[L.guard_chunk].walls:
+			if MapGen.dist_to_rect(tp, w) < 400.0:
+				return "树离围墙 %.0f" % MapGen.dist_to_rect(tp, w)
+		if not ids["lm_fallen_tree"].has("bar") or not ids["lm_fallen_tree"].has("chest"):
+			return "树没有掩体或宝箱"
+	var fy: Vector2 = ids["lm_fairy_ring"].pos
+	if fy.distance_to(fire) < 700.0:
+		return "菌环离篝火 %.0f" % fy.distance_to(fire)
+	for en in L.guard_entrances:
+		var gap: Rect2 = en.gap
+		if fy.distance_to(gap.get_center()) < 900.0:
+			return "菌环离入口 %.0f" % fy.distance_to(gap.get_center())
+	for c in camps:
+		if fy.distance_to(c) < 600.0:
+			return "菌环离营地 %.0f" % fy.distance_to(c)
+	if ids["lm_fairy_ring"].get("pods", []).size() != 4:
+		return "菌环孢子囊 %d" % ids["lm_fairy_ring"].get("pods", []).size()
+	if ids.has("lm_epitaph"):
+		var ep: Vector2 = ids["lm_epitaph"].pos
+		for c in camps:
+			if ep.distance_to(c) < 500.0:
+				return "碑离营地 %.0f" % ep.distance_to(c)
+		for id in ids:
+			if id == "lm_epitaph":
+				continue
+			if ep.distance_to(ids[id].pos) < 400.0:
+				return "碑离 %s %.0f" % [id, ep.distance_to(ids[id].pos)]
+		for grp in L.spawn_points.patrol:
+			for q in grp.points:
+				if ep.distance_to(q) < 500.0:
+					return "碑离巡逻 %.0f" % ep.distance_to(q)
+	return ""
+
 func test_generation() -> void:
 	print("== OM1 地图生成 MapGen / OM4 分布 ==")
 	var reach_ok := true
@@ -114,6 +190,8 @@ func test_generation() -> void:
 	var retries := 0
 	var patrol_report := []
 	var patrol_ok := true
+	var lm_ok := true
+	var lm_msg := ""
 	for depth in [1, 2, 3]:
 		var fd := Game.floor_data(depth)
 		var groups := 0.0
@@ -167,6 +245,11 @@ func test_generation() -> void:
 						empty_ok = empty_ok and p.points.all(func(r): return r.distance_to(q) >= 150.0)
 			groups += st.patrol_groups
 			expect += st.normal_chunks * fd.patrol_chance
+			var why := _landmark_problems(L, true)
+			if why != "":
+				lm_ok = false
+				if lm_msg == "":
+					lm_msg = "层 %d 种子 %d %s" % [depth, s * 7 + 1, why]
 		var err := absf(groups - expect) / expect
 		patrol_ok = patrol_ok and err <= 0.15
 		patrol_report.append("第 %d 层 %.1f / 期望 %.1f（%+.1f%%）" % [depth, groups / 50.0, expect / 50.0, (groups - expect) / expect * 100])
@@ -234,6 +317,27 @@ func test_generation() -> void:
 	check(count_ok, "OM4-1 营地、宝箱、资源点、神龛数量和设定精确相符（2 / 3 / 6 / 1），巡逻组 2~4 人、营地人数在区间内")
 	check(patrol_ok, "OM4-1 巡逻组数 50 种子均值和期望（普通区块 × patrol_chance）误差 ≤ 15%%：%s" % "，".join(patrol_report))
 	check(empty_ok, "OM4-2 起点区块和层主区内没有巡逻点 / 营地；巡逻路线点离障碍 ≥ 60px；宝箱/资源点离路线点 ≥ 150px")
+	check(lm_ok, "T5 50 个种子：必出地标都在、最小距离成立、第 2/3 层没有地标 %s" % lm_msg)
+	var spring_res: LandmarkData = load("res://data/landmarks/lm_spring.tres")
+	check(DP.find_editor(spring_res, "light_radius") != null and DP.find_editor(spring_res, "probability") != null and is_equal_approx(spring_res.light_radius, 300.0) and is_equal_approx(spring_res.sight_confirm_cut, 0.2), "地标参数在 F1 可调（萤苔泉光照 300、视野确认 −0.2 s）")
+	check(var_to_str(a.landmarks) == var_to_str(MapGen.generate(42, 1, fd1, true).landmarks), "T5 同种子首局地标可复现")
+	var late_a := MapGen.generate(99, 1, fd1, false)
+	check(var_to_str(late_a.landmarks) == var_to_str(MapGen.generate(99, 1, fd1, false).landmarks), "T5 同种子非首局地标可复现")
+	var epi := 0
+	var late_ok := true
+	var late_msg := ""
+	for s in 60:
+		var Ls := MapGen.generate(80000 + s * 17, 1, fd1, false)
+		var late_why := _landmark_problems(Ls, false)
+		if late_why != "":
+			late_ok = false
+			late_msg = "种子 %d %s" % [80000 + s * 17, late_why]
+			break
+		for lm in Ls.landmarks:
+			if lm.id == "lm_epitaph":
+				epi += 1
+	check(late_ok, "T5 非首局 60 个种子：必出地标和最小距离仍成立 %s" % late_msg)
+	check(epi >= 8 and epi <= 32, "T5 非首局墓碑出现 %d/60（约 30%%）" % epi)
 
 # ---------------- T8 / T13.2 掉落 ----------------
 func test_drops() -> void:
@@ -1486,9 +1590,16 @@ func test_open_map() -> void:
 	check(f.layout.chunks.size() == 30 and f.player.global_position.distance_to(L.start_pos) < 1.0 and L.chunks[MapGen.chunk_at(L, f.player.global_position)].type == "start", "第 1 层是 6×5 区块的开放地图，主角在起点区块中心")
 	check(f.get_node_or_null("Nav") is NavigationRegion2D and f.nav_ready and f.wall_rects.size() == MapGen.all_solids(L).size(), "floor.tscn 有 NavigationRegion2D，烘焙成功；墙和障碍全部生成（%d 个实心矩形）" % f.wall_rects.size())
 	var st: Dictionary = f.map_stats()
-	var on_map := get_tree().get_nodes_in_group("enemies")
+	var on_map := get_tree().get_nodes_in_group("enemies").filter(func(e): return not e.get_meta("landmark", false))
 	check(on_map.size() == st.patrol_enemies + st.camp_enemies and on_map.all(func(e): var k := MapGen.chunk_at(L, e.global_position); return k != L.start_chunk and k != L.guard_chunk), "OM4-2 开局刷出巡逻 %d + 营地 %d 只，起点区块和层主区里没有普通怪" % [st.patrol_enemies, st.camp_enemies])
 	check(on_map.all(func(e): return e.ai != null and (e.state == EnemyBase.S.PATROL or e.state == EnemyBase.S.ALERT)), "开局所有普通怪在巡逻 / 待机，没有人在追（离起点都超过 720px）")
+	var lm_mobs: Array = get_tree().get_nodes_in_group("enemies").filter(func(e): return e.get_meta("landmark", false))
+	var posts: Array = lm_mobs.filter(func(e): return e.data.id == "mushling" and e.ai != null and e.ai.style == "post")
+	var elites: Array = lm_mobs.filter(func(e): return e.get_meta("elite", false) and e.ai != null and e.ai.style == "post")
+	var ring_pods: Array = get_tree().get_nodes_in_group("hazards").filter(func(h): return h.get_meta("landmark", false))
+	check(posts.size() == 2, "塌倒路标：2 只发芽野猪站岗（%d）" % posts.size())
+	check(elites.size() == 1, "菌环中心深苔史莱姆站岗（%d）" % elites.size())
+	check(ring_pods.size() == 4, "菌环在全层孢子囊之外另放 4 个（%d）" % ring_pods.size())
 	# 篝火
 	f.player.hp = 40
 	f.player.global_position = L.campfire_pos + Vector2(0, 30)
@@ -1639,6 +1750,24 @@ func test_aggro() -> void:
 		check(e.state == EnemyBase.S.CHASE and t >= want - 0.02 and t <= want + 0.15 and t_alert >= 0.0 and t_alert < 0.15, "2.8-1 正面 300px 进入视野锥：%.2f s 警觉，%.2f s 进入追击（确认时间 %.1f s，检测间隔 0.1 s）" % [t_alert, t, want])
 		e.queue_free()
 		await frames(2)
+	var spring_pos := E + Vector2(0, 900)
+	var had_spring := false
+	for lm in f.layout.landmarks:
+		if lm.id == "lm_spring":
+			had_spring = true
+			spring_pos = lm.pos
+	if not had_spring:
+		f.layout.landmarks.append({"id": "lm_spring", "pos": spring_pos, "light": 300.0, "sight_cut": 0.2})
+	var se: EnemyBase = f._map_enemy("mushling", spring_pos, "spring")
+	await frames(2)
+	var in_light: float = se.ai.confirm_sec()
+	se.global_position = E
+	var out_light: float = se.ai.confirm_sec()
+	check(is_equal_approx(in_light, R.sight_confirm_sec - 0.2) and is_equal_approx(out_light, R.sight_confirm_sec), "萤苔泉光照内视野确认 %.2f s，光外 %.2f s（本层 %.1f − 0.2）" % [in_light, out_light, R.sight_confirm_sec])
+	se.queue_free()
+	await frames(2)
+	if not had_spring:
+		f.layout.landmarks.pop_back()
 	# 墙后看不到：找一个障碍矩形，敌人和主角分在两侧
 	_sync_rules(f, true)
 	var solids := MapGen.all_solids(f.layout)
@@ -2305,7 +2434,7 @@ func test_ecology_floor() -> void:
 		await wait_scene(Game.SCN_FLOOR)
 		var f := scene()
 		var fd: FloorData = f.fd
-		var hz: Array = get_tree().get_nodes_in_group("hazards")
+		var hz: Array = get_tree().get_nodes_in_group("hazards").filter(func(h): return not h.get_meta("landmark", false))
 		var txt: String = f.map_stats_text()
 		var cnt := {}
 		var tot := 0

@@ -6,6 +6,13 @@
 [ext_resource type="Resource" path="res://data/loot_tables/node.tres" id="r2"]
 [ext_resource type="Resource" path="res://data/aggro/aggro_floor1.tres" id="r3"]
 [ext_resource type="Resource" path="res://data/ecology/eco_fungal_grove.tres" id="eco"]
+[ext_resource type="Script" path="res://scripts/resources/landmark_data.gd" id="slm"]
+[ext_resource type="Resource" path="res://data/landmarks/lm_crater.tres" id="lm0"]
+[ext_resource type="Resource" path="res://data/landmarks/lm_first_fight.tres" id="lm1"]
+[ext_resource type="Resource" path="res://data/landmarks/lm_spring.tres" id="lm2"]
+[ext_resource type="Resource" path="res://data/landmarks/lm_fallen_tree.tres" id="lm3"]
+[ext_resource type="Resource" path="res://data/landmarks/lm_fairy_ring.tres" id="lm4"]
+[ext_resource type="Resource" path="res://data/landmarks/lm_epitaph.tres" id="lm5"]
 
 [resource]
 script = ExtResource("s")
@@ -20,4 +27,5 @@ camp_size_max = 6
 node_loot = ExtResource("r2")
 aggro_override = ExtResource("r3")
 ecology = ExtResource("eco")
+landmarks = Array[ExtResource("slm")]([ExtResource("lm0"), ExtResource("lm1"), ExtResource("lm2"), ExtResource("lm3"), ExtResource("lm4"), ExtResource("lm5")])
 path_min_r = 112.0

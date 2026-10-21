@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="LandmarkData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/landmark_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "lm_fallen_tree"
+display_name = "倒伏巨树"
+probability = 0.7
+required = false
+footprint_w = 460.0
+footprint_h = 160.0
+bar_w = 420.0
+bar_h = 80.0
+min_start = 700.0
+min_guard_wall = 400.0

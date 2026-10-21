@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="LandmarkData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/landmark_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "lm_spring"
+display_name = "萤苔泉"
+probability = 0.8
+required = false
+radius = 140.0
+min_start = 900.0
+min_campfire = 600.0
+min_camp = 400.0
+light_radius = 300.0
+sight_confirm_cut = 0.2
+interact_sec = 2.5
+column_min = 2
+column_max = 3
+near_path = 1

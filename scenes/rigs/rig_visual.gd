@@ -3,7 +3,7 @@ extends Node2D
 ## Hosts a Skeleton2D rig. Feet sit on this node's origin.
 ## Facing: side whenever the aim has a horizontal component; front/back only
 ## near straight up/down, with a 15 degree buffer so the set does not flicker.
-## Left is the side scene mirrored. Boar art is side only, so it keeps the last side.
+## Left is the side scene mirrored. Hero, boar, and the moss-crown boss share that rule.
 
 const HERO_SCENES := {
 	"s": preload("res://scenes/rigs/hero_s.tscn"),
@@ -11,9 +11,20 @@ const HERO_SCENES := {
 	"f": preload("res://scenes/rigs/hero_f.tscn"),
 	"b": preload("res://scenes/rigs/hero_b.tscn"),
 }
-const BOAR_SCENE := preload("res://scenes/rigs/mushling_s.tscn")
+const BOAR_SCENES := {
+	"s": preload("res://scenes/rigs/mushling_s.tscn"),
+	"f": preload("res://scenes/rigs/mushling_f.tscn"),
+	"b": preload("res://scenes/rigs/mushling_b.tscn"),
+}
+const BOSS_SCENES := {
+	"s": preload("res://scenes/rigs/mosscrown_s.tscn"),
+	"f": preload("res://scenes/rigs/mosscrown_f.tscn"),
+	"b": preload("res://scenes/rigs/mosscrown_b.tscn"),
+}
 const HERO_PX := 233.0
-const BOAR_PX := 187.0
+# Skeleton-space height of each facing, so every facing lands on the same world height.
+const BOAR_PX := {"s": 193.7, "f": 201.9, "b": 202.5}
+const BOSS_PX := {"s": 258.6, "f": 279.2, "b": 280.6}
 const ENTER := deg_to_rad(15.0)
 const EXIT := deg_to_rad(30.0)
 # Skeleton-space bounds of every clip, plus 8px so the 1.5px outline is not clipped.
@@ -22,7 +33,12 @@ const VIEW := {
 	"s": Vector4(217, 261, 106, 249),
 	"f": Vector4(130, 257, 63, 245),
 	"b": Vector4(138, 255, 75, 245),
-	"boar": Vector4(264, 211, 114, 196),
+	"mushling_s": Vector4(264, 211, 114, 196),
+	"mushling_f": Vector4(179, 219, 88, 206),
+	"mushling_b": Vector4(209, 220, 90, 207),
+	"boss_s": Vector4(350, 275, 140, 262),
+	"boss_f": Vector4(245, 297, 121, 283),
+	"boss_b": Vector4(224, 298, 113, 284),
 }
 
 var kind := "hero"
@@ -39,7 +55,6 @@ var _glow: ShaderMaterial
 func setup(k: String, world_h: float) -> void:
 	kind = k
 	_world_h = world_h
-	_px = HERO_PX if k == "hero" else BOAR_PX
 	_mount("s")
 
 
@@ -102,12 +117,6 @@ func apply_glow(src: Material) -> void:
 
 func _pick(dir: Vector2) -> String:
 	var d := dir.normalized()
-	if kind == "boar":
-		if absf(d.x) >= sin(ENTER):
-			return "l" if d.x < 0.0 else "s"
-		if _code == "l" or _code == "s":
-			return _code
-		return "s"
 	var from_down := absf(angle_difference(d.angle(), PI * 0.5))
 	var from_up := absf(angle_difference(d.angle(), -PI * 0.5))
 	var near := from_down if from_down <= from_up else from_up
@@ -125,7 +134,15 @@ func _mount(code: String) -> void:
 	for c in get_children():
 		remove_child(c)
 		c.free()
-	var packed: PackedScene = BOAR_SCENE if kind == "boar" else HERO_SCENES[code]
+	var face := "s" if code == "l" else code
+	var packed: PackedScene
+	match kind:
+		"boar":
+			packed = BOAR_SCENES[face]
+		"boss":
+			packed = BOSS_SCENES[face]
+		_:
+			packed = HERO_SCENES[code]
 	_rig = packed.instantiate() as Node2D
 	add_child(_rig)
 	_ap = _rig.find_child("AnimationPlayer", true, false) as AnimationPlayer
@@ -142,7 +159,12 @@ func _fit_view() -> void:
 	var outline := _outline()
 	if view == null or motion == null or outline == null:
 		return
-	var key := "boar" if kind == "boar" else ("s" if _code == "l" else _code)
+	var face := "s" if _code == "l" else _code
+	var key := face
+	if kind == "boar":
+		key = "mushling_" + face
+	elif kind == "boss":
+		key = "boss_" + face
 	var spec: Vector4 = VIEW[key]
 	view.size = Vector2i(int(spec.x), int(spec.y))
 	motion.position = Vector2(spec.z, spec.w)
@@ -151,8 +173,15 @@ func _fit_view() -> void:
 
 
 func _apply_scale() -> void:
+	var face := "s" if _code == "l" else _code
+	if kind == "boss":
+		_px = float(BOSS_PX[face])
+	elif kind == "boar":
+		_px = float(BOAR_PX[face])
+	else:
+		_px = HERO_PX
 	var s := _world_h / _px
-	var flip := -1.0 if kind == "boar" and _code == "l" else 1.0
+	var flip := -1.0 if (kind == "boar" or kind == "boss") and _code == "l" else 1.0
 	scale = Vector2(s * flip, s)
 
 

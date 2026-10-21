@@ -113,12 +113,17 @@ func _ready() -> void:
 		visual.scale = Vector2.ONE * (vh / visual.texture.get_height())
 	visual.position = Vector2(0, 10 - vh * 0.5)
 	add_child(visual)
-	if data != null and data.id == "mushling":
+	var rig_kind := ""
+	if self is Guard:
+		rig_kind = "boss"
+	elif data != null and data.id == "mushling":
+		rig_kind = "boar"
+	if rig_kind != "":
 		visual.visible = false
 		rig = RigVisual.new()
 		rig.name = "Rig"
 		rig.position = Vector2(0, 10)
-		rig.setup("boar", vh)
+		rig.setup(rig_kind, vh)
 		add_child(rig)
 	_sync_visual()
 	warn = Label.new()

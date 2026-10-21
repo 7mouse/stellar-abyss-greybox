@@ -3837,6 +3837,12 @@ func test_rig() -> void:
 				poly = c
 				break
 	check(sk is Skeleton2D and bsk is Skeleton2D and shot.find_child("Skeleton", true, false) == null, "场景里主角和野猪是 Skeleton2D，孢子菇仍是占位图")
+	var open_eye := p.find_child("eye_open_r_s", true, false) as CanvasItem
+	var shut_eye := p.find_child("eye_closed_r_s", true, false) as CanvasItem
+	check(open_eye != null and shut_eye != null and open_eye.visible and not shut_eye.visible, "睁眼替换件默认显示，闭眼件藏着")
+	p.rig.get_child(0).set_eyes_closed(true)
+	check(not open_eye.visible and shut_eye.visible, "闭眼时换成闭眼替换件")
+	p.rig.get_child(0).set_eyes_closed(false)
 	check(poly != null and poly.has_meta("skin") and String(poly.skeleton) == "", "网格权重在 CPU 上算，没有挂 GPU 骨骼")
 	var hv := p.find_child("View", true, false) as SubViewport
 	var bv := boar.find_child("View", true, false) as SubViewport
@@ -3874,6 +3880,44 @@ func test_rig() -> void:
 	await frames(2)
 	check(p.state == Player.S.HURT and p.rig.anim_playing() == "hit", "受击播放 hit")
 	check(boar.state == EnemyBase.S.CHASE and boar.rig.anim_playing() == "move" and boar.rig.facing_code() == "l", "野猪追击播放 move，朝左是侧面镜像")
+	boar.facing = Vector2.DOWN
+	boar._sync_visual()
+	var bopen := boar.find_child("eye_open_l_f", true, false) as CanvasItem
+	var bshut := boar.find_child("eye_closed_l_f", true, false) as CanvasItem
+	check(boar.rig.facing_code() == "f" and boar.rig.anim_playing() == "move", "野猪纯向下用正面，并播放 move")
+	check(bopen != null and bshut != null and bopen.visible and not bshut.visible, "野猪正面默认睁眼")
+	boar.rig.get_child(0).set_eyes_closed(true)
+	check(bshut.visible and not bopen.visible, "野猪正面眨眼换成闭眼件")
+	boar.facing = Vector2.UP
+	boar._sync_visual()
+	check(boar.rig.facing_code() == "b" and boar.rig.anim_playing() == "move", "野猪纯向上用背面，并播放 move")
+	var g := Guard.new()
+	g.setup_guard(Game.floors[0].guard, 1)
+	g.position = Vector2(0, 420)
+	arena.add_child(g)
+	await frames(2)
+	check(g.find_child("Skeleton", true, false) is Skeleton2D and g.rig.kind == "boss", "苔冠王野猪是骨骼，不是放大的占位图")
+	g.facing = Vector2.DOWN
+	g._sync_visual()
+	check(g.rig.facing_code() == "f", "苔冠王向下是正面")
+	g.facing = Vector2.UP
+	g._sync_visual()
+	var crown := g.find_child("crown", true, false)
+	check(g.rig.facing_code() == "b" and crown is Bone2D, "苔冠王向上是背面，皇冠是独立骨")
+	g.facing = Vector2.LEFT
+	g._sync_visual()
+	check(g.rig.facing_code() == "l" and g.rig.scale.x < 0.0, "苔冠王向左是侧面镜像")
+	_check_bone_caps()
+	var hud := Hud.new()
+	arena.add_child(hud)
+	await frames(1)
+	var hp_frame := hud.get_node("hp_frame") as NinePatchRect
+	var slot_frame := hud.get_node("slot_frame") as NinePatchRect
+	check(hp_frame != null and hp_frame.patch_margin_left == 38 and hp_frame.patch_margin_top == 11 and hp_frame.patch_margin_right == 38 and hp_frame.patch_margin_bottom == 12, "血条边框是 9-slice，边距 38/11/38/12")
+	check(slot_frame != null and slot_frame.patch_margin_left == 22 and slot_frame.patch_margin_top == 26 and slot_frame.patch_margin_right == 22 and slot_frame.patch_margin_bottom == 23, "消耗品槽边框是 9-slice，边距 22/26/22/23")
+	check(hud.quality_frame is ColorRect and hud.quality_frame.name == "quality_frame", "品质框仍是色块")
+	hud.queue_free()
+	g.queue_free()
 	boar.aggro = false
 	boar._go(EnemyBase.S.WINDUP)
 	await frames(2)
@@ -3881,4 +3925,56 @@ func test_rig() -> void:
 	p.input_enabled = true
 	shot.queue_free()
 	boar.queue_free()
+
+func _check_bone_caps() -> void:
+	var cfg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/rig_bone_limits.json"))
+	var max_deg := float(cfg["max_deg"])
+	check(max_deg == 12.0, "配件转角上限写在配置里，目前是 12 度")
+	var limited := {}
+	for rule in cfg["rules"]:
+		for id in rule["ids"]:
+			if not limited.has(id):
+				limited[id] = {}
+			for bone in rule["bones"]:
+				limited[id][String(bone)] = true
+	var must := {
+		"mosscrown_b": ["crown", "tail"],
+		"mosscrown_s": ["tail"],
+		"mushling_b": ["tail"],
+		"shroom_s": ["cap"],
+	}
+	var over := ""
+	var missing := ""
+	for id in limited:
+		var packed := load("res://scenes/rigs/%s.tscn" % id) as PackedScene
+		var node := packed.instantiate()
+		var ap := node.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		for bone in limited[id]:
+			var bone_node := node.find_child(String(bone), true, false)
+			if bone_node == null or not (bone_node is Bone2D):
+				if must.has(id) and String(bone) in must[id]:
+					missing += "%s.%s " % [id, bone]
+				continue
+			var saw := false
+			for anim_name in ["idle", "move"]:
+				var anim := ap.get_animation(anim_name)
+				if anim == null:
+					missing += "%s.%s " % [id, anim_name]
+					continue
+				for t in anim.get_track_count():
+					var path := String(anim.track_get_path(t))
+					if not path.ends_with("/" + String(bone) + ":rotation"):
+						continue
+					saw = true
+					for k in anim.track_get_key_count(t):
+						var deg := rad_to_deg(float(anim.track_get_key_value(t, k)))
+						if absf(deg) > max_deg + 0.01:
+							over += "%s %s %s %.2f " % [id, anim_name, bone, deg]
+			if not saw:
+				missing += "%s.%s " % [id, bone]
+		node.free()
+	for id in must:
+		if not limited.has(id):
+			missing += id + " "
+	check(over == "" and missing == "", "皇冠、尾巴、伞边的动画不超过配置（%s%s）" % [over, missing])
 

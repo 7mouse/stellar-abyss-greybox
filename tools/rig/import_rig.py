@@ -61,11 +61,17 @@ HERO_SPRITE = {
 }
 HERO_MESH = {"torso": ["spine", "chest"], "scarf": ["scarf0", "scarf1", "scarf2"]}
 BOAR_SPRITE = {
-    "head": "head", "ear": "ear", "sprout": "sprout", "tail": "tail",
+    "head": "head", "ear": "ear", "ear_far": "ear_far", "sprout": "sprout",
+    "tail": "tail", "crown": "crown",
     "leg_hind_r": "hind_r", "leg_hind_l": "hind_l",
     "leg_front_r": "front_r", "leg_front_l": "front_l",
 }
 BOAR_MESH = {"body": ["spine", "chest"]}
+SHROOM_SPRITE = {
+    "cap": "cap", "stalk": "stalk",
+    "arm_l": "arm_l", "arm_r": "arm_r",
+    "root_l": "root_l", "root_r": "root_r",
+}
 
 
 def logical_name(filename: str) -> str:
@@ -170,35 +176,62 @@ def hero_anims(facing: str) -> list[dict]:
     return anims
 
 
-def boar_anims() -> list[dict]:
+def boar_anims(extra: dict | None = None) -> list[dict]:
+    idle_rot = {
+        "spine": wave(8, 1.0, 0.2),
+        "chest": wave(8, 2.2, 0.6),
+        "head": wave(8, 2.2, 1.0),
+        "ear": wave(8, 4.0, 1.4),
+        "sprout": wave(8, 5.0, 0.3),
+        "tail": wave(8, 7.0, 2.1),
+        "crown": wave(8, 6.0, 0.4),
+    }
+    move_rot = {
+        "hind_r": [-16, -2, 14, 16, 4, -10, -16],
+        "front_l": [-16, -2, 14, 16, 4, -10, -16],
+        "hind_l": [16, 4, -10, -16, -2, 14, 16],
+        "front_r": [16, 4, -10, -16, -2, 14, 16],
+        "spine": [-1.5, 0, 1.5, 1.5, 0, -1.5, -1.5],
+        "chest": [-2.5, -0.5, 2, 2.5, 0.5, -2, -2.5],
+        "head": [3, 1, -2, -3, -1, 2, 3],
+        "sprout": [6, 2, -3, -6, -2, 4, 6],
+        "tail": [7, 2, -4, -7, -2, 4, 7],
+        "ear": [2, 1, -1, -2, -1, 1, 2],
+        "crown": [4, 1, -2, -4, -1, 2, 4],
+    }
+    if extra:
+        idle_rot.update(extra.get("idle", {}))
+        move_rot.update(extra.get("move", {}))
+    return [
+        {"name": "idle", "fps": 8, "frames": 8, "loop": True, "rot": idle_rot, "pos": {"Motion": bob(8, 1.4)}},
+        {"name": "move", "fps": 12, "frames": 6, "loop": True, "rot": move_rot, "pos": {"Motion": walk_bob(6, 2.8)}},
+    ]
+
+
+def shroom_anims() -> list[dict]:
+    # 菌盖是一整块，幅度先收在配置上限以内。
     return [
         {
             "name": "idle", "fps": 8, "frames": 8, "loop": True,
             "rot": {
-                "spine": wave(8, 1.0, 0.2),
-                "chest": wave(8, 2.2, 0.6),
-                "head": wave(8, 2.2, 1.0),
-                "ear": wave(8, 4.0, 1.4),
-                "sprout": wave(8, 5.0, 0.3),
-                "tail": wave(8, 7.0, 2.1),
+                "stalk": wave(8, 1.5, 0.3),
+                "cap": wave(8, 8.0, 0.6),
+                "arm_l": wave(8, 4.0, 1.2),
+                "arm_r": wave(8, 4.0, 2.0),
             },
-            "pos": {"Motion": bob(8, 1.4)},
+            "pos": {"Motion": bob(8, 1.2)},
         },
         {
             "name": "move", "fps": 12, "frames": 6, "loop": True,
             "rot": {
-                "hind_r": [-16, -2, 14, 16, 4, -10, -16],
-                "front_l": [-16, -2, 14, 16, 4, -10, -16],
-                "hind_l": [16, 4, -10, -16, -2, 14, 16],
-                "front_r": [16, 4, -10, -16, -2, 14, 16],
-                "spine": [-1.5, 0, 1.5, 1.5, 0, -1.5, -1.5],
-                "chest": [-2.5, -0.5, 2, 2.5, 0.5, -2, -2.5],
-                "head": [3, 1, -2, -3, -1, 2, 3],
-                "sprout": [6, 2, -3, -6, -2, 4, 6],
-                "tail": [7, 2, -4, -7, -2, 4, 7],
-                "ear": [2, 1, -1, -2, -1, 1, 2],
+                "root_l": [-8, -2, 6, 8, 2, -6, -8],
+                "root_r": [8, 2, -6, -8, -2, 6, 8],
+                "stalk": [-2, 0, 2, 2, 0, -2, -2],
+                "cap": [6, 2, -4, -6, -2, 4, 6],
+                "arm_l": [8, 2, -4, -8, -2, 4, 8],
+                "arm_r": [-8, -2, 4, 8, 2, -4, -8],
             },
-            "pos": {"Motion": walk_bob(6, 2.8)},
+            "pos": {"Motion": walk_bob(6, 2.0)},
         },
     ]
 
@@ -722,29 +755,58 @@ def build_boar(piv, root, part_world):
         return np.array(piv[key], float) - root
 
     hip = (P("hip_l") + P("hip_r")) / 2
-    chest = (P("shoulder_l") + P("shoulder_r")) / 2
-    bones_w = {
-        "root": np.zeros(2),
-        "spine": hip,
-        "chest": chest,
-        "head": P("neck"),
-        "ear": P("ear_root"),
-        "sprout": P("sprout_root"),
-        "tail": P("tail_root"),
-        "hind_r": P("hip_r"),
-        "hind_l": P("hip_l"),
-        "front_r": P("shoulder_r"),
-        "front_l": P("shoulder_l"),
-    }
-    parents = {
-        "root": "", "spine": "root", "chest": "spine", "head": "chest",
-        "ear": "head", "sprout": "chest", "tail": "spine",
-        "hind_r": "root", "hind_l": "root", "front_r": "root", "front_l": "root",
-    }
-    order = [
-        "root", "spine", "chest", "head", "ear", "sprout", "tail",
-        "hind_r", "hind_l", "front_r", "front_l",
-    ]
+    if "shoulder_l" in piv and "shoulder_r" in piv:
+        chest = (P("shoulder_l") + P("shoulder_r")) / 2
+    else:
+        chest = hip + np.array([0.0, -36.0])
+    bones_w = {"root": np.zeros(2), "spine": hip, "chest": chest}
+    parents = {"root": "", "spine": "root", "chest": "spine"}
+    order = ["root", "spine", "chest"]
+
+    def add(name: str, parent: str, key: str) -> None:
+        if key not in piv or parent not in bones_w:
+            return
+        bones_w[name] = P(key)
+        parents[name] = parent
+        order.append(name)
+
+    head_key = "neck" if "neck" in piv else ("head_top" if "head_top" in piv else "")
+    if head_key:
+        add("head", "chest", head_key)
+    head_parent = "head" if "head" in bones_w else "chest"
+    add("ear", head_parent, "ear_root")
+    add("ear_far", head_parent, "ear_far_root")
+    add("sprout", "chest", "sprout_root")
+    add("tail", "spine", "tail_root")
+    add("crown", head_parent, "crown_root")
+    add("hind_r", "root", "hip_r")
+    add("hind_l", "root", "hip_l")
+    add("front_r", "root", "shoulder_r")
+    add("front_l", "root", "shoulder_l")
+    return bones_w, parents, order
+
+
+def build_shroom(piv, root, _part_world):
+    def P(key):
+        return np.array(piv[key], float) - root
+
+    hip = (P("hip_l") + P("hip_r")) / 2
+    bones_w = {"root": np.zeros(2), "stalk": hip}
+    parents = {"root": "", "stalk": "root"}
+    order = ["root", "stalk"]
+
+    def add(name: str, parent: str, key: str) -> None:
+        if key not in piv:
+            return
+        bones_w[name] = P(key)
+        parents[name] = parent
+        order.append(name)
+
+    add("cap", "stalk", "cap_root")
+    add("arm_l", "stalk", "arm_root_l")
+    add("arm_r", "stalk", "arm_root_r")
+    add("root_l", "root", "hip_l")
+    add("root_r", "root", "hip_r")
     return bones_w, parents, order
 
 
@@ -765,6 +827,8 @@ def joints_for(kind: str, facing: str):
             ("scarf_root", "scarf0", "torso", "scarf", 6),
         ]
         return rows
+    if kind == "shroom":
+        return []
     return [
         ("neck", "head", "body", "head", 7),
         ("hip_r", "hind_r", "body", "leg_hind_r", 6),
@@ -773,8 +837,42 @@ def joints_for(kind: str, facing: str):
         ("shoulder_l", "front_l", "body", "leg_front_l", 6),
         ("tail_root", "tail", "body", "tail", 5),
         ("ear_root", "ear", "head", "ear", 4),
+        ("ear_far_root", "ear_far", "head", "ear_far", 4),
         ("sprout_root", "sprout", "body", "sprout", 4),
+        ("crown_root", "crown", "head", "crown", 6),
     ]
+
+
+def sprite_bone(kind: str, logical: str, sprite_map: dict) -> str:
+    if logical.startswith("eye"):
+        return "stalk" if kind == "shroom" else "head"
+    if kind == "shroom" and (logical.startswith("blush") or logical == "mouth"):
+        return "stalk"
+    return sprite_map.get(logical, "")
+
+
+def load_limits(out_root: str) -> dict:
+    path = os.path.join(out_root, "data/rig_bone_limits.json")
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def finish_anims(spec_id: str, anims: list, bone_names: set, limits: dict) -> list:
+    limited = set()
+    for rule in limits["rules"]:
+        if spec_id in rule["ids"]:
+            limited.update(rule["bones"])
+    cap = float(limits["max_deg"])
+    for anim in anims:
+        kept = {}
+        for bone, values in anim["rot"].items():
+            if bone not in bone_names:
+                continue
+            if bone in limited:
+                values = [round(max(-cap, min(cap, float(v))), 2) for v in values]
+            kept[bone] = values
+        anim["rot"] = kept
+    return anims
 
 
 def process_rig(spec, src, out_root, preview_dir):
@@ -782,7 +880,7 @@ def process_rig(spec, src, out_root, preview_dir):
     piv = {k: (float(v[0]), float(v[1])) for k, v in pivots_doc["pivots"].items()}
     root = np.array(piv["root"], float)
     parts_dir = os.path.join(src, spec["parts_dir"])
-    order = spec["order"]
+    order = pivots_doc["order"]
     cleaned = {}
     for name in order:
         fp = os.path.join(parts_dir, name + ".png")
@@ -806,6 +904,9 @@ def process_rig(spec, src, out_root, preview_dir):
     if spec["kind"] == "hero":
         bones_w, parents, bone_order = build_humanoid(piv, root, part_world, spec["facing"])
         sprite_map, mesh_map = HERO_SPRITE, HERO_MESH
+    elif spec["kind"] == "shroom":
+        bones_w, parents, bone_order = build_shroom(piv, root, part_world)
+        sprite_map, mesh_map = SHROOM_SPRITE, {}
     else:
         bones_w, parents, bone_order = build_boar(piv, root, part_world)
         sprite_map, mesh_map = BOAR_SPRITE, BOAR_MESH
@@ -832,6 +933,7 @@ def process_rig(spec, src, out_root, preview_dir):
         cy = (y0 + y1) / 2
         char = np.array([cx - root[0], cy - root[1]])
         tex = "res://" + tex_rel
+        bone = sprite_bone(spec["kind"], logical, sprite_map)
         if logical in mesh_map:
             bone_names = [b for b in mesh_map[logical] if b in bones_w]
             mesh = grid_mesh(
@@ -848,8 +950,7 @@ def process_rig(spec, src, out_root, preview_dir):
                 "points": mesh["points"], "uvs": mesh["uvs"], "tris": mesh["tris"],
                 "bone_names": mesh["bone_names"], "weights": mesh["weights"],
             })
-        elif logical in sprite_map:
-            bone = sprite_map[logical]
+        elif bone:
             if bone not in bones_w:
                 continue
             local = char - bones_w[bone]
@@ -898,7 +999,7 @@ def process_rig(spec, src, out_root, preview_dir):
         "sprites": sprites,
         "meshes": meshes,
         "pads": pads,
-        "anims": spec["anims"](),
+        "anims": finish_anims(spec["id"], spec["anims"](), set(bones_w), load_limits(out_root)),
     }
     man_dir = os.path.join(out_root, "assets/rigs/manifests")
     os.makedirs(man_dir, exist_ok=True)
@@ -910,7 +1011,9 @@ def process_rig(spec, src, out_root, preview_dir):
 
 
 def _debug_composite(rid, cleaned, shifts, piv, pads, preview_dir):
-    canvas = np.zeros((256, 256, 4), np.uint8)
+    h = max(img.shape[0] for img in cleaned.values())
+    w = max(img.shape[1] for img in cleaned.values())
+    canvas = np.zeros((h, w, 4), np.uint8)
     # 按 z 画。cleaned 的插入顺序就是 order
     for name, img in cleaned.items():
         placed = shift_arr(img, shifts[name][0], shifts[name][1])
@@ -931,40 +1034,50 @@ def write_pad(path: str) -> None:
     im.save(path)
 
 
+def _spec(rid, kind, facing, asset_dir, pivots, parts_dir, anims, outline) -> dict:
+    return {
+        "id": rid, "kind": kind, "facing": facing, "asset_dir": asset_dir,
+        "scene": f"res://scenes/rigs/{rid}.tscn",
+        "pivots": pivots, "parts_dir": parts_dir,
+        "seats": (lambda: hero_seats(facing)) if kind == "hero" else boar_seats,
+        "anims": anims, "outline": outline,
+    }
+
+
 def specs_for(src: str) -> list[dict]:
-    hero = "hero/hero_parts_{f}_v2_1_pivots.json"
     hero_line = palette_outline(src, "hero/hero_palette_src.json")
     boar_line = palette_outline(src, "sprout_boar/sprout_boar_palette_src.json")
-    return [
-        {
-            "id": "hero_s", "kind": "hero", "facing": "s", "asset_dir": "hero/s",
-            "scene": "res://scenes/rigs/hero_s.tscn",
-            "pivots": hero.format(f="s"), "parts_dir": "hero/parts_v2_1",
-            "order": HERO_ORDER["s"], "seats": lambda: hero_seats("s"),
-            "anims": lambda: hero_anims("s"), "outline": hero_line,
-        },
-        {
-            "id": "hero_f", "kind": "hero", "facing": "f", "asset_dir": "hero/f",
-            "scene": "res://scenes/rigs/hero_f.tscn",
-            "pivots": hero.format(f="f"), "parts_dir": "hero/parts_v2_1",
-            "order": HERO_ORDER["f"], "seats": lambda: hero_seats("f"),
-            "anims": lambda: hero_anims("f"), "outline": hero_line,
-        },
-        {
-            "id": "hero_b", "kind": "hero", "facing": "b", "asset_dir": "hero/b",
-            "scene": "res://scenes/rigs/hero_b.tscn",
-            "pivots": hero.format(f="b"), "parts_dir": "hero/parts_v2_1",
-            "order": HERO_ORDER["b"], "seats": lambda: hero_seats("b"),
-            "anims": lambda: hero_anims("b"), "outline": hero_line,
-        },
-        {
-            "id": "mushling_s", "kind": "boar", "facing": "s", "asset_dir": "mushling/s",
-            "scene": "res://scenes/rigs/mushling_s.tscn",
-            "pivots": "sprout_boar/sprout_boar_parts_s_v2_1_pivots.json",
-            "parts_dir": "sprout_boar/parts_v2_1", "order": BOAR_ORDER,
-            "seats": boar_seats, "anims": boar_anims, "outline": boar_line,
-        },
-    ]
+    boss_line = palette_outline(src, "mosscrown_king_boar/mosscrown_king_boar_palette_src.json")
+    shroom_line = palette_outline(src, "root_spore_mushroom/root_spore_mushroom_palette_src.json")
+    specs = []
+    for facing in ("s", "f", "b"):
+        specs.append(_spec(
+            f"hero_{facing}", "hero", facing, f"hero/{facing}",
+            f"hero/hero_parts_{facing}_v2_2_pivots.json", "hero/parts_v2_2",
+            lambda facing=facing: hero_anims(facing), hero_line,
+        ))
+    boar_src = {
+        "s": ("sprout_boar/sprout_boar_parts_s_v2_2_pivots.json", "sprout_boar/parts_v2_2"),
+        "f": ("sprout_boar/sprout_boar_parts_f_v1_1_pivots.json", "sprout_boar/parts_f_v1_1"),
+        "b": ("sprout_boar/sprout_boar_parts_b_v1_1_pivots.json", "sprout_boar/parts_b_v1_1"),
+    }
+    for facing, (pivots, parts) in boar_src.items():
+        specs.append(_spec(
+            f"mushling_{facing}", "boar", facing, f"mushling/{facing}",
+            pivots, parts, boar_anims, boar_line,
+        ))
+    for facing in ("s", "f", "b"):
+        specs.append(_spec(
+            f"mosscrown_{facing}", "boar", facing, f"mosscrown/{facing}",
+            f"mosscrown_king_boar/mosscrown_king_boar_parts_{facing}_v2_1_pivots.json",
+            "mosscrown_king_boar/parts_v2_1", boar_anims, boss_line,
+        ))
+        specs.append(_spec(
+            f"shroom_{facing}", "shroom", facing, f"shroom/{facing}",
+            f"root_spore_mushroom/root_spore_mushroom_parts_{facing}_v1_1_pivots.json",
+            f"root_spore_mushroom/parts_{facing}_v1_1", shroom_anims, shroom_line,
+        ))
+    return specs
 
 
 def main() -> None:

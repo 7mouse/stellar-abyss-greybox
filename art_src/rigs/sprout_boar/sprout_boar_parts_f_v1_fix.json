@@ -1,0 +1,58 @@
+{
+ "joints": [
+  {
+   "pivot": "neck",
+   "parent": "body_f_mesh",
+   "child": "head_f",
+   "child_cls": "big",
+   "child_from": "head_top"
+  },
+  {
+   "pivot": "sprout_root",
+   "parent": "body_f_mesh",
+   "child": "sprout_f",
+   "child_cls": "small",
+   "child_from": "sprout_tip"
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "body_f_mesh",
+   "child": "leg_hind_r_f",
+   "child_cls": "small",
+   "child_from": "hoof_r_hind"
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "body_f_mesh",
+   "child": "leg_hind_l_f",
+   "child_cls": "small",
+   "child_from": "hoof_l_hind"
+  },
+  {
+   "pivot": "shoulder_r",
+   "parent": "body_f_mesh",
+   "child": "leg_front_r_f",
+   "child_cls": "small",
+   "child_from": "hoof_r_front"
+  },
+  {
+   "pivot": "shoulder_l",
+   "parent": "body_f_mesh",
+   "child": "leg_front_l_f",
+   "child_cls": "small",
+   "child_from": "hoof_l_front"
+  }
+ ],
+ "line_rgb": [
+  33,
+  24,
+  8
+ ],
+ "cap_version": 2,
+ "parts_dir": "parts",
+ "src_psd2x": "art_src/rigs/sprout_boar/sprout_boar_parts_f_v1_raw_src2x.psd",
+ "src_pivots": "art_src/rigs/sprout_boar/sprout_boar_parts_f_v1_raw_pivots.json",
+ "out_dir": "art_src/rigs/sprout_boar",
+ "base": "sprout_boar_parts_f_v1",
+ "scale": 2
+}

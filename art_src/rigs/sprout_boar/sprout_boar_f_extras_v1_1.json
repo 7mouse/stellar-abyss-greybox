@@ -1,0 +1,34 @@
+{
+ "src_psd2x": "art_src/rigs/sprout_boar/sprout_boar_parts_f_v1_src2x.psd",
+ "src_pivots": "art_src/rigs/sprout_boar/sprout_boar_parts_f_v1_pivots.json",
+ "out_dir": "art_src/rigs/sprout_boar",
+ "base": "sprout_boar_parts_f_v1_1",
+ "parts_dir": "parts_f_v1_1",
+ "ops": [
+  {
+   "op": "blink",
+   "head": "head_f",
+   "suffix": "f",
+   "eyes": [
+    {
+     "side": "r",
+     "auto": [
+      86,
+      136,
+      114,
+      164
+     ]
+    },
+    {
+     "side": "l",
+     "auto": [
+      138,
+      136,
+      166,
+      164
+     ]
+    }
+   ]
+  }
+ ]
+}

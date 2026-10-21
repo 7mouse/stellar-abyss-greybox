@@ -1,0 +1,195 @@
+{
+ "canvas": [
+  256,
+  256
+ ],
+ "unit": "px@1:1",
+ "version": "sprout_boar_parts_b_v1_1",
+ "order": [
+  "leg_front_l_b",
+  "leg_front_r_b",
+  "head_b",
+  "eye_open_r_b",
+  "eye_closed_r_b",
+  "eye_open_l_b",
+  "eye_closed_l_b",
+  "leg_hind_l_b",
+  "leg_hind_r_b",
+  "body_b_mesh",
+  "tail_b",
+  "sprout_b"
+ ],
+ "swap": [
+  "eye_closed_l_b",
+  "eye_closed_r_b"
+ ],
+ "pivots": {
+  "sprout_root": [
+   112.2,
+   93.8
+  ],
+  "sprout_tip": [
+   112.2,
+   51.5
+  ],
+  "tail_root": [
+   182.3,
+   193.9
+  ],
+  "tail_tip": [
+   214.6,
+   201.6
+  ],
+  "hip_l": [
+   63.7,
+   224.7
+  ],
+  "hoof_l_hind": [
+   63.7,
+   251.7
+  ],
+  "hip_r": [
+   159.2,
+   224.7
+  ],
+  "hoof_r_hind": [
+   159.2,
+   251.7
+  ],
+  "shoulder_l": [
+   87.6,
+   222.4
+  ],
+  "hoof_l_front": [
+   87.6,
+   244.0
+  ],
+  "shoulder_r": [
+   135.3,
+   222.4
+  ],
+  "hoof_r_front": [
+   135.3,
+   244.0
+  ],
+  "root": [
+   112.2,
+   251.7
+  ]
+ },
+ "line_rgb": [
+  33,
+  24,
+  8
+ ],
+ "from": "art_src/rigs/sprout_boar/sprout_boar_parts_b_v1_src2x.psd",
+ "log": {
+  "extras": [
+   {
+    "op": "empty",
+    "name": "eye_open_r_b",
+    "above": "head_b"
+   },
+   {
+    "op": "empty",
+    "name": "eye_closed_r_b",
+    "above": "eye_open_r_b",
+    "swap": true
+   },
+   {
+    "op": "empty",
+    "name": "eye_open_l_b",
+    "above": "eye_closed_r_b"
+   },
+   {
+    "op": "empty",
+    "name": "eye_closed_l_b",
+    "above": "eye_open_l_b",
+    "swap": true
+   }
+  ],
+  "previous": {
+   "ops": [],
+   "joints": {
+    "sprout_root": {
+     "child": {
+      "before": 5.5,
+      "half_width": 2.2,
+      "after": 5.5,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 5.5,
+      "cap_half_width": 2.6,
+      "added_px_1to1": 3,
+      "erased_cut_px_1to1": 0,
+      "part": "sprout_b",
+      "cls": "small"
+     }
+    },
+    "tail_root": {
+     "child": {
+      "before": 0.6,
+      "half_width": 16.9,
+      "after": 8.0,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 8.0,
+      "cap_half_width": 17.2,
+      "added_px_1to1": 261,
+      "erased_cut_px_1to1": 0,
+      "part": "tail_b",
+      "cls": "small"
+     },
+     "parent": {
+      "before": 40.2,
+      "half_width": 68.4,
+      "after": 40.2,
+      "action": "kept (already deeper than range)",
+      "part": "body_b_mesh",
+      "cls": "small"
+     }
+    },
+    "hip_r": {
+     "child": {
+      "before": 12.4,
+      "half_width": 9.8,
+      "after": 12.4,
+      "action": "kept (already deeper than range)",
+      "part": "leg_hind_r_b",
+      "cls": "small"
+     }
+    },
+    "hip_l": {
+     "child": {
+      "before": 12.4,
+      "half_width": 8.8,
+      "after": 12.4,
+      "action": "kept (already deeper than range)",
+      "part": "leg_hind_l_b",
+      "cls": "small"
+     }
+    },
+    "shoulder_r": {
+     "child": {
+      "before": 8.7,
+      "half_width": 7.0,
+      "after": 8.7,
+      "action": "kept (already deeper than range)",
+      "part": "leg_front_r_b",
+      "cls": "small"
+     }
+    },
+    "shoulder_l": {
+     "child": {
+      "before": 9.2,
+      "half_width": 7.2,
+      "after": 9.2,
+      "action": "kept (already deeper than range)",
+      "part": "leg_front_l_b",
+      "cls": "small"
+     }
+    }
+   },
+   "cleanup": {},
+   "post_ops": []
+  }
+ }
+}

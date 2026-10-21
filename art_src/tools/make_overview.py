@@ -16,8 +16,8 @@ chars = [('hero f/s/b v2.2', [R + 'hero/hero_parts_f_v2_2_preview.png', R + 'her
          ('deep_moss_slime v1.1', [R + 'deep_moss_slime/deep_moss_slime_parts_v1_1_preview.png']),
          ('mosscrown_king_boar f/s/b v2.1 (redraw)', [R + f'mosscrown_king_boar/mosscrown_king_boar_parts_{f}_v2_1_preview.png' for f in 'fsb'])]
 W = 2600; BG = (226, 222, 212, 255)
-sheet = Image.new('RGBA', (W, 2400), BG); d = ImageDraw.Draw(sheet)
-d.text((20, 12), 'Stellar Abyss - level 1 art batch 2026-10-21c - overview at game scale (1080p, hero = 135 px). AI output cut by tool, no hand painting.', fill=(20, 20, 20, 255))
+sheet = Image.new("RGBA", (W, 4000), BG); d = ImageDraw.Draw(sheet)
+d.text((20, 12), 'Stellar Abyss - level 1 art batch ' + (sys.argv[2] if len(sys.argv) > 2 else '2026-10-21d') + ' - overview at game scale (1080p, hero = 135 px). AI output cut by tool, no hand painting.', fill=(20, 20, 20, 255))
 # baseline crop
 base = Image.open('art_src/ref/combat_baseline_v2.jpg').convert('RGBA').crop((380, 250, 980, 560)); base = base.resize((base.width * 3 // 2, base.height * 3 // 2), Image.LANCZOS)
 sheet.alpha_composite(base, (20, 40)); d.text((24, 44 + base.height), 'combat_baseline_v2 crop @1080p (reference)', fill=(20, 20, 20, 255))
@@ -41,11 +41,16 @@ def row(title, files, scale, maxh=None, ystart=None, cols_w=W - 40):
         sheet.alpha_composite(im, (xx, y)); d.text((xx, y + im.height + 2), os.path.basename(f)[:30], fill=(60, 60, 60, 255))
         xx += im.width + 14; rh = max(rh, im.height)
     y += rh + 30
-T = 'art_src/terrain/floor1_v1/'
-row('Terrain S01/S02 tiles (tool-fixed seamless versions, 512 shown at 1/2) - realistic-leaning, see checklist', sorted(glob.glob(T + 'tiles/*_seamless_512.png')) + sorted(glob.glob(T + 'edges/*_seamless_512.png')), 0.5)
-row('Terrain props & decals (1:1 cut x0.75)', sorted(glob.glob(T + 'props/*.png')) + sorted(glob.glob(T + 'decals/*.png')), 0.75)
-U = 'art_src/ui/hud_v1/'
-row('HUD (tool-desaturated; borders still heavy/ornate), x0.6', [U + 'frames/u01_portrait_frame.png', U + 'frames/u04_minimap_ring.png', U + 'bars/u02_bar_frame.png', U + 'bars/u02_fill_hp.png', U + 'bars/u02_fill_mp.png', U + 'bars/u02_fill_sp.png', U + 'bars/u02_bar_overlay.png'] + sorted(glob.glob(U + 'buttons/*.png')) + sorted(glob.glob(U + 'icons/*.png')) + [U + 'frames/u07_slot_square.png'] + sorted(glob.glob(U + 'quality/*.png')) + sorted(glob.glob(U + 'states/*.png')), 0.6)
+T = 'art_src/terrain/floor1_v2/'
+row('Terrain v2 S01 tiles 512 (shown at 1/2): min-cut wrapped, seam test <= 1.15 on every axis', [T + f'tiles/s01_{n}.png' for n in ('ground_moss', 'ground_autumn', 'ground_stone', 'ground_stone_large', 'water')], 0.5)
+row('Terrain v2 S02 edge overlays 512x128 + corners 128 (x0.75, on grey)', [T + 'edges/s02_edge_moss_stone.png', T + 'edges/s02_edge_moss_stone_corner_outer.png', T + 'edges/s02_edge_moss_stone_corner_inner.png', T + 'edges/s02_edge_autumn_moss.png', T + 'edges/s02_edge_autumn_moss_corner_outer.png', T + 'edges/s02_edge_autumn_moss_corner_inner.png'], 0.75)
+row('Terrain v2 S03 trees (whole / crown / base, 512x768, x0.5), S05 rocks, S06 ruins, S04 bushes, S18, S07 decals, S09 light (1:1 x0.5)',
+    [T + f'trees/s03_tree_{t}{p}.png' for t in ('autumn', 'green') for p in ('', '_crown', '_base')] + sorted(glob.glob(T + 'props_rocks_ruins/s0*.png')) + sorted(glob.glob(T + 'props_bushes_decals/s*.png')) + sorted(glob.glob(T + 'light/s09*.png')), 0.5)
+U = 'art_src/ui/hud_v2/'
+row('HUD v2 thin-border set (9-slice rebuilt; 1:1 x0.6): U02, U10, U07, U15 x5 tints, U03, panels, U01/U04/U05/U06/U08, U16 x9',
+    [U + 'bars/u02_bar_frame.png', U + 'bars/u02_fill_hp.png', U + 'bars/u02_fill_mp.png', U + 'bars/u02_fill_sp.png', U + 'bars/u10_boss_bar_frame.png', U + 'bars/u10_fill_boss.png', U + 'icons/u10_boss_icon.png', U + 'frames/u07_slot.png']
+    + sorted(glob.glob(U + 'frames/u15_quality_frame_*.png')) + [U + 'frames/u03_level_badge.png'] + sorted(glob.glob(U + 'panels/*.png')) + sorted(glob.glob(U + 'hud/*.png')) + sorted(glob.glob(U + 'icons_u16/u16_*.png')), 0.6)
+row('U11-U13 screens 1920x1080 (x0.3, over a dark backdrop)', [U + 'screens/u11_backpack.png', U + 'screens/u12_extract_result.png', U + 'screens/u13_vault_storage.png'], 0.3)
 F = 'art_src/fx/fx_v1/'
 fx = sorted(glob.glob(F + '*/*.png'))
 row('FX frames (1:1 cut x0.6)', fx, 0.6)

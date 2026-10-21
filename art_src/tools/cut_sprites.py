@@ -7,6 +7,7 @@ item: {"name", "pick":[x,y]}                one connected component (background 
       {"name", "tile":[x0,y0,x1,y1]}        opaque square texture crop (largest centred square inside the rect);
             "wrap":"xy"|"x" -> seam test (wrap-edge difference / inner neighbour difference) + a tool-fixed
             <name>_seamless.png (half-offset cross-fade), "size": upscale target (e.g. 512) also written as <name>_<size>.png
+      "black": true (rect only) light on black -> alpha from brightness; "max": N downscale to fit N px (never up)
       optional per item: "group", "frame", "nine": true (estimate 9-slice margins), "recolor": name of a recolor op,
             "split_fill": {"fills":{name:[r,g,b]}} (bars: frame with the coloured fill replaced by the charcoal base +
             one fill strip per colour, fill area = the saturated interior)
@@ -129,7 +130,12 @@ def main(cfg):
                 rec['rect_src'] = [sl[1].start, sl[0].start, sl[1].stop, sl[0].stop]
             else:
                 x0, y0, x1, y1 = [int(v * ds) for v in it['rect']]
-                part = soft_alpha(rgb[y0:y1, x0:x1]) if it.get('soft', True) else rgba[y0:y1, x0:x1].copy()
+                if it.get('black'):   # light on a black background (additive overlays): alpha = brightness
+                    t = rgb[y0:y1, x0:x1]; al = np.clip((t.max(2) - 12) / 200.0, 0, 1)
+                    col = np.where(al[..., None] > 0.02, t / np.maximum(t.max(2, keepdims=True), 1) * 255, 0)
+                    part = np.dstack([col, al * 255])
+                else:
+                    part = soft_alpha(rgb[y0:y1, x0:x1]) if it.get('soft', True) else rgba[y0:y1, x0:x1].copy()
                 rec['rect_src'] = [x0, y0, x1, y1]
             orig = part.copy()
             if it.get('recolor'): part = recolor(part, R[it['recolor']])
@@ -160,6 +166,9 @@ def main(cfg):
                 rec['fill_rect_in_frame'] = [int(x0f), int(y0f), int(x1f), int(y1f)]
                 rec['nine'] = {'left': int(x0f) + 2, 'right': int(a.shape[1] - x1f) + 2, 'top': int(y0f), 'bottom': int(a.shape[0] - y1f),
                                'note': 'frame: stretch only the straight middle; the centre stud (diamond) must be a separate overlay or it stretches'}
+            if it.get('max'):     # downscale only, to fit the spec box
+                k = min(1.0, it['max'] / max(im.size))
+                if k < 1: im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS); rec['scale'] = round(k, 3)
             im.save(f'{od}/{n}.png')
             if it.get('nine'): rec['nine'] = nine_margins(im)
         rec['size'] = list(Image.open(f'{od}/{n}.png').size); rec['file'] = os.path.join(g, n + '.png')

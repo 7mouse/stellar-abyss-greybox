@@ -1,0 +1,98 @@
+{
+ "source": "art_src/src/mosscrown_king_boar_partsheet_v2_gen1.jpg",
+ "items": {
+  "crown": {
+   "rect_src": [
+    873,
+    564,
+    1045,
+    667
+   ],
+   "size": [
+    172,
+    103
+   ],
+   "file": "crown.png",
+   "spec": "苔冠 (spare; baked into head_f/head_s, own part in b)"
+  },
+  "crown_sprout_glow": {
+   "rect_src": [
+    935,
+    562,
+    987,
+    625
+   ],
+   "size": [
+    52,
+    61
+   ],
+   "file": "crown_sprout_glow.png",
+   "spec": "crown sprout crystal (spare, part of crown)"
+  },
+  "ear_l": {
+   "rect_src": [
+    670,
+    570,
+    732,
+    656
+   ],
+   "size": [
+    62,
+    86
+   ],
+   "file": "ear_l.png"
+  },
+  "ear_r": {
+   "rect_src": [
+    761,
+    570,
+    823,
+    657
+   ],
+   "size": [
+    62,
+    87
+   ],
+   "file": "ear_r.png"
+  },
+  "tusk_l": {
+   "rect_src": [
+    1093,
+    579,
+    1143,
+    663
+   ],
+   "size": [
+    50,
+    84
+   ],
+   "file": "tusk_l.png"
+  },
+  "tusk_r": {
+   "rect_src": [
+    1163,
+    584,
+    1220,
+    664
+   ],
+   "size": [
+    57,
+    80
+   ],
+   "file": "tusk_r.png"
+  },
+  "tail": {
+   "rect_src": [
+    560,
+    573,
+    625,
+    665
+   ],
+   "size": [
+    65,
+    92
+   ],
+   "file": "tail.png"
+  }
+ }
+}

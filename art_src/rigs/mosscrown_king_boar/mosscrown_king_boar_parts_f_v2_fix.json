@@ -1,0 +1,46 @@
+{
+ "joints": [
+  {
+   "pivot": "neck",
+   "parent": "body_f_mesh",
+   "child": "head_f",
+   "child_cls": "big",
+   "child_from": "head_top"
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "body_f_mesh",
+   "child": "leg_hind_r_f",
+   "child_cls": "big",
+   "child_from": "hoof_r_hind"
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "body_f_mesh",
+   "child": "leg_hind_l_f",
+   "child_cls": "big",
+   "child_from": "hoof_l_hind"
+  },
+  {
+   "pivot": "shoulder_r",
+   "parent": "body_f_mesh",
+   "child": "leg_front_r_f",
+   "child_cls": "big",
+   "child_from": "hoof_r_front"
+  },
+  {
+   "pivot": "shoulder_l",
+   "parent": "body_f_mesh",
+   "child": "leg_front_l_f",
+   "child_cls": "big",
+   "child_from": "hoof_l_front"
+  }
+ ],
+ "cap_version": 2,
+ "parts_dir": "parts",
+ "src_psd2x": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_f_v2_raw_src2x.psd",
+ "src_pivots": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_f_v2_raw_pivots.json",
+ "out_dir": "art_src/rigs/mosscrown_king_boar",
+ "base": "mosscrown_king_boar_parts_f_v2",
+ "scale": 2
+}

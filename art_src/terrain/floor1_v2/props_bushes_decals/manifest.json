@@ -1,0 +1,121 @@
+{
+ "source": "art_src/src/terrain_v2/s04s07s18_bushes_decals_gen1.jpg",
+ "items": {
+  "s04_bush_round": {
+   "rect_src": [
+    63,
+    81,
+    307,
+    312
+   ],
+   "size": [
+    244,
+    231
+   ],
+   "file": "s04_bush_round.png",
+   "spec": "S04"
+  },
+  "s04_bush_wide": {
+   "rect_src": [
+    353,
+    109,
+    627,
+    302
+   ],
+   "scale": 0.934,
+   "size": [
+    256,
+    180
+   ],
+   "file": "s04_bush_wide.png",
+   "spec": "S04"
+  },
+  "s04_bush_flowers": {
+   "rect_src": [
+    684,
+    95,
+    911,
+    308
+   ],
+   "size": [
+    227,
+    213
+   ],
+   "file": "s04_bush_flowers.png",
+   "spec": "S04"
+  },
+  "s18_glow_mushroom_ring": {
+   "rect_src": [
+    962,
+    92,
+    1225,
+    320
+   ],
+   "size": [
+    246,
+    214
+   ],
+   "file": "s18_glow_mushroom_ring.png",
+   "spec": "S18 (whole ring; the engine can also place it as is)"
+  },
+  "s07_moss_decal_a": {
+   "rect_src": [
+    27,
+    375,
+    365,
+    645
+   ],
+   "scale": 0.79,
+   "size": [
+    256,
+    202
+   ],
+   "file": "s07_moss_decal_a.png",
+   "spec": "S07"
+  },
+  "s07_moss_decal_b": {
+   "rect_src": [
+    375,
+    402,
+    652,
+    618
+   ],
+   "scale": 0.977,
+   "size": [
+    256,
+    196
+   ],
+   "file": "s07_moss_decal_b.png",
+   "spec": "S07"
+  },
+  "s07_moss_decal_c": {
+   "rect_src": [
+    675,
+    390,
+    955,
+    636
+   ],
+   "scale": 0.962,
+   "size": [
+    256,
+    222
+   ],
+   "file": "s07_moss_decal_c.png",
+   "spec": "S07"
+  },
+  "s07_moss_decal_d": {
+   "rect_src": [
+    987,
+    392,
+    1217,
+    635
+   ],
+   "size": [
+    215,
+    227
+   ],
+   "file": "s07_moss_decal_d.png",
+   "spec": "S07"
+  }
+ }
+}

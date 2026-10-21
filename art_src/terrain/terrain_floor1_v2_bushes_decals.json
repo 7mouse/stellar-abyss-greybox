@@ -1,0 +1,9 @@
+{"source": "art_src/src/terrain_v2/s04s07s18_bushes_decals_gen1.jpg", "out_dir": "art_src/terrain/floor1_v2/props_bushes_decals", "disp_scale": 1.25, "items": [
+ {"name": "s04_bush_round", "pick": [148, 158], "max": 256, "spec": "S04"},
+ {"name": "s04_bush_wide", "pick": [392, 165], "max": 256, "spec": "S04"},
+ {"name": "s04_bush_flowers", "pick": [638, 160], "max": 256, "spec": "S04"},
+ {"name": "s18_glow_mushroom_ring", "rect": [770, 74, 980, 256], "soft": false, "max": 256, "spec": "S18 (whole ring; the engine can also place it as is)"},
+ {"name": "s07_moss_decal_a", "rect": [22, 300, 292, 516], "soft": false, "max": 256, "spec": "S07"},
+ {"name": "s07_moss_decal_b", "rect": [300, 322, 522, 495], "soft": false, "max": 256, "spec": "S07"},
+ {"name": "s07_moss_decal_c", "rect": [540, 312, 764, 509], "soft": false, "max": 256, "spec": "S07"},
+ {"name": "s07_moss_decal_d", "rect": [790, 314, 974, 508], "soft": false, "max": 256, "spec": "S07"}]}

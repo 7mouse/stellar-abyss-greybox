@@ -1,0 +1,11 @@
+{
+ "canvas": [
+  512,
+  768
+ ],
+ "scale": 0.69,
+ "sort_y": 720,
+ "src": "art_src/src/terrain_v2/s03_tree_green_gen1.jpg",
+ "crown_px": 272528,
+ "base_px": 144637
+}

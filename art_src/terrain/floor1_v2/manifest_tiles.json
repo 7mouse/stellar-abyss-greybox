@@ -1,0 +1,146 @@
+{
+ "s01_ground_moss": {
+  "file": "art_src/terrain/floor1_v2/tiles/s01_ground_moss.png",
+  "size": [
+   512,
+   512
+  ],
+  "src": "art_src/src/terrain_v2/s01_moss_gen2.jpg",
+  "seam_ratio": {
+   "x": 1.09,
+   "y": 1.02
+  },
+  "cut_cost": {
+   "x": 54,
+   "y": 47
+  }
+ },
+ "s01_ground_autumn": {
+  "file": "art_src/terrain/floor1_v2/tiles/s01_ground_autumn.png",
+  "size": [
+   512,
+   512
+  ],
+  "src": "art_src/src/terrain_v2/s01_autumn_gen2.jpg",
+  "seam_ratio": {
+   "x": 1.0,
+   "y": 0.99
+  },
+  "cut_cost": {
+   "x": 228,
+   "y": 207
+  }
+ },
+ "s01_ground_stone": {
+  "file": "art_src/terrain/floor1_v2/tiles/s01_ground_stone.png",
+  "size": [
+   512,
+   512
+  ],
+  "src": "art_src/src/terrain_v2/s01_stone_gen2.jpg",
+  "seam_ratio": {
+   "x": 1.15,
+   "y": 0.89
+  },
+  "cut_cost": {
+   "x": 295,
+   "y": 311
+  }
+ },
+ "s01_ground_stone_large": {
+  "file": "art_src/terrain/floor1_v2/tiles/s01_ground_stone_large.png",
+  "size": [
+   512,
+   512
+  ],
+  "src": "art_src/src/terrain_v2/s01_stone_gen1.jpg",
+  "seam_ratio": {
+   "x": 1.03,
+   "y": 0.92
+  },
+  "cut_cost": {
+   "x": 585,
+   "y": 597
+  }
+ },
+ "s01_water": {
+  "file": "art_src/terrain/floor1_v2/tiles/s01_water.png",
+  "size": [
+   512,
+   512
+  ],
+  "src": "art_src/src/terrain_v2/s01_water_gen1.jpg",
+  "seam_ratio": {
+   "x": 0.74,
+   "y": 1.12
+  },
+  "cut_cost": {
+   "x": 221,
+   "y": 62
+  }
+ },
+ "s02_edge_moss_stone": {
+  "file": "art_src/terrain/floor1_v2/edges/s02_edge_moss_stone.png",
+  "size": [
+   512,
+   128
+  ],
+  "src": "art_src/src/terrain_v2/s02_moss_stone_gen1.jpg",
+  "boundary_row_576": 292,
+  "seam_ratio": {
+   "x": 0.97
+  },
+  "line_row": 88,
+  "use": "alpha overlay; the tile boundary sits on row 88; s01_ground_moss tile above, s01_ground_stone tile below"
+ },
+ "s02_edge_moss_stone_corner_outer": {
+  "file": "art_src/terrain/floor1_v2/edges/s02_edge_moss_stone_corner_outer.png",
+  "size": [
+   128,
+   128
+  ],
+  "from": "art_src/terrain/floor1_v2/edges/s02_edge_moss_stone.png",
+  "use": "tile corner at the centre (64,64); outer = A in the top-left quadrant, inner = A everywhere but bottom-right"
+ },
+ "s02_edge_moss_stone_corner_inner": {
+  "file": "art_src/terrain/floor1_v2/edges/s02_edge_moss_stone_corner_inner.png",
+  "size": [
+   128,
+   128
+  ],
+  "from": "art_src/terrain/floor1_v2/edges/s02_edge_moss_stone.png",
+  "use": "tile corner at the centre (64,64); outer = A in the top-left quadrant, inner = A everywhere but bottom-right"
+ },
+ "s02_edge_autumn_moss": {
+  "file": "art_src/terrain/floor1_v2/edges/s02_edge_autumn_moss.png",
+  "size": [
+   512,
+   128
+  ],
+  "src": "art_src/src/terrain_v2/s02_moss_autumn_gen1.jpg",
+  "boundary_row_576": 276,
+  "seam_ratio": {
+   "x": 1.0
+  },
+  "line_row": 88,
+  "use": "alpha overlay; the tile boundary sits on row 88; s01_ground_autumn tile above, s01_ground_moss tile below"
+ },
+ "s02_edge_autumn_moss_corner_outer": {
+  "file": "art_src/terrain/floor1_v2/edges/s02_edge_autumn_moss_corner_outer.png",
+  "size": [
+   128,
+   128
+  ],
+  "from": "art_src/terrain/floor1_v2/edges/s02_edge_autumn_moss.png",
+  "use": "tile corner at the centre (64,64); outer = A in the top-left quadrant, inner = A everywhere but bottom-right"
+ },
+ "s02_edge_autumn_moss_corner_inner": {
+  "file": "art_src/terrain/floor1_v2/edges/s02_edge_autumn_moss_corner_inner.png",
+  "size": [
+   128,
+   128
+  ],
+  "from": "art_src/terrain/floor1_v2/edges/s02_edge_autumn_moss.png",
+  "use": "tile corner at the centre (64,64); outer = A in the top-left quadrant, inner = A everywhere but bottom-right"
+ }
+}

@@ -1,0 +1,34 @@
+{
+ "source": "art_src/src/terrain_v2/s09_leaflight_gen1.jpg",
+ "items": {
+  "s09_leaf_light_a": {
+   "rect_src": [
+    100,
+    137,
+    700,
+    550
+   ],
+   "scale": 0.994,
+   "size": [
+    512,
+    344
+   ],
+   "file": "s09_leaf_light_a.png",
+   "spec": "S09 additive"
+  },
+  "s09_leaf_light_b": {
+   "rect_src": [
+    737,
+    225,
+    1175,
+    537
+   ],
+   "size": [
+    360,
+    234
+   ],
+   "file": "s09_leaf_light_b.png",
+   "spec": "S09 additive"
+  }
+ }
+}

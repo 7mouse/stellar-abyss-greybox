@@ -1,0 +1,121 @@
+{
+ "source": "art_src/src/terrain_v2/s05s06_rocks_ruins_gen1.jpg",
+ "items": {
+  "s05_rock_large": {
+   "rect_src": [
+    48,
+    35,
+    368,
+    302
+   ],
+   "scale": 0.8,
+   "size": [
+    256,
+    214
+   ],
+   "file": "s05_rock_large.png",
+   "spec": "S05 large"
+  },
+  "s05_rock_medium": {
+   "rect_src": [
+    436,
+    85,
+    657,
+    289
+   ],
+   "scale": 0.869,
+   "size": [
+    192,
+    177
+   ],
+   "file": "s05_rock_medium.png",
+   "spec": "S05 medium"
+  },
+  "s05_rock_small": {
+   "rect_src": [
+    753,
+    139,
+    890,
+    269
+   ],
+   "scale": 0.701,
+   "size": [
+    96,
+    91
+   ],
+   "file": "s05_rock_small.png",
+   "spec": "S05 small"
+  },
+  "s05_pebbles": {
+   "rect_src": [
+    997,
+    147,
+    1150,
+    267
+   ],
+   "scale": 0.686,
+   "size": [
+    96,
+    74
+   ],
+   "file": "s05_pebbles.png",
+   "spec": "S05 pebble cluster"
+  },
+  "s06_ruin_pillar": {
+   "rect_src": [
+    65,
+    322,
+    235,
+    647
+   ],
+   "size": [
+    170,
+    325
+   ],
+   "file": "s06_ruin_pillar.png",
+   "spec": "S06 broken pillar"
+  },
+  "s06_ruin_wall": {
+   "rect_src": [
+    306,
+    379,
+    595,
+    632
+   ],
+   "size": [
+    289,
+    253
+   ],
+   "file": "s06_ruin_wall.png",
+   "spec": "S06 low wall"
+  },
+  "s06_ruin_arch": {
+   "rect_src": [
+    634,
+    322,
+    910,
+    647
+   ],
+   "size": [
+    276,
+    325
+   ],
+   "file": "s06_ruin_arch.png",
+   "spec": "S06 arch fragment"
+  },
+  "s06_ruin_blocks": {
+   "rect_src": [
+    936,
+    364,
+    1256,
+    660
+   ],
+   "size": [
+    320,
+    296
+   ],
+   "file": "s06_ruin_blocks.png",
+   "spec": "S06 fallen blocks"
+  }
+ }
+}

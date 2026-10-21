@@ -1,0 +1,11 @@
+{
+ "canvas": [
+  512,
+  768
+ ],
+ "scale": 0.639,
+ "sort_y": 722,
+ "src": "art_src/src/terrain_v2/s03_tree_autumn_gen1.jpg",
+ "crown_px": 352230,
+ "base_px": 97481
+}

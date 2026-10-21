@@ -1,0 +1,92 @@
+{
+ "canvas": [
+  256,
+  256
+ ],
+ "unit": "px@1:1",
+ "pivots": {
+  "cap_root": [
+   126.1,
+   134.6
+  ],
+  "cap_top": [
+   126.1,
+   67.1
+  ],
+  "hip_r": [
+   93.9,
+   208.1
+  ],
+  "foot_r": [
+   93.9,
+   247.1
+  ],
+  "hip_l": [
+   137.4,
+   206.6
+  ],
+  "foot_l": [
+   137.4,
+   244.1
+  ],
+  "arm_root_r": [
+   128.4,
+   158.6
+  ],
+  "hand_r": [
+   135.1,
+   203.6
+  ],
+  "arm_root_l": [
+   162.1,
+   160.1
+  ],
+  "hand_l": [
+   167.4,
+   193.1
+  ],
+  "eye_r": [
+   172.6,
+   152.6
+  ],
+  "root": [
+   126.1,
+   249.4
+  ]
+ },
+ "parts": {
+  "root_l_s": {
+   "pick_component": 9,
+   "scale": 0.942
+  },
+  "arm_l_s": {
+   "pick_component": 12,
+   "scale": 1.171
+  },
+  "stalk_s_mesh": {
+   "pick_component": 7,
+   "scale": 1.704
+  },
+  "root_r_s": {
+   "pick_component": 8,
+   "scale": 0.984
+  },
+  "blush_r_s": {
+   "pick_component": 0,
+   "scale": 1.615
+  },
+  "eye_r_s": {
+   "pick_component": 0,
+   "scale": 1.421
+  },
+  "arm_r_s": {
+   "pick_component": 11,
+   "scale": 1.154
+  },
+  "cap_s": {
+   "pick_component": 6,
+   "scale": 1.446
+  }
+ },
+ "swap": []
+}

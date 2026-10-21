@@ -1,0 +1,9 @@
+{
+  "max_deg": 12,
+  "note": "这些配件贴着身体画，转大了会露边。独立配件重生后把 max_deg 放开。",
+  "rules": [
+    {"ids": ["mosscrown_s", "mosscrown_f", "mosscrown_b"], "bones": ["crown", "tail"]},
+    {"ids": ["mushling_b"], "bones": ["tail"]},
+    {"ids": ["shroom_s", "shroom_f", "shroom_b"], "bones": ["cap"]}
+  ]
+}

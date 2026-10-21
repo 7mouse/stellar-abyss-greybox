@@ -1,0 +1,221 @@
+{
+ "canvas": [
+  320,
+  320
+ ],
+ "unit": "px@1:1",
+ "version": "mosscrown_king_boar_parts_b_v2_1",
+ "order": [
+  "leg_front_l_b",
+  "leg_front_r_b",
+  "head_b",
+  "eye_open_r_b",
+  "eye_closed_r_b",
+  "eye_open_l_b",
+  "eye_closed_l_b",
+  "leg_hind_l_b",
+  "leg_hind_r_b",
+  "body_b_mesh",
+  "tail_b",
+  "crown_b"
+ ],
+ "swap": [
+  "eye_closed_l_b",
+  "eye_closed_r_b"
+ ],
+ "pivots": {
+  "neck": [
+   160.5,
+   136.3
+  ],
+  "head_top": [
+   160.5,
+   82.6
+  ],
+  "crown_root": [
+   160.5,
+   93.3
+  ],
+  "crown_tip": [
+   160.5,
+   50.3
+  ],
+  "tail_root": [
+   226.1,
+   184.7
+  ],
+  "tail_tip": [
+   251.9,
+   206.2
+  ],
+  "hip_l": [
+   101.4,
+   270.7
+  ],
+  "hoof_l_hind": [
+   101.4,
+   310.5
+  ],
+  "hip_r": [
+   219.7,
+   270.7
+  ],
+  "hoof_r_hind": [
+   219.7,
+   310.5
+  ],
+  "shoulder_l": [
+   141.2,
+   268.6
+  ],
+  "hoof_l_front": [
+   141.2,
+   301.9
+  ],
+  "shoulder_r": [
+   179.9,
+   268.6
+  ],
+  "hoof_r_front": [
+   179.9,
+   301.9
+  ],
+  "root": [
+   160.5,
+   311.6
+  ]
+ },
+ "line_rgb": [
+  63,
+  62,
+  42
+ ],
+ "from": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_b_v2_src2x.psd",
+ "log": {
+  "extras": [
+   {
+    "op": "empty",
+    "name": "eye_open_r_b",
+    "above": "head_b"
+   },
+   {
+    "op": "empty",
+    "name": "eye_closed_r_b",
+    "above": "eye_open_r_b",
+    "swap": true
+   },
+   {
+    "op": "empty",
+    "name": "eye_open_l_b",
+    "above": "eye_closed_r_b"
+   },
+   {
+    "op": "empty",
+    "name": "eye_closed_l_b",
+    "above": "eye_open_l_b",
+    "swap": true
+   }
+  ],
+  "previous": {
+   "ops": [],
+   "joints": {
+    "neck": {
+     "child": {
+      "before": 58.9,
+      "half_width": 44.5,
+      "after": 58.9,
+      "action": "kept (already deeper than range)",
+      "part": "head_b",
+      "cls": "big"
+     }
+    },
+    "crown_root": {
+     "child": {
+      "before": 9.5,
+      "half_width": 36.8,
+      "after": 9.5,
+      "action": "kept (already deeper than range)",
+      "part": "crown_b",
+      "cls": "small"
+     },
+     "parent": {
+      "before": 15.5,
+      "half_width": 46.2,
+      "after": 15.5,
+      "action": "kept (already deeper than range)",
+      "part": "head_b",
+      "cls": "small"
+     }
+    },
+    "tail_root": {
+     "child": {
+      "before": 18.2,
+      "half_width": 11.8,
+      "after": 18.2,
+      "action": "kept (already deeper than range)",
+      "part": "tail_b",
+      "cls": "small"
+     },
+     "parent": {
+      "before": 51.1,
+      "half_width": 74.9,
+      "after": 51.1,
+      "action": "kept (already deeper than range)",
+      "part": "body_b_mesh",
+      "cls": "small"
+     }
+    },
+    "hip_r": {
+     "child": {
+      "before": 21.4,
+      "half_width": 17.0,
+      "after": 21.4,
+      "action": "kept (already deeper than range)",
+      "part": "leg_hind_r_b",
+      "cls": "big"
+     }
+    },
+    "hip_l": {
+     "child": {
+      "before": 21.4,
+      "half_width": 16.8,
+      "after": 21.4,
+      "action": "kept (already deeper than range)",
+      "part": "leg_hind_l_b",
+      "cls": "big"
+     }
+    },
+    "shoulder_r": {
+     "child": {
+      "before": 19.4,
+      "half_width": 13.0,
+      "after": 19.4,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 19.5,
+      "cap_half_width": 11.2,
+      "added_px_1to1": 43,
+      "erased_cut_px_1to1": 26,
+      "part": "leg_front_r_b",
+      "cls": "big"
+     }
+    },
+    "shoulder_l": {
+     "child": {
+      "before": 18.4,
+      "half_width": 12.8,
+      "after": 19.4,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 19.5,
+      "cap_half_width": 10.5,
+      "added_px_1to1": 60,
+      "erased_cut_px_1to1": 15,
+      "part": "leg_front_l_b",
+      "cls": "big"
+     }
+    }
+   },
+   "cleanup": {},
+   "post_ops": []
+  }
+ }
+}

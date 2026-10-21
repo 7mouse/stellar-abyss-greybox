@@ -1,0 +1,253 @@
+{
+ "source": "/workspace/art/rigs/hero/src/hero_fb_partsheet_gen1.jpg",
+ "out_dir": "/workspace/art/rigs/hero",
+ "base": "hero_parts_f_v1",
+ "canvas2x": 512,
+ "disp_scale": 1.25,
+ "pose_box": [
+  257,
+  4,
+  419,
+  300
+ ],
+ "parts": [
+  {
+   "name": "head_f",
+   "pick": [
+    95,
+    370
+   ],
+   "box": [
+    272,
+    6,
+    382,
+    112
+   ]
+  },
+  {
+   "name": "torso_f_mesh",
+   "pick": [
+    330,
+    375
+   ],
+   "box": [
+    280,
+    106,
+    392,
+    215
+   ]
+  },
+  {
+   "name": "scarf_f_mesh",
+   "pick": [
+    590,
+    370
+   ],
+   "box": [
+    290,
+    95,
+    418,
+    180
+   ],
+   "keep_holes": true
+  },
+  {
+   "name": "arm_upper_r_f",
+   "pick": [
+    332,
+    490
+   ],
+   "box": [
+    265,
+    118,
+    296,
+    180
+   ]
+  },
+  {
+   "name": "forearm_r_f",
+   "pick": [
+    550,
+    490
+   ],
+   "box": [
+    256,
+    158,
+    292,
+    212
+   ]
+  },
+  {
+   "name": "arm_upper_l_f",
+   "pick": [
+    425,
+    490
+   ],
+   "box": [
+    368,
+    118,
+    398,
+    180
+   ]
+  },
+  {
+   "name": "forearm_l_f",
+   "pick": [
+    637,
+    490
+   ],
+   "box": [
+    366,
+    158,
+    400,
+    215
+   ]
+  },
+  {
+   "name": "thigh_r_f",
+   "pick": [
+    835,
+    405
+   ],
+   "box": [
+    283,
+    198,
+    326,
+    250
+   ]
+  },
+  {
+   "name": "thigh_l_f",
+   "pick": [
+    918,
+    405
+   ],
+   "box": [
+    324,
+    198,
+    368,
+    250
+   ]
+  },
+  {
+   "name": "shin_r_f",
+   "pick": [
+    790,
+    500
+   ],
+   "box": [
+    268,
+    236,
+    318,
+    298
+   ]
+  },
+  {
+   "name": "shin_l_f",
+   "pick": [
+    902,
+    500
+   ],
+   "box": [
+    332,
+    236,
+    376,
+    300
+   ]
+  },
+  {
+   "name": "sword_f",
+   "pick": [
+    860,
+    290
+   ],
+   "box": [
+    342,
+    163,
+    406,
+    268
+   ],
+   "rotate": 25
+  }
+ ],
+ "order": [
+  "shin_r_f",
+  "shin_l_f",
+  "thigh_r_f",
+  "thigh_l_f",
+  "torso_f_mesh",
+  "arm_upper_r_f",
+  "forearm_r_f",
+  "arm_upper_l_f",
+  "head_f",
+  "scarf_f_mesh",
+  "sword_f",
+  "forearm_l_f"
+ ],
+ "pivots": {
+  "neck": [
+   328,
+   104
+  ],
+  "shoulder_r": [
+   285,
+   128
+  ],
+  "elbow_r": [
+   278,
+   165
+  ],
+  "wrist_r": [
+   273,
+   198
+  ],
+  "shoulder_l": [
+   378,
+   128
+  ],
+  "elbow_l": [
+   384,
+   165
+  ],
+  "wrist_l": [
+   386,
+   200
+  ],
+  "hip_r": [
+   305,
+   205
+  ],
+  "knee_r": [
+   300,
+   242
+  ],
+  "ankle_r": [
+   295,
+   285
+  ],
+  "hip_l": [
+   345,
+   205
+  ],
+  "knee_l": [
+   350,
+   242
+  ],
+  "ankle_l": [
+   355,
+   285
+  ],
+  "scarf_root": [
+   328,
+   108
+  ],
+  "sword_grip": [
+   384,
+   200
+  ],
+  "root": [
+   328,
+   296
+  ]
+ }
+}

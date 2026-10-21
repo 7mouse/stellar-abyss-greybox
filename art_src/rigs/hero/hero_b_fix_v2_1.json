@@ -1,0 +1,150 @@
+{
+ "src_psd2x": "art_src/rigs/hero/hero_parts_b_v1_src2x.psd",
+ "src_pivots": "art_src/rigs/hero/hero_parts_b_v1_pivots.json",
+ "out_dir": "art_src/rigs/hero",
+ "base": "hero_parts_b_v2_1",
+ "scale": 2,
+ "line_rgb": [
+  40,
+  28,
+  21
+ ],
+ "ops": [
+  {
+   "op": "swing_attach",
+   "child": "forearm_r_b",
+   "parent": "arm_upper_r_b",
+   "joint": "elbow_r",
+   "hinge": "wrist_r",
+   "overlap": 6,
+   "why": "forearm hung ~6px beside the cuff; swung around the wrist so the elbow end overlaps the upper-arm cuff, hand stays put"
+  },
+  {
+   "op": "translate",
+   "parts": [
+    "forearm_r_b"
+   ],
+   "d": [
+    0,
+    -6
+   ],
+   "pivots": [
+    "elbow_r",
+    "wrist_r"
+   ],
+   "why": "v2.1 item 4: the v2 swing turns the hand straight down, bottom 183->187.5 (6px below the left hand 181.5). Lift the whole forearm+hand 6px so the fingertips end at 181.5 = left hand; elbow end goes 6px deeper into the cuff (hidden under torso/upper arm)"
+  },
+  {
+   "op": "pivot_to_overlap",
+   "pivot": "elbow_r",
+   "parts": [
+    "arm_upper_r_b",
+    "forearm_r_b"
+   ]
+  },
+  {
+   "op": "translate",
+   "parts": [
+    "forearm_l_b",
+    "sword_b"
+   ],
+   "d": [
+    4,
+    0
+   ],
+   "pivots": [
+    "wrist_l",
+    "sword_grip"
+   ],
+   "why": "left forearm floated 4px off the torso; nudged in, still overlapping the upper arm"
+  },
+  {
+   "op": "pivot_to_overlap",
+   "pivot": "elbow_l",
+   "parts": [
+    "arm_upper_l_b",
+    "forearm_l_b"
+   ]
+  }
+ ],
+ "joints": [
+  {
+   "pivot": "neck",
+   "parent": "torso_b_mesh",
+   "child": "head_b",
+   "child_cls": "big",
+   "child_cap_r": 8,
+   "note": "neck stub, hidden by scarf/backpack"
+  },
+  {
+   "pivot": "shoulder_r",
+   "parent": "torso_b_mesh",
+   "child": "arm_upper_r_b",
+   "child_cls": "big",
+   "child_from": "elbow_r"
+  },
+  {
+   "pivot": "elbow_r",
+   "parent": "arm_upper_r_b",
+   "child": "forearm_r_b",
+   "child_cls": "small",
+   "child_from": "wrist_r",
+   "parent_cls": "small",
+   "parent_from": "shoulder_r"
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "torso_b_mesh",
+   "child": "thigh_r_b",
+   "child_cls": "big",
+   "child_from": "knee_r"
+  },
+  {
+   "pivot": "knee_r",
+   "parent": "thigh_r_b",
+   "child": "shin_r_b",
+   "child_cls": "small",
+   "child_from": "ankle_r",
+   "parent_cls": "small",
+   "parent_from": "hip_r",
+   "parent_target": 10,
+   "v21": "item 3: thigh knee cap (on top, shin-pixel copy, invisible) 5.5->10"
+  },
+  {
+   "pivot": "shoulder_l",
+   "parent": "torso_b_mesh",
+   "child": "arm_upper_l_b",
+   "child_cls": "big",
+   "child_from": "elbow_l"
+  },
+  {
+   "pivot": "elbow_l",
+   "parent": "arm_upper_l_b",
+   "child": "forearm_l_b",
+   "child_cls": "small",
+   "child_from": "wrist_l",
+   "parent_cls": "small",
+   "parent_from": "shoulder_l"
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "torso_b_mesh",
+   "child": "thigh_l_b",
+   "child_cls": "big",
+   "child_from": "knee_l"
+  },
+  {
+   "pivot": "knee_l",
+   "parent": "thigh_l_b",
+   "child": "shin_l_b",
+   "child_cls": "small",
+   "child_from": "ankle_l",
+   "parent_cls": "small",
+   "parent_from": "hip_l",
+   "parent_target": 10,
+   "v21": "item 3: thigh knee cap (on top, shin-pixel copy, invisible) 5.5->10"
+  }
+ ],
+ "parts_dir": "parts_v2_1",
+ "cap_version": 2
+}

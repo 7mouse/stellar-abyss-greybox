@@ -30,6 +30,7 @@ var hurtbox: Hurtbox
 var hitbox: Hitbox
 var body: ColorRect
 var visual: Sprite2D
+var rig: RigVisual
 var warn: Label
 var aim_line: Line2D
 var attack_tele: TelegraphShape
@@ -112,6 +113,18 @@ func _ready() -> void:
 		visual.scale = Vector2.ONE * (vh / visual.texture.get_height())
 	visual.position = Vector2(0, 10 - vh * 0.5)
 	add_child(visual)
+	var rig_kind := ""
+	if self is Guard:
+		rig_kind = "boss"
+	elif data != null and data.id == "mushling":
+		rig_kind = "boar"
+	if rig_kind != "":
+		visual.visible = false
+		rig = RigVisual.new()
+		rig.name = "Rig"
+		rig.position = Vector2(0, 10)
+		rig.setup(rig_kind, vh)
+		add_child(rig)
 	_sync_visual()
 	warn = Label.new()
 	warn.text = "!"
@@ -154,7 +167,9 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	var _p := Prof.t0()
 	_prof_physics_process(delta)
+	var _v := Prof.t0()
 	_sync_visual()
+	Prof.add("visual", _v)
 	Prof.add("enemy", _p)
 
 func _sync_visual() -> void:
@@ -166,6 +181,25 @@ func _sync_visual() -> void:
 		visual.modulate = body.color * body.modulate
 	if absf(facing.x) > 0.2:
 		visual.flip_h = facing.x < 0.0
+	if rig:
+		rig.set_facing(facing)
+		rig.set_anim(_rig_anim())
+		if feel_flash_t > 0.0:
+			rig.modulate = visual.modulate
+		else:
+			rig.modulate = _rig_tint()
+		rig.set_asleep(ai != null and ai.sleeping)
+
+func _rig_anim() -> String:
+	if state == S.CHASE or state == S.PATROL or state == S.RETURN:
+		return "move"
+	return "idle"
+
+func _rig_tint() -> Color:
+	var base := tint
+	if base.r < 0.01 or base.g < 0.01 or base.b < 0.01:
+		return Color(1, 1, 1, body.modulate.a)
+	return Color(body.color.r / base.r, body.color.g / base.g, body.color.b / base.b, body.modulate.a)
 
 func feel_flash(ms: int, moss := false, _redwhite := false) -> void:
 	feel_flash_t = maxf(feel_flash_t, ms / 1000.0)

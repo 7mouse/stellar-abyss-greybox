@@ -54,6 +54,7 @@ const GLOW_B := Color(0.372549, 0.658824, 0.627451)
 var sim_aim := Vector2.ZERO
 var body_rect: ColorRect
 var sprite: Sprite2D
+var rig: RigVisual
 var _skill_mat: ShaderMaterial
 var depth := 1
 
@@ -81,7 +82,13 @@ func _ready() -> void:
 	if sprite.texture:
 		sprite.scale = Vector2.ONE * (vh / sprite.texture.get_height())
 	sprite.position = Vector2(0, 8 - vh * 0.5)
+	sprite.visible = false
 	add_child(sprite)
+	rig = RigVisual.new()
+	rig.name = "Rig"
+	rig.position = Vector2(0, 8)
+	rig.setup("hero", vh)
+	add_child(rig)
 	hurtbox = Hurtbox.new()
 	hurtbox.team = "player"
 	hurtbox.owner_actor = self
@@ -281,6 +288,17 @@ func try_dash() -> bool:
 	Tutorial.notify("dash")
 	return true
 
+func _rig_anim() -> String:
+	match state:
+		S.MOVE:
+			return "move"
+		S.ATTACK:
+			return "attack_1"
+		S.HURT:
+			return "hit"
+		_:
+			return "idle"
+
 func _update_facing() -> void:
 	var a := aim_input()
 	if a == Vector2.ZERO:
@@ -367,6 +385,11 @@ func _prof_physics_process(delta: float) -> void:
 			sprite.modulate.a = body_rect.modulate.a
 		if absf(facing.x) > 0.2:
 			sprite.flip_h = facing.x < 0.0
+		if rig:
+			rig.modulate = sprite.modulate
+			rig.set_facing(facing)
+			rig.set_anim(_rig_anim())
+			rig.apply_glow(sprite.material)
 	if state == S.MOVE:
 		_step_t -= delta
 		if _step_t <= 0.0:

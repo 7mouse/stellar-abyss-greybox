@@ -1,0 +1,60 @@
+{
+ "canvas": [
+  256,
+  192
+ ],
+ "unit": "px@1:1",
+ "pivots": {
+  "root": [
+   127.5,
+   186.6
+  ],
+  "body": [
+   127.5,
+   141.5
+  ],
+  "eye_r": [
+   103.0,
+   145.8
+  ],
+  "eye_l": [
+   151.0,
+   145.8
+  ],
+  "mouth": [
+   127.0,
+   155.4
+  ],
+  "highlight": [
+   100.6,
+   103.6
+  ]
+ },
+ "parts": {
+  "puddle_mesh": {
+   "pick_component": 11,
+   "scale": 0.367
+  },
+  "body_mesh": {
+   "pick_component": 4,
+   "scale": 0.901
+  },
+  "highlight": {
+   "pick_component": 3,
+   "scale": 0.528
+  },
+  "eye_l": {
+   "pick_component": 6,
+   "scale": 0.73
+  },
+  "eye_r": {
+   "pick_component": 10,
+   "scale": 0.715
+  },
+  "mouth": {
+   "pick_component": 9,
+   "scale": 0.661
+  }
+ },
+ "swap": []
+}

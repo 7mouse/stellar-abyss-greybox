@@ -1,0 +1,249 @@
+{
+ "source": "art_src/src/terrain_floor1_set_gen1.jpg",
+ "items": {
+  "s01_ground_moss": {
+   "seam_ratio": {
+    "x": 2.95,
+    "y": 1.62
+   },
+   "seamless_as_cut": false,
+   "seam_ratio_after_fix": {
+    "x": 1.26,
+    "y": 1.08
+   },
+   "upscale": "137x137 -> 512x512 (source too small for the spec size; soft)",
+   "size": [
+    137,
+    137
+   ],
+   "file": "tiles/s01_ground_moss.png",
+   "spec": "S01 moss"
+  },
+  "s01_ground_roots": {
+   "seam_ratio": {
+    "x": 2.74,
+    "y": 2.13
+   },
+   "seamless_as_cut": false,
+   "seam_ratio_after_fix": {
+    "x": 1.6,
+    "y": 1.16
+   },
+   "upscale": "140x140 -> 512x512 (source too small for the spec size; soft)",
+   "size": [
+    140,
+    140
+   ],
+   "file": "tiles/s01_ground_roots.png",
+   "spec": "S01 extra (roots/earth; not the autumn tile)"
+  },
+  "s01_ground_stone": {
+   "seam_ratio": {
+    "x": 2.73,
+    "y": 1.77
+   },
+   "seamless_as_cut": false,
+   "seam_ratio_after_fix": {
+    "x": 1.02,
+    "y": 0.87
+   },
+   "upscale": "139x139 -> 512x512 (source too small for the spec size; soft)",
+   "size": [
+    139,
+    139
+   ],
+   "file": "tiles/s01_ground_stone.png",
+   "spec": "S01 grey stone (wet cobbles)"
+  },
+  "s01_water": {
+   "seam_ratio": {
+    "x": 2.99,
+    "y": 1.46
+   },
+   "seamless_as_cut": false,
+   "seam_ratio_after_fix": {
+    "x": 1.1,
+    "y": 1.01
+   },
+   "upscale": "120x120 -> 512x512 (source too small for the spec size; soft)",
+   "size": [
+    120,
+    120
+   ],
+   "file": "tiles/s01_water.png",
+   "spec": "S01 water"
+  },
+  "s02_edge_moss_stone": {
+   "seam_ratio": {
+    "x": 3.34
+   },
+   "seamless_as_cut": false,
+   "seam_ratio_after_fix": {
+    "x": 1.23
+   },
+   "upscale": "772x62 -> 512x41 (source too small for the spec size; soft)",
+   "size": [
+    772,
+    62
+   ],
+   "file": "edges/s02_edge_moss_stone.png",
+   "spec": "S02 straight edge moss/stone wall"
+  },
+  "s02_edge_moss_roots": {
+   "seam_ratio": {
+    "x": 3.39
+   },
+   "seamless_as_cut": false,
+   "seam_ratio_after_fix": {
+    "x": 0.89
+   },
+   "upscale": "772x60 -> 512x40 (source too small for the spec size; soft)",
+   "size": [
+    772,
+    60
+   ],
+   "file": "edges/s02_edge_moss_roots.png",
+   "spec": "S02 straight edge moss/roots"
+  },
+  "stump_a": {
+   "rect_src": [
+    145,
+    307,
+    372,
+    450
+   ],
+   "size": [
+    220,
+    139
+   ],
+   "file": "props/stump_a.png",
+   "spec": "deco (stump; not S03 tree)"
+  },
+  "s04_bush_a": {
+   "rect_src": [
+    382,
+    300,
+    570,
+    445
+   ],
+   "size": [
+    188,
+    143
+   ],
+   "file": "props/s04_bush_a.png",
+   "spec": "S04"
+  },
+  "stump_b": {
+   "rect_src": [
+    590,
+    308,
+    806,
+    457
+   ],
+   "size": [
+    207,
+    142
+   ],
+   "file": "props/stump_b.png",
+   "spec": "deco (stump)"
+  },
+  "s04_bush_b": {
+   "rect_src": [
+    812,
+    300,
+    1010,
+    452
+   ],
+   "size": [
+    198,
+    152
+   ],
+   "file": "props/s04_bush_b.png",
+   "spec": "S04"
+  },
+  "s06_ruin_pillars": {
+   "rect_src": [
+    147,
+    437,
+    340,
+    565
+   ],
+   "size": [
+    187,
+    128
+   ],
+   "file": "props/s06_ruin_pillars.png",
+   "spec": "S06"
+  },
+  "s06_ruin_block": {
+   "rect_src": [
+    362,
+    442,
+    512,
+    568
+   ],
+   "size": [
+    145,
+    126
+   ],
+   "file": "props/s06_ruin_block.png",
+   "spec": "S06"
+  },
+  "s18_glow_mushrooms": {
+   "rect_src": [
+    147,
+    565,
+    352,
+    710
+   ],
+   "size": [
+    199,
+    143
+   ],
+   "file": "props/s18_glow_mushrooms.png",
+   "spec": "S18 mushroom ring cluster"
+  },
+  "s04_shrub_patch": {
+   "rect_src": [
+    397,
+    558,
+    663,
+    715
+   ],
+   "size": [
+    259,
+    155
+   ],
+   "file": "props/s04_shrub_patch.png",
+   "spec": "S04"
+  },
+  "s07_moss_decal": {
+   "rect_src": [
+    681,
+    565,
+    897,
+    706
+   ],
+   "size": [
+    210,
+    135
+   ],
+   "file": "decals/s07_moss_decal.png",
+   "spec": "S07 moss patch decal (soft edge)"
+  },
+  "s05_rock_mound": {
+   "rect_src": [
+    911,
+    540,
+    1128,
+    705
+   ],
+   "size": [
+    210,
+    156
+   ],
+   "file": "props/s05_rock_mound.png",
+   "spec": "S05 big rock"
+  }
+ }
+}

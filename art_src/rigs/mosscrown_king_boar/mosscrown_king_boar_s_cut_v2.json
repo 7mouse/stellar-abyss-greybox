@@ -1,0 +1,222 @@
+{
+ "source": "art_src/src/mosscrown_king_boar_partsheet_v2_gen1.jpg",
+ "out_dir": "art_src/rigs/mosscrown_king_boar",
+ "base": "mosscrown_king_boar_parts_s_v2",
+ "canvas2x": 640,
+ "disp_scale": 1.25,
+ "k": 2.15,
+ "cap_version": 2,
+ "why": "v2 redraw (cute, matches combat_baseline_v2); crown, ears and tusks are baked into the head part",
+ "pose_box": [
+  73,
+  14,
+  353,
+  258
+ ],
+ "parts": [
+  {
+   "name": "leg_hind_l_s",
+   "pick": [
+    175,
+    490
+   ],
+   "box": [
+    112,
+    196,
+    144,
+    252
+   ]
+  },
+  {
+   "name": "leg_front_l_s",
+   "pick": [
+    371,
+    490
+   ],
+   "box": [
+    232,
+    196,
+    264,
+    252
+   ]
+  },
+  {
+   "name": "tail_s",
+   "pick": [
+    474,
+    495
+   ],
+   "box": [
+    56,
+    92,
+    94,
+    150
+   ],
+   "flip_h": true,
+   "keep_holes": true
+  },
+  {
+   "name": "body_s_mesh",
+   "pick": [
+    600,
+    360
+   ],
+   "box": [
+    73,
+    52,
+    300,
+    236
+   ]
+  },
+  {
+   "name": "leg_hind_r_s",
+   "pick": [
+    77,
+    490
+   ],
+   "box": [
+    72,
+    198,
+    110,
+    258
+   ]
+  },
+  {
+   "name": "leg_front_r_s",
+   "pick": [
+    277,
+    490
+   ],
+   "box": [
+    190,
+    198,
+    228,
+    258
+   ]
+  },
+  {
+   "name": "head_s",
+   "pick": [
+    100,
+    380
+   ],
+   "box": [
+    190,
+    14,
+    354,
+    214
+   ]
+  }
+ ],
+ "order": [
+  "leg_hind_l_s",
+  "leg_front_l_s",
+  "tail_s",
+  "body_s_mesh",
+  "leg_hind_r_s",
+  "leg_front_r_s",
+  "head_s"
+ ],
+ "pivots": {
+  "neck": [
+   225,
+   150
+  ],
+  "head_tip": [
+   330,
+   140
+  ],
+  "tail_root": [
+   85,
+   115
+  ],
+  "tail_tip": [
+   62,
+   140
+  ],
+  "hip_r": [
+   91,
+   215
+  ],
+  "hoof_r_hind": [
+   91,
+   256
+  ],
+  "hip_l": [
+   128,
+   213
+  ],
+  "hoof_l_hind": [
+   128,
+   250
+  ],
+  "shoulder_r": [
+   209,
+   215
+  ],
+  "hoof_r_front": [
+   209,
+   256
+  ],
+  "shoulder_l": [
+   248,
+   213
+  ],
+  "hoof_l_front": [
+   248,
+   250
+  ],
+  "root": [
+   180,
+   257
+  ]
+ },
+ "joints": [
+  {
+   "pivot": "neck",
+   "parent": "body_s_mesh",
+   "child": "head_s",
+   "child_cls": "big",
+   "child_from": "head_tip"
+  },
+  {
+   "pivot": "tail_root",
+   "parent": "body_s_mesh",
+   "child": "tail_s",
+   "child_cls": "small",
+   "child_from": "tail_tip",
+   "parent_cls": "small",
+   "parent_from": "root",
+   "child_cover_only": false,
+   "child_target": 8
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "body_s_mesh",
+   "child": "leg_hind_r_s",
+   "child_cls": "big",
+   "child_from": "hoof_r_hind"
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "body_s_mesh",
+   "child": "leg_hind_l_s",
+   "child_cls": "big",
+   "child_from": "hoof_l_hind"
+  },
+  {
+   "pivot": "shoulder_r",
+   "parent": "body_s_mesh",
+   "child": "leg_front_r_s",
+   "child_cls": "big",
+   "child_from": "hoof_r_front"
+  },
+  {
+   "pivot": "shoulder_l",
+   "parent": "body_s_mesh",
+   "child": "leg_front_l_s",
+   "child_cls": "big",
+   "child_from": "hoof_l_front"
+  }
+ ]
+}

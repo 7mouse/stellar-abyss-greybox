@@ -1,0 +1,44 @@
+{
+ "src_psd2x": "art_src/rigs/sprout_boar/sprout_boar_parts_s_v2_1_src2x.psd",
+ "src_pivots": "art_src/rigs/sprout_boar/sprout_boar_parts_s_v2_1_pivots.json",
+ "out_dir": "art_src/rigs/sprout_boar",
+ "base": "sprout_boar_parts_s_v2_2",
+ "parts_dir": "parts_v2_2",
+ "ops": [
+  {
+   "op": "open_white",
+   "part": "tail_s",
+   "why": "tail loop was filled white by the v1 cut"
+  },
+  {
+   "op": "dup_layer",
+   "src": "ear_s",
+   "name": "ear_far_s",
+   "d": [
+    28,
+    -12
+   ],
+   "below": "head_s",
+   "mul": 0.82,
+   "pivot_from": "ear_root",
+   "pivot": "ear_far_root",
+   "why": "lead: side view needs the second (far) ear; tool copy of ear_s, shifted toward the snout, 18% darker, behind the head"
+  },
+  {
+   "op": "blink",
+   "head": "head_s",
+   "suffix": "s",
+   "eyes": [
+    {
+     "side": "r",
+     "auto": [
+      176,
+      140,
+      200,
+      165
+     ]
+    }
+   ]
+  }
+ ]
+}

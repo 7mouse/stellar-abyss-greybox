@@ -1,0 +1,107 @@
+{
+ "cell": 16,
+ "count": 10,
+ "order": "index 0 = outline, last = highlight, middle dark->light",
+ "colors": [
+  {
+   "i": 0,
+   "hex": "#171A21",
+   "rgb": [
+    23,
+    26,
+    33
+   ],
+   "role": "outline"
+  },
+  {
+   "i": 1,
+   "hex": "#313341",
+   "rgb": [
+    49,
+    51,
+    65
+   ],
+   "role": "base"
+  },
+  {
+   "i": 2,
+   "hex": "#53476A",
+   "rgb": [
+    83,
+    71,
+    106
+   ],
+   "role": "base"
+  },
+  {
+   "i": 3,
+   "hex": "#806DA4",
+   "rgb": [
+    128,
+    109,
+    164
+   ],
+   "role": "base"
+  },
+  {
+   "i": 4,
+   "hex": "#857E94",
+   "rgb": [
+    133,
+    126,
+    148
+   ],
+   "role": "base"
+  },
+  {
+   "i": 5,
+   "hex": "#8D7AAD",
+   "rgb": [
+    141,
+    122,
+    173
+   ],
+   "role": "base"
+  },
+  {
+   "i": 6,
+   "hex": "#9D88B9",
+   "rgb": [
+    157,
+    136,
+    185
+   ],
+   "role": "base"
+  },
+  {
+   "i": 7,
+   "hex": "#B29CC8",
+   "rgb": [
+    178,
+    156,
+    200
+   ],
+   "role": "base"
+  },
+  {
+   "i": 8,
+   "hex": "#BFABD2",
+   "rgb": [
+    191,
+    171,
+    210
+   ],
+   "role": "base"
+  },
+  {
+   "i": 9,
+   "hex": "#FFFEFF",
+   "rgb": [
+    255,
+    254,
+    255
+   ],
+   "role": "highlight"
+  }
+ ]
+}

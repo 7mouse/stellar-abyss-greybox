@@ -1,0 +1,343 @@
+{
+ "canvas": [
+  256,
+  256
+ ],
+ "unit": "px@1:1",
+ "version": "hero_parts_s_v2_2",
+ "order": [
+  "arm_upper_l_s",
+  "forearm_l_s",
+  "thigh_l_s",
+  "shin_l_s",
+  "backpack_s",
+  "hair_back_s",
+  "scarf_s_mesh",
+  "torso_s_mesh",
+  "thigh_r_s",
+  "shin_r_s",
+  "head_s",
+  "eye_open_l_s",
+  "eye_closed_l_s",
+  "eye_open_r_s",
+  "eye_closed_r_s",
+  "sword_s",
+  "arm_upper_r_s",
+  "forearm_r_s"
+ ],
+ "swap": [
+  "eye_closed_l_s",
+  "eye_closed_r_s"
+ ],
+ "pivots": {
+  "neck": [
+   142.8,
+   104.7
+  ],
+  "shoulder_r": [
+   129.5,
+   115.0
+  ],
+  "elbow_r": [
+   129.5,
+   142.3
+  ],
+  "wrist_r": [
+   129.5,
+   171.9
+  ],
+  "shoulder_l": [
+   157.5,
+   115.0
+  ],
+  "elbow_l": [
+   159.0,
+   140.1
+  ],
+  "wrist_l": [
+   160.5,
+   169.6
+  ],
+  "hip_r": [
+   135.4,
+   171.9
+  ],
+  "knee_r": [
+   136.1,
+   199.2
+  ],
+  "ankle_r": [
+   136.9,
+   234.6
+  ],
+  "hip_l": [
+   155.3,
+   171.9
+  ],
+  "knee_l": [
+   156.1,
+   197.7
+  ],
+  "ankle_l": [
+   159.0,
+   233.1
+  ],
+  "scarf_root": [
+   140.6,
+   109.1
+  ],
+  "sword_grip": [
+   131.0,
+   174.1
+  ],
+  "backpack_anchor": [
+   120.6,
+   123.9
+  ],
+  "root": [
+   145.7,
+   247.9
+  ],
+  "eye_r": [
+   155.6,
+   82.0
+  ]
+ },
+ "line_rgb": [
+  40,
+  28,
+  21
+ ],
+ "from": "art_src/rigs/hero/hero_parts_s_v2_1_src2x.psd",
+ "log": {
+  "extras": [
+   {
+    "op": "blink",
+    "head": "head_s",
+    "suffix": "s",
+    "eyes": [
+     {
+      "side": "r",
+      "ellipse": [
+       155.6,
+       82,
+       6,
+       7.2
+      ]
+     }
+    ],
+    "eyes_fit": [
+     {
+      "side": "r",
+      "ellipse_1to1": [
+       155.6,
+       82.0,
+       6.0,
+       7.2
+      ],
+      "skin_rgb": [
+       244.0,
+       205.0,
+       173.0
+      ]
+     }
+    ]
+   },
+   {
+    "op": "empty",
+    "name": "eye_open_l_s",
+    "above": "head_s"
+   },
+   {
+    "op": "empty",
+    "name": "eye_closed_l_s",
+    "above": "eye_open_l_s",
+    "swap": true
+   }
+  ],
+  "previous": {
+   "ops": [],
+   "joints": {
+    "neck": {
+     "parent": {
+      "before": 5.9,
+      "half_width": 17.1,
+      "after": 22.5,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 22.5,
+      "cap_half_width": 15.0,
+      "added_px_1to1": 419,
+      "erased_cut_px_1to1": 78,
+      "part": "torso_s_mesh",
+      "cls": "big"
+     }
+    },
+    "shoulder_r": {
+     "child": {
+      "before": 11.2,
+      "half_width": 7.9,
+      "after": 11.2,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 11.2,
+      "cap_half_width": 8.3,
+      "added_px_1to1": 12,
+      "erased_cut_px_1to1": 0,
+      "part": "arm_upper_r_s",
+      "cls": "big"
+     }
+    },
+    "elbow_r": {
+     "child": {
+      "before": 3.6,
+      "half_width": 7.0,
+      "after": 4.6,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 5.0,
+      "cap_half_width": 7.2,
+      "added_px_1to1": 22,
+      "erased_cut_px_1to1": 0,
+      "part": "forearm_r_s",
+      "cls": "small"
+     },
+     "parent": {
+      "before": -2.1,
+      "half_width": 7.0,
+      "after": 7.4,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 7.5,
+      "cap_half_width": 7.3,
+      "added_px_1to1": 104,
+      "erased_cut_px_1to1": 26,
+      "part": "arm_upper_r_s",
+      "cls": "small"
+     }
+    },
+    "hip_r": {
+     "child": {
+      "before": -0.3,
+      "half_width": 8.8,
+      "after": 10.7,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 11.0,
+      "cap_half_width": 9.4,
+      "added_px_1to1": 209,
+      "erased_cut_px_1to1": 0,
+      "part": "thigh_r_s",
+      "cls": "big"
+     }
+    },
+    "knee_r": {
+     "child": {
+      "before": 6.0,
+      "half_width": 9.2,
+      "after": 6.0,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 6.0,
+      "cap_half_width": 9.2,
+      "added_px_1to1": 13,
+      "erased_cut_px_1to1": 0,
+      "part": "shin_r_s",
+      "cls": "small"
+     },
+     "parent": {
+      "before": -0.5,
+      "half_width": 9.3,
+      "after": 7.1,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 7.5,
+      "cap_half_width": 10.1,
+      "added_px_1to1": 135,
+      "erased_cut_px_1to1": 35,
+      "part": "thigh_r_s",
+      "cls": "small"
+     }
+    },
+    "shoulder_l": {
+     "child": {
+      "before": 13.3,
+      "half_width": 7.7,
+      "after": 19.4,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 19.5,
+      "cap_half_width": 8.8,
+      "added_px_1to1": 171,
+      "erased_cut_px_1to1": 21,
+      "part": "arm_upper_l_s",
+      "cls": "big"
+     }
+    },
+    "elbow_l": {
+     "child": {
+      "before": 2.1,
+      "half_width": 6.0,
+      "after": 4.7,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 5.0,
+      "cap_half_width": 5.8,
+      "added_px_1to1": 49,
+      "erased_cut_px_1to1": 0,
+      "part": "forearm_l_s",
+      "cls": "small"
+     },
+     "parent": {
+      "before": -2.2,
+      "half_width": 6.8,
+      "after": 7.4,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 7.5,
+      "cap_half_width": 7.4,
+      "added_px_1to1": 136,
+      "erased_cut_px_1to1": 25,
+      "part": "arm_upper_l_s",
+      "cls": "small"
+     }
+    },
+    "hip_l": {
+     "child": {
+      "before": 0.0,
+      "half_width": 9.4,
+      "after": 19.2,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 19.5,
+      "cap_half_width": 10.2,
+      "added_px_1to1": 345,
+      "erased_cut_px_1to1": 41,
+      "part": "thigh_l_s",
+      "cls": "big"
+     }
+    },
+    "knee_l": {
+     "child": {
+      "before": 4.1,
+      "half_width": 8.8,
+      "after": 5.0,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 5.0,
+      "cap_half_width": 8.7,
+      "added_px_1to1": 29,
+      "erased_cut_px_1to1": 0,
+      "part": "shin_l_s",
+      "cls": "small"
+     },
+     "parent": {
+      "before": 0.7,
+      "half_width": 9.3,
+      "after": 7.2,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 7.5,
+      "cap_half_width": 10.0,
+      "added_px_1to1": 127,
+      "erased_cut_px_1to1": 21,
+      "part": "thigh_l_s",
+      "cls": "small"
+     }
+    }
+   },
+   "cleanup": {
+    "head_s": "filled 109 px@1:1 hole",
+    "head_s solidify": "closed 26 px@1:1 half-transparent crack pixels"
+   },
+   "post_ops": []
+  }
+ }
+}

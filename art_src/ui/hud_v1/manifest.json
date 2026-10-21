@@ -1,0 +1,362 @@
+{
+ "source": "art_src/src/hud_set_gen1.jpg",
+ "items": {
+  "u01_portrait_frame": {
+   "rect_src": [
+    41,
+    19,
+    258,
+    239
+   ],
+   "size": [
+    217,
+    220
+   ],
+   "file": "frames/u01_portrait_frame.png",
+   "spec": "U01",
+   "recolor": "muted_frame"
+  },
+  "u04_minimap_ring": {
+   "rect_src": [
+    1002,
+    13,
+    1234,
+    250
+   ],
+   "size": [
+    232,
+    237
+   ],
+   "file": "frames/u04_minimap_ring.png",
+   "spec": "U04 (arrow baked in; programmer draws its own arrow)",
+   "recolor": "muted_frame"
+  },
+  "u02_bar": {
+   "rect_src": [
+    289,
+    43,
+    741,
+    97
+   ],
+   "draw_order": "u02_bar_frame (charcoal base) -> fill (scaled/clipped in x) -> u02_bar_overlay (rim + centre stud)",
+   "fills": {
+    "u02_fill_hp": "#964038",
+    "u02_fill_mp": "#4C6E86",
+    "u02_fill_sp": "#968454"
+   },
+   "fill_rect_in_frame": [
+    36,
+    11,
+    416,
+    42
+   ],
+   "nine": {
+    "left": 38,
+    "right": 38,
+    "top": 11,
+    "bottom": 12,
+    "note": "frame: stretch only the straight middle; the centre stud (diamond) must be a separate overlay or it stretches"
+   },
+   "size": [
+    452,
+    54
+   ],
+   "file": "bars/u02_bar.png",
+   "spec": "U02 frame + 3 fills",
+   "recolor": "muted_frame"
+  },
+  "u02_bar_src_mp": {
+   "rect_src": [
+    290,
+    108,
+    741,
+    162
+   ],
+   "size": [
+    451,
+    54
+   ],
+   "file": "bars/_src/u02_bar_src_mp.png",
+   "spec": "original blue bar, kept for reference",
+   "recolor": "muted_frame"
+  },
+  "u02_bar_src_sp": {
+   "rect_src": [
+    290,
+    174,
+    740,
+    227
+   ],
+   "size": [
+    450,
+    53
+   ],
+   "file": "bars/_src/u02_bar_src_sp.png",
+   "spec": "original yellow bar, kept for reference",
+   "recolor": "muted_frame"
+  },
+  "u05_attack_button": {
+   "rect_src": [
+    47,
+    250,
+    252,
+    458
+   ],
+   "size": [
+    205,
+    208
+   ],
+   "file": "buttons/u05_attack_button.png",
+   "spec": "U05 (sword)",
+   "recolor": "muted_icon"
+  },
+  "u06_heavy_attack": {
+   "rect_src": [
+    323,
+    266,
+    494,
+    441
+   ],
+   "size": [
+    171,
+    175
+   ],
+   "file": "buttons/u06_heavy_attack.png",
+   "spec": "U06",
+   "recolor": "muted_icon"
+  },
+  "u06_dash": {
+   "rect_src": [
+    538,
+    267,
+    706,
+    441
+   ],
+   "size": [
+    168,
+    174
+   ],
+   "file": "buttons/u06_dash.png",
+   "spec": "U06",
+   "recolor": "muted_icon"
+  },
+  "u06_skill1": {
+   "rect_src": [
+    750,
+    268,
+    917,
+    440
+   ],
+   "size": [
+    167,
+    172
+   ],
+   "file": "buttons/u06_skill1.png",
+   "spec": "U06",
+   "recolor": "muted_icon"
+  },
+  "u06_skill2": {
+   "rect_src": [
+    961,
+    267,
+    1128,
+    440
+   ],
+   "size": [
+    167,
+    173
+   ],
+   "file": "buttons/u06_skill2.png",
+   "spec": "U06",
+   "recolor": "muted_icon"
+  },
+  "u07_consumable_slot": {
+   "rect_src": [
+    778,
+    35,
+    958,
+    224
+   ],
+   "size": [
+    180,
+    189
+   ],
+   "file": "buttons/u07_consumable_slot.png",
+   "spec": "U07",
+   "recolor": "muted_frame"
+  },
+  "u07_slot_square": {
+   "rect_src": [
+    35,
+    492,
+    175,
+    646
+   ],
+   "nine": {
+    "left": 22,
+    "right": 22,
+    "top": 26,
+    "bottom": 23,
+    "note": "straight-border thickness (+2px) on the 1/3 & 2/3 lines; the stud at each edge midpoint will stretch unless split off"
+   },
+   "size": [
+    140,
+    154
+   ],
+   "file": "frames/u07_slot_square.png",
+   "spec": "U07 alt / inventory slot",
+   "recolor": "muted_frame"
+  },
+  "u08_backpack": {
+   "rect_src": [
+    194,
+    492,
+    337,
+    646
+   ],
+   "size": [
+    143,
+    154
+   ],
+   "file": "icons/u08_backpack.png",
+   "spec": "U08",
+   "recolor": "muted_icon"
+  },
+  "u08_shard": {
+   "rect_src": [
+    358,
+    498,
+    477,
+    640
+   ],
+   "size": [
+    119,
+    142
+   ],
+   "file": "icons/u08_shard.png",
+   "spec": "U08 (also usable as U16 碎片)",
+   "recolor": "muted_icon"
+  },
+  "u08_pause": {
+   "rect_src": [
+    499,
+    498,
+    616,
+    635
+   ],
+   "size": [
+    117,
+    137
+   ],
+   "file": "icons/u08_pause.png",
+   "spec": "U08",
+   "recolor": "muted_frame"
+  },
+  "u15_quality_frame_grey": {
+   "rect_src": [
+    634,
+    486,
+    748,
+    647
+   ],
+   "nine": {
+    "left": 23,
+    "right": 25,
+    "top": 35,
+    "bottom": 31,
+    "note": "straight-border thickness (+2px) on the 1/3 & 2/3 lines; the stud at each edge midpoint will stretch unless split off"
+   },
+   "size": [
+    114,
+    161
+   ],
+   "file": "quality/u15_quality_frame_grey.png",
+   "spec": "U15 (1 needed; shader tints)",
+   "recolor": "muted_quality"
+  },
+  "u15_quality_frame_moss": {
+   "rect_src": [
+    760,
+    485,
+    875,
+    648
+   ],
+   "nine": {
+    "left": 25,
+    "right": 27,
+    "top": 34,
+    "bottom": 33,
+    "note": "straight-border thickness (+2px) on the 1/3 & 2/3 lines; the stud at each edge midpoint will stretch unless split off"
+   },
+   "size": [
+    115,
+    163
+   ],
+   "file": "quality/u15_quality_frame_moss.png",
+   "recolor": "muted_quality"
+  },
+  "u15_quality_frame_teal": {
+   "rect_src": [
+    886,
+    486,
+    1000,
+    648
+   ],
+   "nine": {
+    "left": 24,
+    "right": 26,
+    "top": 36,
+    "bottom": 35,
+    "note": "straight-border thickness (+2px) on the 1/3 & 2/3 lines; the stud at each edge midpoint will stretch unless split off"
+   },
+   "size": [
+    114,
+    162
+   ],
+   "file": "quality/u15_quality_frame_teal.png",
+   "recolor": "muted_quality"
+  },
+  "u15_quality_frame_purple": {
+   "rect_src": [
+    1010,
+    486,
+    1123,
+    648
+   ],
+   "nine": {
+    "left": 23,
+    "right": 26,
+    "top": 36,
+    "bottom": 33,
+    "note": "straight-border thickness (+2px) on the 1/3 & 2/3 lines; the stud at each edge midpoint will stretch unless split off"
+   },
+   "size": [
+    113,
+    162
+   ],
+   "file": "quality/u15_quality_frame_purple.png",
+   "recolor": "muted_quality"
+  },
+  "u15_quality_frame_gold": {
+   "rect_src": [
+    1135,
+    485,
+    1251,
+    648
+   ],
+   "nine": {
+    "left": 26,
+    "right": 27,
+    "top": 39,
+    "bottom": 30,
+    "note": "straight-border thickness (+2px) on the 1/3 & 2/3 lines; the stud at each edge midpoint will stretch unless split off"
+   },
+   "size": [
+    116,
+    163
+   ],
+   "file": "quality/u15_quality_frame_gold.png",
+   "recolor": "muted_quality"
+  }
+ }
+}

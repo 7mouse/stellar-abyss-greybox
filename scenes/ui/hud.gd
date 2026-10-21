@@ -4,6 +4,10 @@ extends CanvasLayer
 ## 右下是攻击键和围着它的一圈按钮，左下一格消耗品。MP、SP、重攻击、第二技能、消耗品还没有对应系统，显示占位。
 
 const BAG_SLOTS := 12 ## 画面上的容量。灰盒背包还没有这个上限
+static var allow_nine := true
+const BAR_FRAME := preload("res://assets/hud/frames/u02_bar_frame.png")
+const SLOT_FRAME := preload("res://assets/hud/frames/u07_slot_square.png")
+const PORTRAIT_FRAME := preload("res://assets/hud/frames/u01_portrait_frame.png")
 const CREAM := Color(0.9, 0.86, 0.76)
 const INK := Color(0.08, 0.07, 0.06, 0.82)
 const HP_COLOR := Color(0.78, 0.16, 0.18)
@@ -69,6 +73,16 @@ func _ready() -> void:
 	show_boss(null)
 
 func _build_status() -> void:
+	var ring := TextureRect.new()
+	ring.name = "portrait_frame"
+	ring.texture = PORTRAIT_FRAME
+	ring.position = Vector2(12, 6)
+	ring.size = Vector2(120, 120)
+	ring.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ring.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ring.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(ring)
 	var portrait := TextureRect.new()
 	portrait.texture = Art.portrait()
 	portrait.position = Vector2(24, 18)
@@ -87,15 +101,19 @@ func _build_status() -> void:
 	level_label.size = badge.size
 	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hp_back = UI.rect(self, Vector2(136, 22), Vector2(280, 24), Color(0.18, 0.08, 0.08, 0.9))
-	hp_bar = UI.rect(self, Vector2(136, 22), Vector2(280, 24), HP_COLOR)
-	hp_text = UI.label(self, "HP", Vector2(144, 22), 18, CREAM)
-	UI.rect(self, Vector2(136, 52), Vector2(280, 18), Color(0.08, 0.1, 0.16, 0.9))
-	mp_bar = UI.rect(self, Vector2(136, 52), Vector2(280, 18), MP_COLOR)
-	UI.label(self, "MP  100 / 100", Vector2(144, 50), 14, CREAM)
-	UI.rect(self, Vector2(136, 76), Vector2(280, 18), Color(0.16, 0.12, 0.06, 0.9))
-	sp_bar = UI.rect(self, Vector2(136, 76), Vector2(224, 18), SP_COLOR)
-	UI.label(self, "SP  80 / 100", Vector2(144, 74), 14, CREAM)
+	# Frame hole matches the fill. Caps are 38/11/38/12, so the bars step down to keep frames from covering each other.
+	_nine(BAR_FRAME, Vector2(136, 8), Vector2(356, 47), 38, 11, 38, 12, "hp_frame")
+	_nine(BAR_FRAME, Vector2(136, 55), Vector2(356, 41), 38, 11, 38, 12, "mp_frame")
+	_nine(BAR_FRAME, Vector2(136, 96), Vector2(356, 41), 38, 11, 38, 12, "sp_frame")
+	hp_back = UI.rect(self, Vector2(174, 19), Vector2(280, 24), Color(0.18, 0.08, 0.08, 0.9))
+	hp_bar = UI.rect(self, Vector2(174, 19), Vector2(280, 24), HP_COLOR)
+	hp_text = UI.label(self, "HP", Vector2(182, 19), 18, CREAM)
+	UI.rect(self, Vector2(174, 66), Vector2(280, 18), Color(0.08, 0.1, 0.16, 0.9))
+	mp_bar = UI.rect(self, Vector2(174, 66), Vector2(280, 18), MP_COLOR)
+	UI.label(self, "MP  100 / 100", Vector2(182, 64), 14, CREAM)
+	UI.rect(self, Vector2(174, 107), Vector2(280, 18), Color(0.16, 0.12, 0.06, 0.9))
+	sp_bar = UI.rect(self, Vector2(174, 107), Vector2(224, 18), SP_COLOR)
+	UI.label(self, "SP  80 / 100", Vector2(182, 105), 14, CREAM)
 	floor_label = UI.label(self, "", Vector2(1360, 24), 28, CREAM)
 	_icon(self, "bag", Vector2(1508, 22), 36)
 	bag_label = UI.label(self, "0/12", Vector2(1548, 26), 24, CREAM)
@@ -119,7 +137,23 @@ func _build_status() -> void:
 	pause_b.z_index = 2
 	pause_label.z_index = 2
 
+func _nine(tex: Texture2D, pos: Vector2, sz: Vector2, left: int, top: int, right: int, bottom: int, node_name: String) -> NinePatchRect:
+	var n := NinePatchRect.new()
+	n.name = node_name
+	n.texture = tex
+	n.position = pos
+	n.size = sz
+	n.patch_margin_left = left
+	n.patch_margin_top = top
+	n.patch_margin_right = right
+	n.patch_margin_bottom = bottom
+	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	n.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	add_child(n)
+	return n
+
 func _build_actions() -> void:
+	_nine(SLOT_FRAME, Vector2(6, 922), Vector2(148, 153), 22, 26, 22, 23, "slot_frame")
 	potion_btn = _btn(Vector2(28, 948), Vector2(104, 104), "potion", _press_potion)
 	potion_btn.name = "potion"
 	potion_btn.text = ""
@@ -239,8 +273,16 @@ func show_toast(t: String) -> void:
 	toast.text = t
 	_toast_t = 2.5
 
+var _nine_on := true
+
 func _process(delta: float) -> void:
 	var _p := Prof.t0()
+	if allow_nine != _nine_on:
+		_nine_on = allow_nine
+		for node_name in ["hp_frame", "mp_frame", "sp_frame", "slot_frame"]:
+			var n := get_node_or_null(node_name)
+			if n:
+				n.visible = allow_nine
 	_prof_process(delta)
 	Prof.add("hud", _p)
 

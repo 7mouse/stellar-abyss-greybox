@@ -1,0 +1,231 @@
+{
+ "canvas": [
+  320,
+  320
+ ],
+ "unit": "px@1:1",
+ "version": "mosscrown_king_boar_parts_s_v2_1",
+ "order": [
+  "leg_hind_l_s",
+  "leg_front_l_s",
+  "tail_s",
+  "body_s_mesh",
+  "leg_hind_r_s",
+  "leg_front_r_s",
+  "head_s",
+  "eye_open_r_s",
+  "eye_closed_r_s",
+  "eye_open_l_s",
+  "eye_closed_l_s"
+ ],
+ "swap": [
+  "eye_closed_l_s",
+  "eye_closed_r_s"
+ ],
+ "pivots": {
+  "neck": [
+   172.9,
+   196.5
+  ],
+  "head_tip": [
+   285.8,
+   185.8
+  ],
+  "tail_root": [
+   22.4,
+   158.9
+  ],
+  "tail_tip": [
+   -2.3,
+   185.8
+  ],
+  "hip_r": [
+   28.8,
+   266.4
+  ],
+  "hoof_r_hind": [
+   28.8,
+   310.5
+  ],
+  "hip_l": [
+   68.6,
+   264.3
+  ],
+  "hoof_l_hind": [
+   68.6,
+   304.0
+  ],
+  "shoulder_r": [
+   155.7,
+   266.4
+  ],
+  "hoof_r_front": [
+   155.7,
+   310.5
+  ],
+  "shoulder_l": [
+   197.6,
+   264.3
+  ],
+  "hoof_l_front": [
+   197.6,
+   304.0
+  ],
+  "root": [
+   124.5,
+   311.6
+  ],
+  "eye_r": [
+   248.8,
+   167.2
+  ]
+ },
+ "line_rgb": [
+  70,
+  68,
+  48
+ ],
+ "from": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_s_v2_src2x.psd",
+ "log": {
+  "extras": [
+   {
+    "op": "blink",
+    "head": "head_s",
+    "suffix": "s",
+    "eyes": [
+     {
+      "side": "r",
+      "auto": [
+       235,
+       150,
+       264,
+       183
+      ]
+     }
+    ],
+    "eyes_fit": [
+     {
+      "side": "r",
+      "ellipse_1to1": [
+       248.8,
+       167.2,
+       10.4,
+       11.0
+      ],
+      "skin_rgb": [
+       183.0,
+       170.0,
+       122.0
+      ]
+     }
+    ]
+   },
+   {
+    "op": "empty",
+    "name": "eye_open_l_s",
+    "above": "eye_closed_r_s"
+   },
+   {
+    "op": "empty",
+    "name": "eye_closed_l_s",
+    "above": "eye_open_l_s",
+    "swap": true
+   }
+  ],
+  "previous": {
+   "ops": [],
+   "joints": {
+    "neck": {
+     "child": {
+      "before": 36.1,
+      "half_width": 68.4,
+      "after": 36.1,
+      "action": "kept (already deeper than range)",
+      "part": "head_s",
+      "cls": "big"
+     }
+    },
+    "tail_root": {
+     "child": {
+      "before": 16.4,
+      "half_width": 12.2,
+      "after": 16.4,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 8.0,
+      "cap_half_width": 14.0,
+      "added_px_1to1": 156,
+      "erased_cut_px_1to1": 35,
+      "part": "tail_s",
+      "cls": "small"
+     },
+     "parent": {
+      "before": 13.8,
+      "half_width": 57.3,
+      "after": 13.8,
+      "action": "kept (already deeper than range)",
+      "part": "body_s_mesh",
+      "cls": "small"
+     }
+    },
+    "hip_r": {
+     "child": {
+      "before": 18.1,
+      "half_width": 17.8,
+      "after": 18.1,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 18.1,
+      "cap_half_width": 13.5,
+      "added_px_1to1": 24,
+      "erased_cut_px_1to1": 0,
+      "part": "leg_hind_r_s",
+      "cls": "big"
+     }
+    },
+    "hip_l": {
+     "child": {
+      "before": 14.6,
+      "half_width": 14.8,
+      "after": 19.1,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 19.5,
+      "cap_half_width": 9.5,
+      "added_px_1to1": 106,
+      "erased_cut_px_1to1": 18,
+      "part": "leg_hind_l_s",
+      "cls": "big"
+     }
+    },
+    "shoulder_r": {
+     "child": {
+      "before": 18.1,
+      "half_width": 17.8,
+      "after": 18.1,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 18.1,
+      "cap_half_width": 13.0,
+      "added_px_1to1": 45,
+      "erased_cut_px_1to1": 0,
+      "part": "leg_front_r_s",
+      "cls": "big"
+     }
+    },
+    "shoulder_l": {
+     "child": {
+      "before": 16.1,
+      "half_width": 15.1,
+      "after": 19.1,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 19.5,
+      "cap_half_width": 8.4,
+      "added_px_1to1": 69,
+      "erased_cut_px_1to1": 18,
+      "part": "leg_front_l_s",
+      "cls": "big"
+     }
+    }
+   },
+   "cleanup": {},
+   "post_ops": []
+  }
+ }
+}

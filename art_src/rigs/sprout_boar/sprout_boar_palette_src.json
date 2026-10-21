@@ -1,0 +1,117 @@
+{
+ "cell": 16,
+ "count": 11,
+ "order": "index 0 = outline, last = highlight, middle dark->light",
+ "colors": [
+  {
+   "i": 0,
+   "hex": "#211706",
+   "rgb": [
+    33,
+    23,
+    6
+   ],
+   "role": "outline"
+  },
+  {
+   "i": 1,
+   "hex": "#454820",
+   "rgb": [
+    69,
+    72,
+    32
+   ],
+   "role": "base"
+  },
+  {
+   "i": 2,
+   "hex": "#5F4D37",
+   "rgb": [
+    95,
+    77,
+    55
+   ],
+   "role": "base"
+  },
+  {
+   "i": 3,
+   "hex": "#747738",
+   "rgb": [
+    116,
+    119,
+    56
+   ],
+   "role": "base"
+  },
+  {
+   "i": 4,
+   "hex": "#947C5E",
+   "rgb": [
+    148,
+    124,
+    94
+   ],
+   "role": "base"
+  },
+  {
+   "i": 5,
+   "hex": "#9B9A4D",
+   "rgb": [
+    155,
+    154,
+    77
+   ],
+   "role": "base"
+  },
+  {
+   "i": 6,
+   "hex": "#C3A378",
+   "rgb": [
+    195,
+    163,
+    120
+   ],
+   "role": "base"
+  },
+  {
+   "i": 7,
+   "hex": "#CDB28D",
+   "rgb": [
+    205,
+    178,
+    141
+   ],
+   "role": "base"
+  },
+  {
+   "i": 8,
+   "hex": "#E7CEA9",
+   "rgb": [
+    231,
+    206,
+    169
+   ],
+   "role": "base"
+  },
+  {
+   "i": 9,
+   "hex": "#F2DBB8",
+   "rgb": [
+    242,
+    219,
+    184
+   ],
+   "role": "base"
+  },
+  {
+   "i": 10,
+   "hex": "#FBEED6",
+   "rgb": [
+    251,
+    238,
+    214
+   ],
+   "role": "highlight"
+  }
+ ]
+}

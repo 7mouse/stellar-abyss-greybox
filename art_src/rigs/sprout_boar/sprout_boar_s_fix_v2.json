@@ -1,0 +1,88 @@
+{
+ "src_psd2x": "art_src/rigs/sprout_boar/sprout_boar_parts_s_v1_src2x.psd",
+ "src_pivots": "art_src/rigs/sprout_boar/sprout_boar_parts_s_v1_pivots.json",
+ "out_dir": "art_src/rigs/sprout_boar",
+ "base": "sprout_boar_parts_s_v2",
+ "scale": 2,
+ "line_rgb": [
+  33,
+  24,
+  8
+ ],
+ "ops": [
+  {
+   "op": "pivot_to_edge",
+   "pivot": "shoulder_l",
+   "parents": [
+    "body_s_mesh",
+    "head_s"
+   ],
+   "dir": [
+    0,
+    -1
+   ],
+   "inset": 2,
+   "x_from_part": "leg_front_l_s",
+   "why": "far front leg had ~8px gap to the body"
+  }
+ ],
+ "joints": [
+  {
+   "pivot": "neck",
+   "parent": "body_s_mesh",
+   "child": "head_s",
+   "child_cls": "big"
+  },
+  {
+   "pivot": "ear_root",
+   "parent": "head_s",
+   "child": "ear_s",
+   "child_cls": "small"
+  },
+  {
+   "pivot": "sprout_root",
+   "parent": "body_s_mesh",
+   "child": "sprout_s",
+   "child_cls": "small"
+  },
+  {
+   "pivot": "tail_root",
+   "parent": "body_s_mesh",
+   "child": "tail_s",
+   "child_cls": "small"
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "body_s_mesh",
+   "child": "leg_hind_r_s",
+   "child_cls": "small",
+   "child_from": "hoof_r_hind"
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "body_s_mesh",
+   "child": "leg_hind_l_s",
+   "child_cls": "small",
+   "child_from": "hoof_l_hind"
+  },
+  {
+   "pivot": "shoulder_r",
+   "parent": "body_s_mesh",
+   "child": "leg_front_r_s",
+   "child_cls": "small",
+   "child_from": "hoof_r_front"
+  },
+  {
+   "pivot": "shoulder_l",
+   "parent": "body_s_mesh",
+   "child": "leg_front_l_s",
+   "child_cls": "small",
+   "child_from": "hoof_l_front",
+   "child_target": 10,
+   "test_parents": [
+    "body_s_mesh",
+    "head_s"
+   ]
+  }
+ ]
+}

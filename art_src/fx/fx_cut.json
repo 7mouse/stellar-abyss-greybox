@@ -1,0 +1,476 @@
+{
+ "source": "art_src/src/fx_set_gen1.jpg",
+ "out_dir": "art_src/fx/fx_v1",
+ "disp_scale": 1.25,
+ "why": "frames cut on the sheet's 4-column grid; alpha = distance to the white paper (soft, keeps watercolour edges); no recolour (already muted)",
+ "items": [
+  {
+   "name": "f01_slash_1",
+   "group": "f01_slash",
+   "rect": [
+    87,
+    3,
+    173,
+    72
+   ],
+   "soft": true,
+   "frame": 1,
+   "spec": "F01 light slash (4 frames; spec 3 segments x2 = 6)"
+  },
+  {
+   "name": "f01_slash_2",
+   "group": "f01_slash",
+   "rect": [
+    289,
+    3,
+    402,
+    72
+   ],
+   "soft": true,
+   "frame": 2,
+   "spec": "F01 light slash (4 frames; spec 3 segments x2 = 6)"
+  },
+  {
+   "name": "f01_slash_3",
+   "group": "f01_slash",
+   "rect": [
+    519,
+    3,
+    660,
+    72
+   ],
+   "soft": true,
+   "frame": 3,
+   "spec": "F01 light slash (4 frames; spec 3 segments x2 = 6)"
+  },
+  {
+   "name": "f01_slash_4",
+   "group": "f01_slash",
+   "rect": [
+    778,
+    3,
+    907,
+    72
+   ],
+   "soft": true,
+   "frame": 4,
+   "spec": "F01 light slash (4 frames; spec 3 segments x2 = 6)"
+  },
+  {
+   "name": "f15_ring_1",
+   "group": "f15_ring",
+   "rect": [
+    63,
+    78,
+    190,
+    150
+   ],
+   "soft": true,
+   "frame": 1,
+   "spec": "F15 roar ring (1 needed) / F13 shockwave frames"
+  },
+  {
+   "name": "f15_ring_2",
+   "group": "f15_ring",
+   "rect": [
+    271,
+    78,
+    421,
+    150
+   ],
+   "soft": true,
+   "frame": 2,
+   "spec": "F15 roar ring (1 needed) / F13 shockwave frames"
+  },
+  {
+   "name": "f15_ring_3",
+   "group": "f15_ring",
+   "rect": [
+    511,
+    78,
+    674,
+    150
+   ],
+   "soft": true,
+   "frame": 3,
+   "spec": "F15 roar ring (1 needed) / F13 shockwave frames"
+  },
+  {
+   "name": "f15_ring_4",
+   "group": "f15_ring",
+   "rect": [
+    773,
+    78,
+    926,
+    150
+   ],
+   "soft": true,
+   "frame": 4,
+   "spec": "F15 roar ring (1 needed) / F13 shockwave frames"
+  },
+  {
+   "name": "f03_thrust_1",
+   "group": "f03_thrust",
+   "rect": [
+    61,
+    155,
+    173,
+    203
+   ],
+   "soft": true,
+   "frame": 1,
+   "spec": "F03 skill-2 thrust (4)"
+  },
+  {
+   "name": "f03_thrust_2",
+   "group": "f03_thrust",
+   "rect": [
+    262,
+    155,
+    418,
+    203
+   ],
+   "soft": true,
+   "frame": 2,
+   "spec": "F03 skill-2 thrust (4)"
+  },
+  {
+   "name": "f03_thrust_3",
+   "group": "f03_thrust",
+   "rect": [
+    490,
+    155,
+    686,
+    203
+   ],
+   "soft": true,
+   "frame": 3,
+   "spec": "F03 skill-2 thrust (4)"
+  },
+  {
+   "name": "f03_thrust_4",
+   "group": "f03_thrust",
+   "rect": [
+    740,
+    155,
+    966,
+    203
+   ],
+   "soft": true,
+   "frame": 4,
+   "spec": "F03 skill-2 thrust (4)"
+  },
+  {
+   "name": "f04_hit_spark_1",
+   "group": "f04_hit_spark",
+   "rect": [
+    56,
+    201,
+    188,
+    266
+   ],
+   "soft": true,
+   "frame": 1,
+   "spec": "F04 hit spark (4)"
+  },
+  {
+   "name": "f04_hit_spark_2",
+   "group": "f04_hit_spark",
+   "rect": [
+    264,
+    201,
+    416,
+    266
+   ],
+   "soft": true,
+   "frame": 2,
+   "spec": "F04 hit spark (4)"
+  },
+  {
+   "name": "f04_hit_spark_3",
+   "group": "f04_hit_spark",
+   "rect": [
+    493,
+    201,
+    685,
+    266
+   ],
+   "soft": true,
+   "frame": 3,
+   "spec": "F04 hit spark (4)"
+  },
+  {
+   "name": "f04_hit_spark_4",
+   "group": "f04_hit_spark",
+   "rect": [
+    760,
+    201,
+    932,
+    266
+   ],
+   "soft": true,
+   "frame": 4,
+   "spec": "F04 hit spark (4)"
+  },
+  {
+   "name": "f05_dust_1",
+   "group": "f05_dust",
+   "rect": [
+    56,
+    262,
+    188,
+    328
+   ],
+   "soft": true,
+   "frame": 1,
+   "spec": "F05 dash dust (4); reusable for F14 charge dust"
+  },
+  {
+   "name": "f05_dust_2",
+   "group": "f05_dust",
+   "rect": [
+    264,
+    262,
+    416,
+    328
+   ],
+   "soft": true,
+   "frame": 2,
+   "spec": "F05 dash dust (4); reusable for F14 charge dust"
+  },
+  {
+   "name": "f05_dust_3",
+   "group": "f05_dust",
+   "rect": [
+    493,
+    262,
+    685,
+    328
+   ],
+   "soft": true,
+   "frame": 3,
+   "spec": "F05 dash dust (4); reusable for F14 charge dust"
+  },
+  {
+   "name": "f05_dust_4",
+   "group": "f05_dust",
+   "rect": [
+    760,
+    262,
+    932,
+    328
+   ],
+   "soft": true,
+   "frame": 4,
+   "spec": "F05 dash dust (4); reusable for F14 charge dust"
+  },
+  {
+   "name": "f09_moss_debris_1",
+   "group": "f09_moss_debris",
+   "rect": [
+    61,
+    330,
+    188,
+    390
+   ],
+   "soft": true,
+   "frame": 1,
+   "spec": "F09 death moss debris (4)"
+  },
+  {
+   "name": "f09_moss_debris_2",
+   "group": "f09_moss_debris",
+   "rect": [
+    267,
+    330,
+    421,
+    390
+   ],
+   "soft": true,
+   "frame": 2,
+   "spec": "F09 death moss debris (4)"
+  },
+  {
+   "name": "f09_moss_debris_3",
+   "group": "f09_moss_debris",
+   "rect": [
+    508,
+    330,
+    671,
+    390
+   ],
+   "soft": true,
+   "frame": 3,
+   "spec": "F09 death moss debris (4)"
+  },
+  {
+   "name": "f09_moss_debris_4",
+   "group": "f09_moss_debris",
+   "rect": [
+    773,
+    330,
+    923,
+    390
+   ],
+   "soft": true,
+   "frame": 4,
+   "spec": "F09 death moss debris (4)"
+  },
+  {
+   "name": "fx_leaf_scatter_1",
+   "group": "fx_leaf_scatter",
+   "rect": [
+    54,
+    392,
+    183,
+    438
+   ],
+   "soft": true,
+   "frame": 1,
+   "spec": "C08 shell-break leaf debris (extra)"
+  },
+  {
+   "name": "fx_leaf_scatter_2",
+   "group": "fx_leaf_scatter",
+   "rect": [
+    261,
+    392,
+    432,
+    438
+   ],
+   "soft": true,
+   "frame": 2,
+   "spec": "C08 shell-break leaf debris (extra)"
+  },
+  {
+   "name": "fx_leaf_scatter_3",
+   "group": "fx_leaf_scatter",
+   "rect": [
+    490,
+    392,
+    687,
+    438
+   ],
+   "soft": true,
+   "frame": 3,
+   "spec": "C08 shell-break leaf debris (extra)"
+  },
+  {
+   "name": "fx_leaf_scatter_4",
+   "group": "fx_leaf_scatter",
+   "rect": [
+    742,
+    392,
+    965,
+    438
+   ],
+   "soft": true,
+   "frame": 4,
+   "spec": "C08 shell-break leaf debris (extra)"
+  },
+  {
+   "name": "f11_portal_splash_1",
+   "group": "f11_portal_splash",
+   "rect": [
+    54,
+    436,
+    183,
+    503
+   ],
+   "soft": true,
+   "frame": 1,
+   "spec": "F11 portal (4 of 10)"
+  },
+  {
+   "name": "f11_portal_splash_2",
+   "group": "f11_portal_splash",
+   "rect": [
+    261,
+    436,
+    432,
+    503
+   ],
+   "soft": true,
+   "frame": 2,
+   "spec": "F11 portal (4 of 10)"
+  },
+  {
+   "name": "f11_portal_splash_3",
+   "group": "f11_portal_splash",
+   "rect": [
+    490,
+    436,
+    687,
+    503
+   ],
+   "soft": true,
+   "frame": 3,
+   "spec": "F11 portal (4 of 10)"
+  },
+  {
+   "name": "f11_portal_splash_4",
+   "group": "f11_portal_splash",
+   "rect": [
+    742,
+    436,
+    965,
+    503
+   ],
+   "soft": true,
+   "frame": 4,
+   "spec": "F11 portal (4 of 10)"
+  },
+  {
+   "name": "f07_spore_cloud_1",
+   "group": "f07_spore_cloud",
+   "rect": [
+    54,
+    500,
+    183,
+    572
+   ],
+   "soft": true,
+   "frame": 1,
+   "spec": "F07 spore cloud (4 of 6; sac 2 missing)"
+  },
+  {
+   "name": "f07_spore_cloud_2",
+   "group": "f07_spore_cloud",
+   "rect": [
+    261,
+    500,
+    432,
+    572
+   ],
+   "soft": true,
+   "frame": 2,
+   "spec": "F07 spore cloud (4 of 6; sac 2 missing)"
+  },
+  {
+   "name": "f07_spore_cloud_3",
+   "group": "f07_spore_cloud",
+   "rect": [
+    490,
+    500,
+    687,
+    572
+   ],
+   "soft": true,
+   "frame": 3,
+   "spec": "F07 spore cloud (4 of 6; sac 2 missing)"
+  },
+  {
+   "name": "f07_spore_cloud_4",
+   "group": "f07_spore_cloud",
+   "rect": [
+    742,
+    500,
+    965,
+    572
+   ],
+   "soft": true,
+   "frame": 4,
+   "spec": "F07 spore cloud (4 of 6; sac 2 missing)"
+  }
+ ]
+}

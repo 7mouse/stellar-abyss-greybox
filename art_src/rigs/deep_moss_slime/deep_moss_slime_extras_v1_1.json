@@ -1,0 +1,37 @@
+{
+ "src_psd2x": "art_src/rigs/deep_moss_slime/deep_moss_slime_parts_v1_src2x.psd",
+ "src_pivots": "art_src/rigs/deep_moss_slime/deep_moss_slime_parts_v1_pivots.json",
+ "out_dir": "art_src/rigs/deep_moss_slime/",
+ "base": "deep_moss_slime_parts_v1_1",
+ "parts_dir": "parts_v1_1",
+ "ops": [
+  {
+   "op": "blink",
+   "head": "body_mesh",
+   "suffix": "s",
+   "closed_only": true,
+   "eyes": [
+    {
+     "side": "r",
+     "open_layer": "eye_r",
+     "ellipse": [
+      94.5,
+      143.5,
+      10.5,
+      11.5
+     ]
+    },
+    {
+     "side": "l",
+     "open_layer": "eye_l",
+     "ellipse": [
+      138.5,
+      143.5,
+      10.5,
+      11.5
+     ]
+    }
+   ]
+  }
+ ]
+}

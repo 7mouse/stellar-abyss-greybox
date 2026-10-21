@@ -1,0 +1,192 @@
+{
+ "rig": "art_src/rigs/hero/hero_parts_s_v2_2.psd",
+ "pivots": "art_src/rigs/hero/hero_parts_s_v2_2_pivots.json",
+ "fix": "art_src/rigs/hero/hero_s_fix_v2_1.json",
+ "attach": {
+  "hair_back_s": "head_s",
+  "eye_open_l_s": "head_s",
+  "eye_closed_l_s": "head_s",
+  "eye_open_r_s": "head_s",
+  "eye_closed_r_s": "head_s",
+  "scarf_s_mesh": "torso_s_mesh",
+  "backpack_s": "torso_s_mesh",
+  "sword_s": "forearm_r_s"
+ },
+ "out": "art_src/rigs/hero/ref/hero_ref_poses_v1.png",
+ "scale": 2,
+ "anims": [
+  {
+   "name": "idle",
+   "fps": 8,
+   "timing": "2 keys, 0.5 s each; blink every 2-4 s (eye_closed 2 frames)",
+   "keys": [
+    {
+     "label": "1 rest"
+    },
+    {
+     "label": "2 breathe",
+     "root_d": [
+      0,
+      1
+     ],
+     "rot": {
+      "neck": 3,
+      "shoulder_r": -4,
+      "shoulder_l": -4
+     }
+    },
+    {
+     "label": "blink",
+     "show": [
+      "eye_closed_r_s"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "move",
+   "fps": 12,
+   "timing": "4 keys loop 0.5 s; body bobs 3 px on passing",
+   "keys": [
+    {
+     "label": "contact A",
+     "rot": {
+      "hip_r": -28,
+      "knee_r": 6,
+      "hip_l": 24,
+      "knee_l": 22,
+      "shoulder_r": 22,
+      "shoulder_l": -20
+     }
+    },
+    {
+     "label": "pass A",
+     "root_d": [
+      0,
+      -3
+     ],
+     "rot": {
+      "hip_r": -5,
+      "knee_r": 10,
+      "hip_l": 5,
+      "knee_l": 35,
+      "shoulder_r": 5,
+      "shoulder_l": -5
+     }
+    },
+    {
+     "label": "contact B",
+     "rot": {
+      "hip_r": 24,
+      "knee_r": 22,
+      "hip_l": -28,
+      "knee_l": 6,
+      "shoulder_r": -20,
+      "shoulder_l": 22
+     }
+    },
+    {
+     "label": "pass B",
+     "root_d": [
+      0,
+      -3
+     ],
+     "rot": {
+      "hip_r": 5,
+      "knee_r": 35,
+      "hip_l": -5,
+      "knee_l": 10,
+      "shoulder_r": -5,
+      "shoulder_l": 5
+     }
+    }
+   ]
+  },
+  {
+   "name": "attack (light 1)",
+   "fps": 12,
+   "timing": "windup 0.15 s; strike 0.08 s (2 frames); recover 0.2 s",
+   "keys": [
+    {
+     "label": "windup",
+     "root_rot": -3,
+     "rot": {
+      "shoulder_r": 150,
+      "elbow_r": -35,
+      "neck": -4,
+      "hip_r": 10,
+      "hip_l": -8
+     }
+    },
+    {
+     "label": "strike",
+     "root_d": [
+      5,
+      0
+     ],
+     "root_rot": 4,
+     "rot": {
+      "shoulder_r": -85,
+      "elbow_r": -8,
+      "neck": 4,
+      "hip_r": -22,
+      "knee_r": 8,
+      "hip_l": 22,
+      "knee_l": 10
+     }
+    },
+    {
+     "label": "recover",
+     "root_d": [
+      3,
+      0
+     ],
+     "rot": {
+      "shoulder_r": -35,
+      "elbow_r": -15,
+      "hip_r": -10,
+      "hip_l": 10
+     }
+    }
+   ]
+  },
+  {
+   "name": "hit",
+   "fps": 12,
+   "timing": "hit 0.1 s hold (white flash by shader); recover 0.2 s",
+   "keys": [
+    {
+     "label": "hit",
+     "root_d": [
+      -5,
+      0
+     ],
+     "root_rot": -6,
+     "rot": {
+      "neck": -12,
+      "shoulder_r": 30,
+      "shoulder_l": 30,
+      "hip_r": 8,
+      "hip_l": -8
+     },
+     "show": [
+      "eye_closed_r_s"
+     ]
+    },
+    {
+     "label": "recover",
+     "root_d": [
+      -2,
+      0
+     ],
+     "rot": {
+      "neck": -4,
+      "shoulder_r": 10,
+      "shoulder_l": 10
+     }
+    }
+   ]
+  }
+ ],
+ "title": "hero (side, v2.2) reference key poses"
+}

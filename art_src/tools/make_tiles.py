@@ -57,6 +57,21 @@ def tile(src, n=512, ov=64, desat=1.0, axes='xy', val=1.0):
         t, cost['y'] = wrap_x(a.transpose(1, 0, 2), n); a = t.transpose(1, 0, 2)
     return np.clip(a, 0, 255), cost
 
+def h_cut(err):
+    """cheapest left-to-right path through err (H x W) -> row index per column"""
+    return min_cut(err.T)
+
+def variant(A, B, band=(40, 104), feather=2):
+    """Wang-style variant: keeps A's outer ring (so any mix of A and its variants tiles seamlessly, no rotation),
+    swaps the interior for B along min-error cuts in a band 40..104 px from each edge (no cross-fade)."""
+    n = A.shape[0]; b0, b1 = band; e = ((A[..., :3] - B[..., :3]) ** 2).sum(-1)
+    yy, xx = np.mgrid[0:n, 0:n].astype(float); w = np.ones((n, n))
+    top = b0 + h_cut(e[b0:b1]); w = np.minimum(w, np.clip((yy - top[None, :]) / (2 * feather) + 0.5, 0, 1))
+    bot = b0 + h_cut(e[n - b1:n - b0][::-1]); w = np.minimum(w, np.clip(((n - 1 - yy) - bot[None, :]) / (2 * feather) + 0.5, 0, 1))
+    lef = b0 + min_cut(e[:, b0:b1]); w = np.minimum(w, np.clip((xx - lef[:, None]) / (2 * feather) + 0.5, 0, 1))
+    rig = b0 + min_cut(e[:, n - b1:n - b0][:, ::-1]); w = np.minimum(w, np.clip(((n - 1 - xx) - rig[:, None]) / (2 * feather) + 0.5, 0, 1))
+    return A * (1 - w[..., None]) + B * w[..., None]
+
 def green_mask(a):
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
     return ((g > r * 1.04) & (g > b * 1.15)).astype(float)
@@ -126,6 +141,12 @@ def main(cfg_path):
         a, cost = tile(t['src'], cfg.get('n', 512), cfg.get('ov', 64), t.get('desat', 1.0), val=t.get('val', 1.0))
         p = f"{out}/tiles/{t['name']}.png"; save(a, p); tiling_check(a, f"{out}/tiles/{t['name']}_tiling_check.png")
         man[t['name']] = {'file': p, 'size': [a.shape[1], a.shape[0]], 'src': t['src'], 'seam_ratio': {'x': seam_score(a, 'x'), 'y': seam_score(a, 'y')}, 'cut_cost': cost}
+    tiles = {t['name']: np.asarray(Image.open(f"{out}/tiles/{t['name']}.png").convert('RGB')).astype(float) for t in cfg.get('tiles', [])}
+    for v in cfg.get('variants', []):
+        A = tiles[v['base']]; B = np.roll(A, (A.shape[0] // 2, A.shape[1] // 2), (0, 1)) if v['interior'] == 'roll' else tiles[v['interior']]
+        o = variant(A, B); p = f"{out}/tiles/{v['name']}.png"; save(o, p); tiling_check(o, f"{out}/tiles/{v['name']}_tiling_check.png")
+        man[v['name']] = {'file': p, 'size': [512, 512], 'variant_of': v['base'], 'interior': v['interior'], 'seam_ratio': {'x': seam_score(o, 'x'), 'y': seam_score(o, 'y')},
+                          'use': f"same outer ring as {v['base']}: mix freely with it (no rotation/flip)"}
     for e in cfg.get('edges', []):
         s, b, cost = edge_strip(e['src'], boundary=e.get('boundary'), desat=e.get('desat', 1.0), flip=e.get('flip', False), val=e.get('val', 1.0))
         p = f"{out}/edges/{e['name']}.png"; save(s, p)

@@ -15,7 +15,7 @@ P = {'panel': ('panels', 'ui_panel_window'), 'head': ('panels', 'ui_header_plate
      'btn_hi': ('panels', 'ui_button_hi'), 'slot': ('frames', 'u07_slot'), 'cell': ('frames', 'u15_quality_frame_grey')}
 def put(cv, key, x, y, w, h):
     g, n = P[key]; src = piece(g, n); m = man.get(n, man.get('u15_quality_frame', {})).get('nine')
-    o, _ = nine(src, w, h, m, None)
+    o, _ = nine(src, w, h, m, None, tile_center=True)
     cv.alpha_composite(Image.fromarray(np.clip(o, 0, 255).astype(np.uint8), 'RGBA'), (x, y))
 def grid(cv, key, x0, y0, cols, rows, s, gap):
     for r in range(rows):

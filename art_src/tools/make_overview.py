@@ -42,12 +42,13 @@ def row(title, files, scale, maxh=None, ystart=None, cols_w=W - 40):
         xx += im.width + 14; rh = max(rh, im.height)
     y += rh + 30
 T = 'art_src/terrain/floor1_v2/'
-row('Terrain v2 S01 tiles 512 (shown at 1/2): min-cut wrapped, seam test <= 1.15 on every axis', [T + f'tiles/s01_{n}.png' for n in ('ground_moss', 'ground_autumn', 'ground_stone', 'ground_stone_large', 'water')], 0.5)
+row('Terrain v2 S01 tiles 512 (shown at 1/2): min-cut wrapped, seam test <= 1.35; _v2/_v3 share the base outer ring (mix freely)', [T + f'tiles/s01_{n}.png' for n in ('ground_moss', 'ground_moss_v2', 'ground_autumn', 'ground_stone', 'ground_stone_v2', 'ground_stone_v3', 'ground_stone_b', 'water')], 0.5)
 row('Terrain v2 S02 edge overlays 512x128 + corners 128 (x0.75, on grey)', [T + 'edges/s02_edge_moss_stone.png', T + 'edges/s02_edge_moss_stone_corner_outer.png', T + 'edges/s02_edge_moss_stone_corner_inner.png', T + 'edges/s02_edge_autumn_moss.png', T + 'edges/s02_edge_autumn_moss_corner_outer.png', T + 'edges/s02_edge_autumn_moss_corner_inner.png'], 0.75)
-row('Terrain v2 S03 trees (whole / crown / base, 512x768, x0.5), S05 rocks, S06 ruins, S04 bushes, S18, S07 decals, S09 light (1:1 x0.5)',
-    [T + f'trees/s03_tree_{t}{p}.png' for t in ('autumn', 'green') for p in ('', '_crown', '_base')] + sorted(glob.glob(T + 'props_rocks_ruins/s0*.png')) + sorted(glob.glob(T + 'props_bushes_decals/s*.png')) + sorted(glob.glob(T + 'light/s09*.png')), 0.5)
+row('Terrain v2 S03 trees (whole / crown / base, 512x768, x0.5), S05 rocks, S06 ruins, S04 bushes, S18, S07 decals (v3 toned), S09 light (v3 cooler) (1:1 x0.5)',
+    [T + f'trees/s03_tree_{t}{p}.png' for t in ('autumn', 'green') for p in ('', '_crown', '_base')] + sorted(glob.glob(T + 'props_rocks_ruins/s0*.png')) + sorted(glob.glob(T + 'props_bushes_decals/s0[4]*.png')) + sorted(glob.glob(T + 'props_bushes_decals/s18*.png')) + sorted(glob.glob(T + 'decals_v3/s07*.png')) + sorted(glob.glob(T + 'light_v3/s09*.png')), 0.5)
+row('Pulled forward: modular cliffs + forest back clumps / foreground canopy (1:1 x0.5)', sorted(glob.glob(T + 'cliffs/cliff*.png')) + sorted(glob.glob(T + 'forest/*_*.png')), 0.5)
 U = 'art_src/ui/hud_v2/'
-row('HUD v2 thin-border set (9-slice rebuilt; 1:1 x0.6): U02, U10, U07, U15 x5 tints, U03, panels, U01/U04/U05/U06/U08, U16 x9',
+row('HUD v2 thin-border set + paper grain in the fills (9-slice rebuilt; 1:1 x0.6): U02, U10, U07, U15 x5 tints, U03, panels, U01/U04/U05/U06/U08, U16 x9',
     [U + 'bars/u02_bar_frame.png', U + 'bars/u02_fill_hp.png', U + 'bars/u02_fill_mp.png', U + 'bars/u02_fill_sp.png', U + 'bars/u10_boss_bar_frame.png', U + 'bars/u10_fill_boss.png', U + 'icons/u10_boss_icon.png', U + 'frames/u07_slot.png']
     + sorted(glob.glob(U + 'frames/u15_quality_frame_*.png')) + [U + 'frames/u03_level_badge.png'] + sorted(glob.glob(U + 'panels/*.png')) + sorted(glob.glob(U + 'hud/*.png')) + sorted(glob.glob(U + 'icons_u16/u16_*.png')), 0.6)
 row('U11-U13 screens 1920x1080 (x0.3, over a dark backdrop)', [U + 'screens/u11_backpack.png', U + 'screens/u12_extract_result.png', U + 'screens/u13_vault_storage.png'], 0.3)

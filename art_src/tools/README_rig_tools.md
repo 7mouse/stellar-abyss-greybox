@@ -37,3 +37,13 @@ v2.1（2026-10-21b）：配置写 `"cap_version": 2` 用 round_cap2。上层部�
 | make_ui_screens.py | U11–U13 整屏布局，用九宫件拼成。 |
 | make_combat_mock.py | 战斗对照图（1080p，主角 135 px）：新地表、道具、角色、HUD 和 combat_baseline_v2 并排。 |
 | cut_sprites.py | 加了 `black`（黑底的光，alpha 取亮度）和 `max`（只缩小，缩到规格尺寸以内）。 |
+
+## v5（2026-10-21e，风格修正）
+| 脚本 | 用途 |
+| --- | --- |
+| make_tiles.py | 加 `variants`：`variant(A, B)` 保留 A 离边 40 px 的外圈，内部换成 B（或 A 自己错位），内外沿最小误差曲线切换，所以 A 和它的变体能任意混铺。`h_cut` 是横向切缝的辅助函数。 |
+| style_fix_v3.py | 苔藓贴花 v3（取地面色、降饱和、软而不规则的 alpha 边）；叶隙光 v3（偏冷、软边）；U16 去白边并放进 128 方格。 |
+| cut_sprites.py | pick 项可加 `open_holes`：被包住的白底也设为透明（戒指中间）。 |
+| make_ui_v2.py | `paper`：中间区叠周期纸纹（TILE 安全），固定件的深色部分也加；`tile_center=True`：渲染到别的尺寸时中间区平铺；另出 256 纸纹平铺图。 |
+| make_combat_mock.py | 场景加了悬崖带、背景树丛、前景树冠、石板变体随机选（seed 11）、散布灌木和石头。 |
+| make_overview.py | 第二个参数是日期；加了石板变体、贴花 / 光 v3、悬崖和森林层一行。 |

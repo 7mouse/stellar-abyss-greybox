@@ -7,7 +7,7 @@ item: {"name", "pick":[x,y]}                one connected component (background 
       {"name", "tile":[x0,y0,x1,y1]}        opaque square texture crop (largest centred square inside the rect);
             "wrap":"xy"|"x" -> seam test (wrap-edge difference / inner neighbour difference) + a tool-fixed
             <name>_seamless.png (half-offset cross-fade), "size": upscale target (e.g. 512) also written as <name>_<size>.png
-      "black": true (rect only) light on black -> alpha from brightness; "max": N downscale to fit N px (never up)
+      "black": true (rect only) light on black -> alpha from brightness; "max": N downscale to fit N px (never up); "open_holes": true (pick) enclosed white -> transparent
       optional per item: "group", "frame", "nine": true (estimate 9-slice margins), "recolor": name of a recolor op,
             "split_fill": {"fills":{name:[r,g,b]}} (bars: frame with the coloured fill replaced by the charcoal base +
             one fill strip per colour, fill area = the saturated interior)
@@ -127,6 +127,8 @@ def main(cfg):
             if 'pick' in it:
                 px_, py_ = [int(v * ds) for v in it['pick']]; i = lab[NI[0][py_, px_], NI[1][py_, px_]]
                 sl = nd.find_objects(lab)[i - 1]; m = lab[sl] == i; part = rgba[sl].copy(); part[..., 3] *= m
+                if it.get('open_holes'):   # white paper enclosed by the object (a ring's middle) becomes transparent
+                    dd = 255 - rgb[sl].min(2); part[..., 3] = np.minimum(part[..., 3], np.clip((dd - 14) * 9, 0, 255))
                 rec['rect_src'] = [sl[1].start, sl[0].start, sl[1].stop, sl[0].stop]
             else:
                 x0, y0, x1, y1 = [int(v * ds) for v in it['rect']]

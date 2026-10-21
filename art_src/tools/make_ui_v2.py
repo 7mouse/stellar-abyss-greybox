@@ -39,15 +39,37 @@ def margins(a, thr=10.0):
         idx = np.nonzero(d[: n // 2] > thr)[0]; return int(idx.max()) + 1 if len(idx) else 1
     return {'left': ext(dc, W) + 2, 'right': ext(dc[::-1], W) + 2, 'top': ext(dr, H) + 2, 'bottom': ext(dr[::-1], H) + 2}
 
-def nine(a, tw, th, m=None, fill_alpha=None):
+def paper_map(h, w, seed=3):
+    """hand-made-paper grain, periodic on (h, w) by construction (FFT-filtered noise), mean 0, ~unit range.
+    blotches (low frequency) + fibre grain (high frequency, slightly stretched in x)."""
+    r = np.random.default_rng(seed); fy = np.fft.fftfreq(h)[:, None]; fx = np.fft.fftfreq(w)[None, :]
+    def band(f0, sx=1.0):
+        f = np.sqrt((fx * sx) ** 2 + fy ** 2) + 1e-6; n = np.fft.fft2(r.standard_normal((h, w)))
+        g = np.real(np.fft.ifft2(n * np.exp(-(f / f0) ** 2))); return g / (g.std() + 1e-9)
+    return 0.7 * band(0.02) + 0.45 * band(0.25, 0.35)
+
+def add_paper(o, y0, y1, x0, x1, k=0.05, seed=3):
+    """multiply the region by (1 + k * paper), plus a faint warm tint; the map is periodic on the region size"""
+    if y1 - y0 < 2 or x1 - x0 < 2: return o
+    pm = paper_map(y1 - y0, x1 - x0, seed)[..., None]
+    reg = o[y0:y1, x0:x1, :3] * (1 + k * pm) + np.array([2.5, 1.5, 0]) ; o[y0:y1, x0:x1, :3] = np.clip(reg, 0, 255); return o
+
+def nine(a, tw, th, m=None, fill_alpha=None, tile_center=False, paper=0.0):
+    """tile_center: the centre is tiled from the source centre (for pieces whose centre carries the paper grain)"""
     H, W = a.shape[:2]; m = m or margins(a); L, R, T, B = m['left'], m['right'], m['top'], m['bottom']
     cx, cy = W // 2, H // 2; o = np.zeros((th, tw, 4))
     o[:T, :L] = a[:T, :L]; o[:T, tw - R:] = a[:T, W - R:]; o[th - B:, :L] = a[H - B:, :L]; o[th - B:, tw - R:] = a[H - B:, W - R:]
     o[:T, L:tw - R] = a[:T, cx:cx + 1]; o[th - B:, L:tw - R] = a[H - B:, cx:cx + 1]
     o[T:th - B, :L] = a[cy:cy + 1, :L]; o[T:th - B, tw - R:] = a[cy:cy + 1, W - R:]
-    centre = np.median(a[T:H - B, L:W - R].reshape(-1, 4), 0); o[T:th - B, L:tw - R] = centre
+    centre = np.median(a[T:H - B, L:W - R].reshape(-1, 4), 0)
+    if tile_center:
+        c = a[T:H - B, L:W - R]; ch, cw = th - T - B, tw - L - R
+        o[T:th - B, L:tw - R] = np.tile(c, (ch // c.shape[0] + 1, cw // c.shape[1] + 1, 1))[:ch, :cw]
+    else:
+        o[T:th - B, L:tw - R] = centre
+        if paper: o = add_paper(o, T, th - B, L, tw - R, paper)
     if fill_alpha is not None:   # the charcoal interior (anything close to the centre colour, inside the line) goes translucent
-        close = (np.abs(o[..., :3] - centre[:3]).sum(-1) < 40) & (o[..., 3] > 200)
+        close = (np.abs(o[..., :3] - centre[:3]).sum(-1) < 60) & (o[..., 3] > 200)
         inner = np.zeros((th, tw), bool); inner[2:-2, 2:-2] = True
         o[..., 3] = np.where(close & inner, 255 * fill_alpha, o[..., 3])
     return o, m
@@ -72,7 +94,8 @@ def main(cfgp):
         kind = it.get('kind', 'fixed')
         if kind == 'nine':
             tw, th = it.get('size', [a.shape[1], a.shape[0]])
-            o, m = nine(a, tw, th, it.get('margins'), it.get('fill_alpha', 0.85)); rec['nine'] = m
+            o, m = nine(a, tw, th, it.get('margins'), it.get('fill_alpha', 0.85), paper=it.get('paper', c.get('paper', 0.0))); rec['nine'] = m
+            if it.get('paper', c.get('paper', 0.0)): rec['paper'] = 'centre fill carries the paper grain, periodic on the centre size: use TILE (or stretch) for the centre'
             if it.get('tints'):
                 base = o
                 for tn, col in it['tints'].items():
@@ -107,6 +130,9 @@ def main(cfgp):
                 a[..., 3] = np.where(dark & (r < it['hollow']), 0, a[..., 3])
             if it.get('fill_alpha') is not None:
                 a[..., 3] = np.where(dark & inner & (a[..., 3] > 0), a[..., 3] * it['fill_alpha'], a[..., 3])
+        if kind == 'fixed' and c.get('paper') and it.get('paper', True) and it.get('group') != 'hud_icons':
+            H, W = a.shape[:2]; lum = a[..., :3] @ [0.299, 0.587, 0.114]; dk = ((lum < 75) & (a[..., 3] > 0))[..., None]
+            pm = paper_map(H, W, 5)[..., None]; a[..., :3] = np.where(dk, np.clip(a[..., :3] * (1 + c['paper'] * pm) + [2.5, 1.5, 0], 0, 255), a[..., :3])
         if it.get('inset_png'):   # e.g. the boss head inside the emblem ring
             ip = Image.open(it['inset_png']).convert('RGBA'); ip.thumbnail(tuple(it['inset_box'][2:]), Image.LANCZOS)
             im = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), 'RGBA'); X, Y = it['inset_box'][:2]
@@ -115,6 +141,9 @@ def main(cfgp):
             lay.putalpha(Image.fromarray(np.minimum(np.asarray(lay.getchannel('A')), np.asarray(circ))))
             im.alpha_composite(lay); a = np.asarray(im).astype(float)
         p = f"{out}/{it.get('group','')}/{n}.png"; save(a, p); rec['size'] = [a.shape[1], a.shape[0]]; man[n] = rec
+    if c.get('paper'):   # engine-side alternative: one tileable grain overlay (multiply / overlay blend, clipped to the panel)
+        pm = paper_map(256, 256, 3); g = np.clip(128 + 128 * c['paper'] * 2.5 * pm, 0, 255)
+        save(np.dstack([g, g, g, np.full_like(g, 255)]), f"{out}/panels/ui_paper_grain_tile_256.png")
     json.dump(man, open(f"{out}/manifest_v2.json", 'w'), ensure_ascii=False, indent=1)
     for k, v in man.items(): print(k, v.get('size'), v.get('nine', ''))
 

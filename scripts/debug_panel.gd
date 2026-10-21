@@ -71,6 +71,7 @@ func _ready() -> void:
 	_section("保险箱", "强化台（局外）", Lineage.meta_rules)
 	_section("线索", "虚拟世界线索 clues.tres", g.clues)
 	_section("线索", "#0000 墓志铭 epitaph_0000.tres", load("res://data/lore/epitaph_0000.tres"))
+	_section("村落", "village_layout.tres", load("res://data/village_layout.tres"))
 	_section("回村符", "紧急回村符 recall_charm.tres", g.recall)
 	_section("打击感", "hit_feel.tres", g.hit_feel)
 	_section("教学", "tutorial_rules.tres", load("res://data/tutorial/tutorial_rules.tres"))

@@ -4,6 +4,7 @@ extends Resource
 
 const ITEM_ID := "recall_charm"
 const CRAFT_MATERIAL := "moss_essence"
+const CRAFT_MATERIALS: PackedStringArray = ["moss_fang", "moss_essence"]
 
 @export var display_name := "紧急回村符"
 @export var chest_drop_chance := 0.005 ## 普通宝箱。顶稀有，已经持有也照常掷
@@ -11,7 +12,7 @@ const CRAFT_MATERIAL := "moss_essence"
 @export var lord_drop_chance := 0.02 ## 每次击杀层主。灰盒没有必给
 @export var first_clear_floor := 100 ## 整局第一次通关的层。接口留给以后，灰盒不会调用
 @export var channel_sec := 3.0 ## 楼层内引导秒数，受击打断且不消耗
-@export var craft_material_count := 3 ## 制作 1 张符要的层主稀有材料（萤苔精，不限哪一层）
+@export var craft_material_count := 3 ## 制作 1 张符要的层主稀有材料（苔冠獠牙、萤苔精，不限哪一层）
 @export var carry_per_floor := 1 ## 进入一层时，背包里最多几张没封印的符
 @export var uses_per_run := 1 ## 一局最多成功使用几次
 @export var blocked_hint := "此处无法使用回村符"
@@ -169,22 +170,29 @@ func _roll(chance: float, key: String) -> bool:
 	return rng.randf() < chance
 
 func craft_material_have() -> int:
-	var n := int(Lineage.mats.get(CRAFT_MATERIAL, 0))
-	if Game.run:
-		n += Game.run.count_of(CRAFT_MATERIAL)
+	var n := 0
+	for id in CRAFT_MATERIALS:
+		n += int(Lineage.mats.get(id, 0))
+		if Game.run:
+			n += Game.run.count_of(id)
 	return n
 
-## 花仓库和背包里的萤苔精。没有持有上限
+## 花仓库和背包里的层主稀有材料。没有持有上限
 func craft() -> bool:
 	var cost := maxi(1, craft_material_count)
 	if craft_material_have() < cost:
 		return false
 	var left := cost
-	var from_mats := mini(left, int(Lineage.mats.get(CRAFT_MATERIAL, 0)))
-	Lineage.mats[CRAFT_MATERIAL] = int(Lineage.mats.get(CRAFT_MATERIAL, 0)) - from_mats
-	left -= from_mats
-	if left > 0 and Game.run:
-		Game.run.take_item(CRAFT_MATERIAL, left)
+	for id in CRAFT_MATERIALS:
+		if left <= 0:
+			break
+		var from_mats := mini(left, int(Lineage.mats.get(id, 0)))
+		Lineage.mats[id] = int(Lineage.mats.get(id, 0)) - from_mats
+		left -= from_mats
+		if left > 0 and Game.run:
+			var take := mini(left, Game.run.count_of(id))
+			if take > 0 and Game.run.take_item(id, take):
+				left -= take
 	if not grant("craft"):
 		return false
 	Lineage.save()

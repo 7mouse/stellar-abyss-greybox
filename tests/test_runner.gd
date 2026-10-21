@@ -29,6 +29,10 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(Log.dir))
 	Log.clear()
 	Lineage.wipe()
+	var profile := ConfigFile.new()
+	profile.load(Tutorial.path)
+	profile.set_value("profile", EpitaphLore.PROFILE_KEY, false)
+	profile.save(Tutorial.path)
 	_run()
 
 func frames(n := 1) -> void:
@@ -1314,6 +1318,28 @@ func test_village() -> void:
 	await wait_scene(Game.SCN_VILLAGE)
 	v = scene()
 	check(v.opening == null, "之后再进村不再播放开场")
+	var lay: VillageLayout = load("res://data/village_layout.tres")
+	check(DP.find_editor(lay, "well_x") != null, "村落坐标在 F1 可调")
+	var spaced := true
+	var gap := 1e9
+	for i in v.facilities.size():
+		for j in range(i + 1, v.facilities.size()):
+			var pa: Vector2 = v.facilities[i].pos
+			var pb: Vector2 = v.facilities[j].pos
+			var d := pa.distance_to(pb)
+			gap = minf(gap, d)
+			if d < 200.0:
+				spaced = false
+	check(spaced, "功能点间距最近 %.0f px（≥ 200）" % gap)
+	v.player.global_position = v.facility("incubator").pos
+	v.player.sim_move = (v.facility("well").pos - v.player.global_position).normalized()
+	var walk_t := Time.get_ticks_msec()
+	var walked: bool = await until(func(): return v.player.global_position.distance_to(v.facility("well").pos) < 70.0, 5.0)
+	var walk_sec := (Time.get_ticks_msec() - walk_t) / 1000.0
+	v.player.sim_move = Vector2.ZERO
+	v.player.velocity = Vector2.ZERO
+	await frames(2)
+	check(walked and walk_sec <= 5.0, "培养槽走到井口 %.2f 秒（移速 260，≤ 5）" % walk_sec)
 	v.play_opening(true)
 	await frames(2)
 	var ev := InputEventKey.new()
@@ -1385,7 +1411,7 @@ func test_death_flow() -> void:
 	var v := scene()
 	var wall: Panel2 = v._open("res://scenes/village/epitaph_wall.gd")
 	await frames(3)
-	var texts: Array = wall.body.get_children().filter(func(c): return c is Button).map(func(b): return b.text)
+	var texts: Array = wall.body.get_children().filter(func(c): return c is Button and c != wall.blank_0000).map(func(b): return b.text)
 	check(texts.size() == 3 and "林·#0001" in texts[0] and "林·#0002" in texts[1], "墓志铭墙显示所有前任")
 	check(wall.ghost != null and wall.ghost_text() == Game.clues.epitaph0_raw, "死过 2 次后最底部出现灰色 #0000")
 	wall.ghost.grab_focus()
@@ -2881,6 +2907,12 @@ func test_recall_charm() -> void:
 	Game.run = Run.new()
 	Game.run.add_item(ItemStack.new(Items.get_item("moss_essence"), 1))
 	check(rules.craft_material_have() == 3 and rules.craft() and Game.run.count_of("moss_essence") == 0 and int(Lineage.mats.moss_essence) == 0 and Game.run.unsealed_count(RecallCharm.ITEM_ID) == 1, "仓库和背包里的萤苔精可以合在一起用，不限哪一层打来的")
+	Lineage.mats["moss_fang"] = 3
+	var fangs_before: int = rules.owned()
+	check(rules.craft() and int(Lineage.mats.get("moss_fang", 0)) == 0 and rules.owned() == fangs_before + 1, "3 个苔冠獠牙做成 1 张符")
+	Lineage.mats["moss_fang"] = 2
+	Lineage.mats.moss_essence = 1
+	check(rules.craft_material_have() == 3 and rules.craft() and int(Lineage.mats.get("moss_fang", 0)) == 0 and int(Lineage.mats.moss_essence) == 0, "苔冠獠牙和萤苔精可以凑成 3 个")
 	Game.run = null
 	# 楼层里：禁区、受击打断、使用、回村可存、楼层状态
 	Lineage.wipe()
@@ -2947,6 +2979,21 @@ func test_recall_charm() -> void:
 	check(await until(func(): return scene().scene_file_path == Game.SCN_VILLAGE, 3.0), "引导结束回到起程村")
 	var v := scene()
 	check(Game.run != null and Game.run.suspended and Game.run.count_of("moss") == moss_carry and Lineage.mats.moss == banked and not rules.carrying(), "回村不是撤离：背包里的萤苔还在，仓库材料没增加，符已消耗")
+	var vlay: VillageLayout = load("res://data/village_layout.tres")
+	check(v.title_label.text.begins_with("中途返回 · 第 1 层"), "中途标题：%s" % v.title_label.text)
+	check(v.player.global_position.distance_to(Vector2(vlay.mid_spawn_x, vlay.mid_spawn_y)) < 8.0, "中途落在井口旁")
+	check(v.facility("well").name == "返回第 1 层", "井口只显示返回第 1 层：%s" % v.facility("well").name)
+	var mid_gap := 1e9
+	var mid_ok := true
+	for i in v.facilities.size():
+		for j in range(i + 1, v.facilities.size()):
+			var ma: Vector2 = v.facilities[i].pos
+			var mb: Vector2 = v.facilities[j].pos
+			var md := ma.distance_to(mb)
+			mid_gap = minf(mid_gap, md)
+			if md < 200.0:
+				mid_ok = false
+	check(mid_ok, "中途设施间距最近 %.0f px（≥ 200）" % mid_gap)
 	var fl := Log.rows("floors")
 	var hdr := Log.HEADERS.floors.split(",")
 	var cols := fl[-1].split(",")
@@ -2959,7 +3006,28 @@ func test_recall_charm() -> void:
 		await frames(2)
 	v.player.global_position = v.facility("bench").pos + Vector2(0, 80)
 	await frames(2)
-	check(v.interact() and v.panel_open != null, "回村后可以打开强化台")
+	check(v.interact() and v.panel_open == null and vlay.bench_block in v.toast.text, "中途强化台灰掉：%s" % v.toast.text)
+	v.player.global_position = v.facility("incubator").pos + Vector2(0, 90)
+	await frames(2)
+	check(v.interact() and v.panel_open == null and vlay.incubator_block in v.toast.text, "中途培养槽灰掉：%s" % v.toast.text)
+	v.player.global_position = v.facility("epitaph").pos + Vector2(0, 50)
+	await frames(2)
+	check(v.interact() and v.panel_open != null and v.panel_open.get("read_only") == true, "中途墓志铭墙只读")
+	if v.panel_open:
+		v.panel_open.close()
+		await frames(2)
+	v.player.global_position = v.facility("shop").pos + Vector2(0, 70)
+	await frames(2)
+	check(v.interact() and v.panel_open == null and vlay.shop_closed in v.toast.text, "中途商店是占位：%s" % v.toast.text)
+	v.player.global_position = v.facility("warehouse").pos + Vector2(0, 70)
+	await frames(2)
+	check(v.interact() and v.panel_open != null and v.panel_open.title == "仓库", "中途可以打开仓库")
+	if v.panel_open:
+		v.panel_open.close()
+		await frames(2)
+	v.player.global_position = v.facility("craft").pos + Vector2(0, 70)
+	await frames(2)
+	check(v.interact() and v.panel_open != null, "中途可以打开合成台")
 	if v.panel_open:
 		v.panel_open.close()
 		await frames(2)
@@ -3020,6 +3088,11 @@ func test_recall_charm() -> void:
 		if st.item.id == "moss":
 			back_moss = true
 	check(back_moss and rules.carrying(), "返回之后掉落和原来一样，宝箱萤苔仍然必掉")
+	var back_crater := false
+	for lm in f.layout.landmarks:
+		if lm.id == "lm_crater":
+			back_crater = f.player.global_position.distance_to(lm.pos) <= float(lm.radius)
+	check(back_crater and f.player.global_position.distance_to(f.layout.start_pos) < 8.0, "返回落在坠落坑")
 	check(f.layout.seed == Game.run.seed and int(mem.get("seed", -1)) == Game.run.seed and "chest_0" in mem.get("picked", []) and victim_id in mem.get("killed", []), "楼层种子、已拾取、已击杀都留着")
 	check(f.used.has("chest_0") and not back_victim and f.guard_dead and f.exit_active and f.guard == null, "宝箱不会再出现，被击杀的怪和层主不会复活，撤离点保持亮起")
 	check(survivor_now != null and survivor_now.hp == survivor_now.max_hp and not survivor_now.ai.in_combat() and survivor_now.global_position.distance_to(home) < 80.0, "活着的怪满血、仇恨清空、回到巡逻点（HP %s，距离 %.0f）" % [str(survivor_now.hp if survivor_now else -1), survivor_now.global_position.distance_to(home) if survivor_now else -1])

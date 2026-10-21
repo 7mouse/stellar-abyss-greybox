@@ -3,6 +3,7 @@ extends Panel2
 
 var ghost: Button
 var blank_0000: Button
+var read_only := false
 var focus_t := 0.0
 var fix_progress := -1.0
 
@@ -10,6 +11,9 @@ func _init() -> void:
 	title = "墓志铭墙"
 
 func _fill() -> void:
+	if read_only:
+		var note: String = load("res://data/village_layout.tres").epitaph_readonly
+		text(note, 22, Color(0.7, 0.7, 0.75))
 	if Lineage.epitaphs.is_empty():
 		text("还没有前任。", 26, Color(0.7, 0.7, 0.7))
 	for e in Lineage.epitaphs:
@@ -40,7 +44,7 @@ func ghost_text() -> String:
 	return ghost.text if ghost else ""
 
 func _process(delta: float) -> void:
-	if ghost == null or not is_instance_valid(ghost):
+	if read_only or ghost == null or not is_instance_valid(ghost):
 		return
 	if fix_progress >= 1.0:
 		return

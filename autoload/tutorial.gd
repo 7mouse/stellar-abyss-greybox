@@ -245,7 +245,7 @@ func _gather(delta: float) -> void:
 		_clear_run_flags()
 		_saw_floor = false
 	var scene := get_tree().current_scene
-	var floor := scene if scene != null and scene.get("layout") != null and scene.get("player") != null else null
+	var floor := scene if scene != null and scene.scene_file_path == Game.SCN_FLOOR else null
 	_on_floor = floor != null and Game.run != null and Game.run.depth == 1
 	if not _on_floor:
 		_near_fight = false

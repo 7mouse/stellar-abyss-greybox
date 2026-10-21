@@ -1,7 +1,39 @@
 extends Node2D
 ## 起程村：自由走动，设施互动范围 64px（有提示）。第一次进入播放开场（之后在布告栏重播，可跳过）
 
-const MAP := Vector2(2400, 1400)
+const LAYOUT_PATH := "res://data/village_layout.tres"
+const ALWAYS := ["epitaph", "incubator", "board", "npc", "warehouse", "vault", "bench", "craft", "shop", "well"]
+const MID_IDS := ["rest", "bag", "return"]
+const NAMES := {
+	"epitaph": "墓志铭墙",
+	"incubator": "培养槽",
+	"board": "布告栏",
+	"npc": "老冒险者",
+	"warehouse": "仓库",
+	"vault": "保险箱",
+	"bench": "简易强化台",
+	"craft": "合成台",
+	"shop": "补给商店",
+	"well": "下潜井口",
+	"rest": "回复生命",
+	"bag": "整理背包",
+}
+const COLORS := {
+	"epitaph": Color(0.55, 0.55, 0.6),
+	"incubator": Color(0.35, 0.8, 0.85),
+	"board": Color(0.5, 0.42, 0.3),
+	"npc": Color(0.75, 0.7, 0.55),
+	"warehouse": Color(0.45, 0.38, 0.22),
+	"vault": Color(0.7, 0.6, 0.3),
+	"bench": Color(0.6, 0.4, 0.3),
+	"craft": Color(0.72, 0.48, 0.22),
+	"shop": Color(0.35, 0.55, 0.4),
+	"well": Color(0.08, 0.08, 0.1),
+	"rest": Color(0.3, 0.65, 0.35),
+	"bag": Color(0.3, 0.45, 0.7),
+	"return": Color(0.42, 0.32, 0.62),
+}
+var layout: VillageLayout
 var player: Player
 var cam: FollowCam
 var prompt: Label
@@ -17,22 +49,21 @@ var _intro_visit := false
 var _settings: CanvasLayer
 
 func _ready() -> void:
-	UI.rect(self, Vector2.ZERO, MAP, Color(0.16, 0.19, 0.15)).z_index = -10
-	UI.rect(self, Vector2(900, 500), Vector2(600, 400), Color(0.22, 0.24, 0.2)).z_index = -9 ## 广场
-	for r in [Rect2(-40, -40, MAP.x + 80, 40), Rect2(-40, MAP.y, MAP.x + 80, 40), Rect2(-40, 0, 40, MAP.y), Rect2(MAP.x, 0, 40, MAP.y)]:
+	layout = load(LAYOUT_PATH)
+	var map_size := Vector2(layout.map_w, layout.map_h)
+	UI.rect(self, Vector2.ZERO, map_size, Color(0.16, 0.19, 0.15)).z_index = -10
+	UI.rect(self, Vector2(layout.plaza_x, layout.plaza_y), Vector2(layout.plaza_w, layout.plaza_h), Color(0.22, 0.24, 0.2)).z_index = -9
+	for r in [Rect2(-40, -40, map_size.x + 80, 40), Rect2(-40, map_size.y, map_size.x + 80, 40), Rect2(-40, 0, 40, map_size.y), Rect2(map_size.x, 0, 40, map_size.y)]:
 		_wall(r)
-	_fac("incubator", "培养槽", Vector2(500, 380), Vector2(120, 160), Color(0.35, 0.8, 0.85), func(): _open("res://scenes/village/incubator.gd"))
-	_fac("vault", "保险箱", Vector2(820, 420), Vector2(140, 100), Color(0.7, 0.6, 0.3), _vault)
-	_fac("epitaph", "墓志铭墙", Vector2(1250, 340), Vector2(320, 60), Color(0.55, 0.55, 0.6), func(): _open("res://scenes/village/epitaph_wall.gd"))
-	_fac("bench", "简易强化台", Vector2(1700, 380), Vector2(140, 90), Color(0.6, 0.4, 0.3), _bench)
-	_fac("well", "下潜井口", Vector2(1200, 1100), Vector2(160, 160), Color(0.08, 0.08, 0.1), _dive)
-	_fac("board", "布告栏", Vector2(400, 900), Vector2(120, 80), Color(0.5, 0.42, 0.3), func(): play_opening(true))
 	_intro_visit = not Lineage.flags.get("opening_seen", false)
-	var npc_pos := Vector2(1380, 1100) if _intro_visit else Vector2(1550, 800)
-	_fac("npc", "老冒险者", npc_pos, Vector2(40, 64), Color(0.75, 0.7, 0.55), _talk_elder)
-	_fac("craft", "制作回村符", Vector2(1880, 980), Vector2(220, 90), Color(0.72, 0.48, 0.22), func(): _open("res://scenes/village/craft_ui.gd"))
+	var mid := Game.run != null and Game.run.suspended
+	for id in ALWAYS:
+		_place(id, mid)
+	if mid:
+		for id in MID_IDS:
+			_place(id, true)
 	player = Player.new()
-	player.position = Vector2(1200, 700)
+	player.position = Vector2(layout.mid_spawn_x, layout.mid_spawn_y) if mid else Vector2(layout.spawn_x, layout.spawn_y)
 	add_child(player)
 	cam = FollowCam.new()
 	cam.target = player
@@ -72,11 +103,61 @@ func _wall(r: Rect2) -> void:
 	sb.add_child(cs)
 	add_child(sb)
 
-func _fac(id: String, n: String, pos: Vector2, size: Vector2, color: Color, cb: Callable) -> void:
+func _place(id: String, mid: bool) -> void:
+	var pos := layout.pos_of(id)
+	if id == "npc" and _intro_visit:
+		pos = Vector2(layout.elder_intro_x, layout.elder_intro_y)
+	var n := str(NAMES.get(id, id))
+	if id == "return" or (id == "well" and mid):
+		n = "返回第 %d 层" % Game.run.depth
+	var blocked := false
+	var reason := ""
+	if mid and id == "incubator":
+		blocked = true
+		reason = layout.incubator_block
+	elif mid and id == "bench":
+		blocked = true
+		reason = layout.bench_block
+	_fac(id, n, pos, layout.size_of(id), COLORS[id] as Color, _callback(id), blocked, reason)
+
+func _callback(id: String) -> Callable:
+	match id:
+		"incubator":
+			return func(): _open("res://scenes/village/incubator.gd")
+		"vault":
+			return _vault
+		"epitaph":
+			return _epitaph
+		"bench":
+			return _bench
+		"well":
+			return _dive
+		"board":
+			return func(): play_opening(true)
+		"npc":
+			return _talk_elder
+		"craft":
+			return func(): _open("res://scenes/village/craft_ui.gd")
+		"warehouse":
+			return func(): _open("res://scenes/village/warehouse_ui.gd")
+		"shop":
+			return _shop
+		"rest":
+			return _rest
+		"bag":
+			return _bag
+		"return":
+			return _return_floor
+		_:
+			return func(): pass
+
+func _fac(id: String, n: String, pos: Vector2, size: Vector2, color: Color, cb: Callable, blocked := false, reason := "") -> void:
 	var rect := UI.rect(self, pos - size / 2, size, color)
 	rect.z_index = -5
+	if blocked:
+		rect.modulate = Color(0.4, 0.4, 0.4)
 	UI.label(self, n, pos + Vector2(-size.x / 2, -size.y / 2 - 40), 24)
-	facilities.append({"id": id, "name": n, "pos": pos, "size": size, "cb": cb, "rect": rect})
+	facilities.append({"id": id, "name": n, "pos": pos, "size": size, "cb": cb, "rect": rect, "blocked": blocked, "reason": reason})
 
 func facility(id: String) -> Dictionary:
 	for f in facilities:
@@ -101,7 +182,10 @@ func _dist_to_rect(p: Vector2, r: Rect2) -> float:
 
 func _process(delta: float) -> void:
 	var ind := Lineage.current()
-	title_label.text = "起程村　%s　Lv%d　萤苔 %d　萤苔精 %d　记忆碎片 %d　保险箱 %d/%d" % [ind.name, ind.level, Lineage.mats.moss, Lineage.mats.moss_essence, Lineage.shards_bank, Lineage.vault.size(), Lineage.vault_capacity()]
+	var head := "起程村"
+	if Game.run and Game.run.suspended:
+		head = layout.mid_title % Game.run.depth
+	title_label.text = "%s　%s　Lv%d　萤苔 %d　萤苔精 %d　记忆碎片 %d　保险箱 %d/%d" % [head, ind.name, ind.level, Lineage.mats.moss, Lineage.mats.moss_essence, Lineage.shards_bank, Lineage.vault.size(), Lineage.vault_capacity()]
 	var f := nearest()
 	prompt.text = ("【%s】%s" % [InputGlyph.interact(), f.name]) if not f.is_empty() and panel_open == null and opening == null else ""
 	_toast_t -= delta
@@ -123,8 +207,21 @@ func interact() -> bool:
 	var f := nearest()
 	if f.is_empty():
 		return false
+	if f.get("blocked", false):
+		show_toast(str(f.reason))
+		return true
 	f.cb.call()
 	return true
+
+func _epitaph() -> void:
+	var wall: Panel2 = _open("res://scenes/village/epitaph_wall.gd")
+	var mid := Game.run != null and Game.run.suspended
+	wall.set("read_only", mid)
+	if mid:
+		wall.rebuild()
+
+func _shop() -> void:
+	show_toast(layout.shop_closed)
 
 func _open(script_path: String) -> Panel2:
 	var p: Panel2 = load(script_path).new()
@@ -188,15 +285,12 @@ func _flash_epitaph() -> void:
 
 func _dive() -> void:
 	if Game.run and Game.run.suspended:
-		show_toast("探索还没结束，不能重新下潜")
+		_return_floor()
 		return
 	Game.start_run()
 
 func _recall_facilities() -> void:
 	player.hp = mini(Game.run.hp, player.max_hp)
-	_fac("rest", "回复生命", Vector2(860, 1100), Vector2(180, 90), Color(0.3, 0.65, 0.35), _rest)
-	_fac("bag", "整理背包", Vector2(1560, 1100), Vector2(180, 90), Color(0.3, 0.45, 0.7), _bag)
-	_fac("return", "返回第 %d 层" % Game.run.depth, Vector2(1200, 860), Vector2(240, 90), Color(0.42, 0.32, 0.62), _return_floor)
 	if Game.run.just_recalled:
 		Game.run.just_recalled = false
 		show_toast("已回到起程村。层主没死就不算撤离，身上的东西仍会丢失。")

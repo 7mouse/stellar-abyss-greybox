@@ -1,0 +1,19 @@
+{
+ "src_psd2x": "art_src/rigs/sprout_boar/sprout_boar_parts_b_v1_1_src2x.psd",
+ "src_pivots": "art_src/rigs/sprout_boar/sprout_boar_parts_b_v1_1_pivots.json",
+ "out_dir": "art_src/rigs/sprout_boar",
+ "base": "sprout_boar_parts_b_v1_2",
+ "parts_dir": "parts_b_v1_2",
+ "why": "21f: hidden overlap extension of the body under the back tail (tool-made from the body's own pixels) so tail_root at +-30 shows no holes",
+ "ops": [
+  {
+   "op": "underfill",
+   "parent": "body_b_mesh",
+   "child": "tail_b",
+   "pivot": "tail_root",
+   "radius": 16,
+   "shade": 0.9,
+   "inset": 1
+  }
+ ]
+}

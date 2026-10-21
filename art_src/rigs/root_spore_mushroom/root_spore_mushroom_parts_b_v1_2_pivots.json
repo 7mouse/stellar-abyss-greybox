@@ -1,0 +1,152 @@
+{
+ "canvas": [
+  256,
+  256
+ ],
+ "unit": "px@1:1",
+ "version": "root_spore_mushroom_parts_b_v1_2",
+ "order": [
+  "root_l_a_b_under_root_l_b_b",
+  "root_l_b_b",
+  "stalk_b_under_root_l_a_b",
+  "root_l_a_b",
+  "root_r_a_b_under_root_r_b_b",
+  "root_r_b_b",
+  "stalk_b_under_root_r_a_b",
+  "root_r_a_b",
+  "stalk_b_under_arm_l_b",
+  "arm_l_b",
+  "stalk_b_under_arm_r_b",
+  "arm_r_b",
+  "stalk_b_mesh",
+  "mouth_open_b",
+  "eye_open_r_b",
+  "eye_closed_r_b",
+  "eye_open_l_b",
+  "eye_closed_l_b",
+  "cap_b"
+ ],
+ "swap": [
+  "eye_closed_l_b",
+  "eye_closed_r_b",
+  "mouth_open_b"
+ ],
+ "pivots": {
+  "cap_root": [
+   127.6,
+   134.6
+  ],
+  "cap_top": [
+   127.6,
+   65.6
+  ],
+  "hip_l": [
+   93.1,
+   206.6
+  ],
+  "foot_l": [
+   93.1,
+   247.1
+  ],
+  "hip_r": [
+   162.1,
+   206.6
+  ],
+  "foot_r": [
+   162.1,
+   247.1
+  ],
+  "arm_root_l": [
+   88.6,
+   181.1
+  ],
+  "hand_l": [
+   55.6,
+   191.6
+  ],
+  "arm_root_r": [
+   167.4,
+   181.1
+  ],
+  "hand_r": [
+   201.1,
+   191.6
+  ],
+  "root": [
+   127.6,
+   249.4
+  ],
+  "root_mid_r": [
+   164.5,
+   219.5
+  ],
+  "root_mid_l": [
+   91.1,
+   216.5
+  ]
+ },
+ "line_rgb": [
+  47,
+  50,
+  38
+ ],
+ "log": {
+  "ops": [],
+  "joints": {
+   "root_mid_r": {
+    "child": {
+     "before": 0.2,
+     "half_width": 11.2,
+     "after": 7.5,
+     "action": "round cap v2.1 hidden: erase+interior fill",
+     "target": 7.5,
+     "cap_half_width": 11.5,
+     "added_px_1to1": 147,
+     "erased_cut_px_1to1": 25,
+     "part": "root_r_b_b",
+     "cls": "small"
+    },
+    "parent": {
+     "before": 1.0,
+     "half_width": 10.9,
+     "after": 5.0,
+     "action": "round cap v2.1 visible: parent pixels",
+     "target": 5.0,
+     "cap_half_width": 12.5,
+     "added_px_1to1": 107,
+     "erased_cut_px_1to1": 0,
+     "part": "root_r_a_b",
+     "cls": "small"
+    }
+   },
+   "root_mid_l": {
+    "child": {
+     "before": 0.0,
+     "half_width": 9.5,
+     "after": 7.4,
+     "action": "round cap v2.1 hidden: erase+interior fill",
+     "target": 7.5,
+     "cap_half_width": 10.7,
+     "added_px_1to1": 138,
+     "erased_cut_px_1to1": 22,
+     "part": "root_l_b_b",
+     "cls": "small"
+    },
+    "parent": {
+     "before": 0.5,
+     "half_width": 11.2,
+     "after": 4.9,
+     "action": "round cap v2.1 visible: parent pixels",
+     "target": 5.0,
+     "cap_half_width": 11.6,
+     "added_px_1to1": 114,
+     "erased_cut_px_1to1": 0,
+     "part": "root_l_a_b",
+     "cls": "small"
+    }
+   }
+  },
+  "cleanup": {},
+  "post_ops": []
+ }
+}

@@ -1,0 +1,416 @@
+{
+ "src_psd2x": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_f_v2_1_src2x.psd",
+ "src_pivots": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_f_v2_1_pivots.json",
+ "out_dir": "art_src/rigs/mosscrown_king_boar",
+ "base": "mosscrown_king_boar_parts_f_v3_raw",
+ "parts_dir": "parts_v3_raw",
+ "ops": [
+  {
+   "op": "remove",
+   "parts": [
+    "eye_open_r_f",
+    "eye_closed_r_f",
+    "eye_open_l_f",
+    "eye_closed_l_f"
+   ]
+  },
+  {
+   "op": "add_part",
+   "name": "head_f",
+   "source": "art_src/src/v21f/king_boar_heads_gen1.jpg",
+   "pick": [
+    250,
+    100
+   ],
+   "fit": {
+    "box": [
+     71.6,
+     87,
+     254.6,
+     259
+    ]
+   },
+   "recolor": {
+    "to": "head_f",
+    "mode": "meanstd",
+    "strength": 0.6
+   },
+   "replace": true
+  },
+  {
+   "op": "add_part",
+   "name": "ear_r_f",
+   "png": "art_src/rigs/mosscrown_king_boar/spares_v2/ear_l.png",
+   "fit": {
+    "box": [
+     62,
+     86,
+     108,
+     142
+    ]
+   },
+   "below": "head_f",
+   "pivots": {
+    "ear_root_r": [
+     98,
+     124
+    ],
+    "ear_tip_r": [
+     72,
+     92
+    ]
+   }
+  },
+  {
+   "op": "add_part",
+   "name": "ear_l_f",
+   "png": "art_src/rigs/mosscrown_king_boar/spares_v2/ear_r.png",
+   "fit": {
+    "box": [
+     214,
+     86,
+     260,
+     142
+    ]
+   },
+   "below": "head_f",
+   "pivots": {
+    "ear_root_l": [
+     224,
+     124
+    ],
+    "ear_tip_l": [
+     250,
+     92
+    ]
+   }
+  },
+  {
+   "op": "add_part",
+   "name": "mane_f_mesh",
+   "source": "art_src/src/v21f/king_boar_mane_gen1.jpg",
+   "pick": [
+    560,
+    270
+   ],
+   "fit": {
+    "box": [
+     50,
+     66,
+     272,
+     246
+    ],
+    "anchor": "top"
+   },
+   "recolor": {
+    "to": "body_f_mesh",
+    "mode": "meanstd",
+    "strength": 0.6
+   },
+   "below": "ear_r_f"
+  },
+  {
+   "op": "add_part",
+   "name": "head_roar_f",
+   "source": "art_src/src/v21f/king_boar_heads_gen1.jpg",
+   "pick": [
+    240,
+    280
+   ],
+   "fit": {
+    "box": [
+     68.6,
+     100.7,
+     256.5,
+     283
+    ]
+   },
+   "recolor": {
+    "to": "head_f",
+    "mode": "meanstd",
+    "strength": 0.6
+   },
+   "above": "head_f",
+   "swap": true
+  },
+  {
+   "op": "add_part",
+   "name": "tusk_r_f",
+   "png": "art_src/rigs/mosscrown_king_boar/spares_v2/tusk_l.png",
+   "fit": {
+    "box": [
+     100,
+     186,
+     128,
+     234
+    ]
+   },
+   "above": "head_roar_f",
+   "pivots": {
+    "tusk_root_r": [
+     122,
+     206
+    ],
+    "tusk_tip_r": [
+     108,
+     232
+    ]
+   }
+  },
+  {
+   "op": "add_part",
+   "name": "tusk_l_f",
+   "png": "art_src/rigs/mosscrown_king_boar/spares_v2/tusk_r.png",
+   "fit": {
+    "box": [
+     194,
+     186,
+     222,
+     234
+    ]
+   },
+   "above": "tusk_r_f",
+   "pivots": {
+    "tusk_root_l": [
+     200,
+     206
+    ],
+    "tusk_tip_l": [
+     214,
+     232
+    ]
+   }
+  },
+  {
+   "op": "blink",
+   "head": "head_f",
+   "suffix": "f",
+   "eyes": [
+    {
+     "side": "r",
+     "auto": [
+      106,
+      150,
+      135,
+      188
+     ]
+    },
+    {
+     "side": "l",
+     "auto": [
+      188,
+      150,
+      217,
+      188
+     ]
+    }
+   ]
+  },
+  {
+   "op": "add_part",
+   "name": "crown_f",
+   "png": "art_src/rigs/mosscrown_king_boar/spares_v2/crown.png",
+   "fit": {
+    "box": [
+     92,
+     38,
+     230,
+     124
+    ]
+   },
+   "above": "eye_closed_l_f",
+   "pivots": {
+    "crown_root": [
+     161,
+     104
+    ],
+    "crown_tip": [
+     161,
+     40
+    ]
+   }
+  },
+  {
+   "op": "add_part",
+   "name": "eye_angry_r_f",
+   "source": "art_src/src/v21f/king_boar_heads_gen1.jpg",
+   "pick": [
+    622,
+    297
+   ],
+   "fit": {
+    "at": [
+     119.2,
+     163.8
+    ],
+    "h": 44
+   },
+   "below": "crown_f",
+   "swap": true
+  },
+  {
+   "op": "add_part",
+   "name": "eye_angry_l_f",
+   "source": "art_src/src/v21f/king_boar_heads_gen1.jpg",
+   "pick": [
+    720,
+    295
+   ],
+   "fit": {
+    "at": [
+     204.4,
+     162.7
+    ],
+    "h": 44
+   },
+   "below": "crown_f",
+   "swap": true
+  },
+  {
+   "op": "reorder",
+   "part": "head_roar_f",
+   "above": "head_f"
+  },
+  {
+   "op": "reorder",
+   "part": "tusk_r_f",
+   "above": "head_roar_f"
+  },
+  {
+   "op": "reorder",
+   "part": "tusk_l_f",
+   "above": "tusk_r_f"
+  },
+  {
+   "op": "empty",
+   "name": "tail_f",
+   "below": "leg_hind_r_f"
+  },
+  {
+   "op": "split",
+   "part": "leg_front_r_f",
+   "at": [
+    98.7,
+    291
+   ],
+   "from": "shoulder_r",
+   "to": "hoof_r_front",
+   "upper": "leg_front_r_a_f",
+   "lower": "leg_front_r_b_f",
+   "pivot": "knee_front_r"
+  },
+  {
+   "op": "split",
+   "part": "leg_front_l_f",
+   "at": [
+    221.3,
+    291
+   ],
+   "from": "shoulder_l",
+   "to": "hoof_l_front",
+   "upper": "leg_front_l_a_f",
+   "lower": "leg_front_l_b_f",
+   "pivot": "knee_front_l"
+  },
+  {
+   "op": "split",
+   "part": "leg_hind_r_f",
+   "at": [
+    129.9,
+    287
+   ],
+   "from": "hip_r",
+   "to": "hoof_r_hind",
+   "upper": "leg_hind_r_a_f",
+   "lower": "leg_hind_r_b_f",
+   "pivot": "knee_hind_r"
+  },
+  {
+   "op": "split",
+   "part": "leg_hind_l_f",
+   "at": [
+    190.1,
+    287
+   ],
+   "from": "hip_l",
+   "to": "hoof_l_hind",
+   "upper": "leg_hind_l_a_f",
+   "lower": "leg_hind_l_b_f",
+   "pivot": "knee_hind_l"
+  },
+  {
+   "op": "underfill",
+   "parent": "head_f",
+   "child": "crown_f",
+   "pivot": "crown_root",
+   "radius": 46,
+   "shade": 0.8,
+   "inset": 2
+  },
+  {
+   "op": "underfill",
+   "parent": "head_f",
+   "child": "ear_r_f",
+   "pivot": "ear_root_r",
+   "radius": 14,
+   "shade": 0.85
+  },
+  {
+   "op": "underfill",
+   "parent": "head_f",
+   "child": "ear_l_f",
+   "pivot": "ear_root_l",
+   "radius": 14,
+   "shade": 0.85
+  },
+  {
+   "op": "underfill",
+   "parent": "head_f",
+   "child": "tusk_r_f",
+   "pivot": "tusk_root_r",
+   "radius": 8,
+   "shade": 0.9
+  },
+  {
+   "op": "underfill",
+   "parent": "head_f",
+   "child": "tusk_l_f",
+   "pivot": "tusk_root_l",
+   "radius": 8,
+   "shade": 0.9
+  },
+  {
+   "op": "underfill",
+   "parent": "leg_front_r_a_f",
+   "child": "leg_front_r_b_f",
+   "pivot": "knee_front_r",
+   "radius": 12,
+   "shade": 0.9
+  },
+  {
+   "op": "underfill",
+   "parent": "leg_front_l_a_f",
+   "child": "leg_front_l_b_f",
+   "pivot": "knee_front_l",
+   "radius": 12,
+   "shade": 0.9
+  },
+  {
+   "op": "underfill",
+   "parent": "leg_hind_r_a_f",
+   "child": "leg_hind_r_b_f",
+   "pivot": "knee_hind_r",
+   "radius": 12,
+   "shade": 0.9
+  },
+  {
+   "op": "underfill",
+   "parent": "leg_hind_l_a_f",
+   "child": "leg_hind_l_b_f",
+   "pivot": "knee_hind_l",
+   "radius": 12,
+   "shade": 0.9
+  }
+ ],
+ "why": "21f C09 v3: bare AI head + separately painted crown, ears, tusks (spares_v2), front mane ruff, open-mouth roar head (head_roar_f swap), angry-eye swaps, 2-segment legs, hidden overlap extensions (underfill) under crown/ears/tusks/knees; tail_f empty (structural, not visible from the front)"
+}

@@ -1,0 +1,32 @@
+{
+ "src_psd2x": "art_src/rigs/root_spore_mushroom/root_spore_mushroom_parts_f_v1_2_raw_src2x.psd",
+ "src_pivots": "art_src/rigs/root_spore_mushroom/root_spore_mushroom_parts_f_v1_2_raw_pivots.json",
+ "out_dir": "art_src/rigs/root_spore_mushroom",
+ "base": "root_spore_mushroom_parts_f_v1_2",
+ "parts_dir": "parts_f_v1_2",
+ "scale": 2,
+ "cap_version": 2,
+ "defringe": false,
+ "joints": [
+  {
+   "pivot": "root_mid_r",
+   "parent": "root_r_a_f",
+   "child": "root_r_b_f",
+   "child_cls": "small",
+   "parent_cls": "small",
+   "child_from": "foot_r",
+   "parent_from": "hip_r",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "root_mid_l",
+   "parent": "root_l_a_f",
+   "child": "root_l_b_f",
+   "child_cls": "small",
+   "parent_cls": "small",
+   "child_from": "foot_l",
+   "parent_from": "hip_l",
+   "child_cover_only": false
+  }
+ ]
+}

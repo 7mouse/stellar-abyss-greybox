@@ -1,0 +1,187 @@
+{
+ "src_psd2x": "art_src/rigs/deep_moss_slime/deep_moss_slime_parts_v1_1_src2x.psd",
+ "src_pivots": "art_src/rigs/deep_moss_slime/deep_moss_slime_parts_v1_1_pivots.json",
+ "out_dir": "art_src/rigs/deep_moss_slime",
+ "base": "deep_moss_slime_parts_v1_2",
+ "parts_dir": "parts_v1_2",
+ "why": "21f: C08 hanging moss (moss_hang) and root spikes (root_spikes) from monster_extras_gen1, plus the C07 core (deep-moss recolour); hide shell + moss_tuft + moss_hang + root_spikes on armour break; the body gloss spot desaturated (the v1 histogram recolour had turned it rainbow)",
+ "ops": [
+  {
+   "op": "add_part",
+   "name": "core",
+   "source": "art_src/src/v21f/monster_extras_gen1.jpg",
+   "pick": [
+    725,
+    110
+   ],
+   "fit": {
+    "at": [
+     120,
+     128
+    ],
+    "h": 26
+   },
+   "recolor": {
+    "to": "body_mesh",
+    "mode": "hist",
+    "strength": 0.8,
+    "thr": 0.2
+   },
+   "alpha_mul": 0.5,
+   "above": "body_mesh",
+   "pivots": {
+    "core": [
+     120,
+     128
+    ]
+   }
+  },
+  {
+   "op": "add_part",
+   "name": "root_spikes",
+   "source": "art_src/src/v21f/monster_extras_gen1.jpg",
+   "pick": [
+    830,
+    300
+   ],
+   "fit": {
+    "box": [
+     134,
+     36,
+     168,
+     84
+    ],
+    "anchor": "bottom"
+   },
+   "recolor": {
+    "to": "shell",
+    "mode": "meanstd",
+    "strength": 0.6,
+    "thr": 0.2
+   },
+   "below": "shell",
+   "pivots": {
+    "spikes_root": [
+     150,
+     78
+    ]
+   },
+   "darken": 0.82
+  },
+  {
+   "op": "add_part",
+   "name": "_tmp_spk2",
+   "source": "art_src/src/v21f/monster_extras_gen1.jpg",
+   "pick": [
+    640,
+    300
+   ],
+   "fit": {
+    "box": [
+     170,
+     58,
+     196,
+     100
+    ],
+    "anchor": "bottom"
+   },
+   "recolor": {
+    "to": "shell",
+    "mode": "meanstd",
+    "strength": 0.6,
+    "thr": 0.2
+   },
+   "merge_into": "root_spikes",
+   "darken": 0.82
+  },
+  {
+   "op": "add_part",
+   "name": "_tmp_spk3",
+   "source": "art_src/src/v21f/monster_extras_gen1.jpg",
+   "pick": [
+    735,
+    300
+   ],
+   "fit": {
+    "box": [
+     100,
+     50,
+     128,
+     92
+    ],
+    "anchor": "bottom"
+   },
+   "recolor": {
+    "to": "shell",
+    "mode": "meanstd",
+    "strength": 0.6,
+    "thr": 0.2
+   },
+   "merge_into": "root_spikes",
+   "darken": 0.82
+  },
+  {
+   "op": "add_part",
+   "name": "moss_hang",
+   "source": "art_src/src/v21f/monster_extras_gen1.jpg",
+   "pick": [
+    225,
+    255
+   ],
+   "fit": {
+    "box": [
+     58,
+     128,
+     98,
+     182
+    ],
+    "anchor": "top"
+   },
+   "recolor": {
+    "to": "moss_tuft",
+    "mode": "hist",
+    "strength": 0.8,
+    "thr": 0.2
+   },
+   "above": "shell",
+   "pivots": {
+    "hang_root": [
+     80,
+     132
+    ]
+   }
+  },
+  {
+   "op": "add_part",
+   "name": "_tmp_hang2",
+   "source": "art_src/src/v21f/monster_extras_gen1.jpg",
+   "pick": [
+    525,
+    255
+   ],
+   "fit": {
+    "box": [
+     168,
+     138,
+     198,
+     176
+    ],
+    "anchor": "top"
+   },
+   "recolor": {
+    "to": "moss_tuft",
+    "mode": "hist",
+    "strength": 0.8,
+    "thr": 0.2
+   },
+   "merge_into": "moss_hang"
+  },
+  {
+   "op": "grade",
+   "part": "body_mesh",
+   "sat": 0.12,
+   "val": 0.85,
+   "min_lum": 0.5
+  }
+ ]
+}

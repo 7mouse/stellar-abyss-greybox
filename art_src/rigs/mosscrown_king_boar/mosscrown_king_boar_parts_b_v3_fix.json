@@ -1,0 +1,121 @@
+{
+ "out_dir": "art_src/rigs/mosscrown_king_boar",
+ "base": "mosscrown_king_boar_parts_b_v3",
+ "scale": 2,
+ "joints": [
+  {
+   "pivot": "neck",
+   "parent": "body_b_mesh",
+   "child": "head_b",
+   "child_cls": "big",
+   "child_from": "head_top"
+  },
+  {
+   "pivot": "ear_root_r",
+   "parent": "head_b",
+   "child": "ear_r_b",
+   "child_cls": "small",
+   "child_from": "ear_tip_r",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "ear_root_l",
+   "parent": "head_b",
+   "child": "ear_l_b",
+   "child_cls": "small",
+   "child_from": "ear_tip_l",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "crown_root",
+   "parent": "head_b",
+   "child": "crown_b",
+   "child_cls": "small",
+   "child_from": "crown_tip",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "tail_root",
+   "parent": "body_b_mesh",
+   "child": "tail_b",
+   "child_cls": "small",
+   "child_from": "tail_tip",
+   "parent_cls": "small",
+   "parent_from": "root",
+   "child_cover_only": false,
+   "child_target": 8
+  },
+  {
+   "pivot": "shoulder_r",
+   "parent": "body_b_mesh",
+   "child": "leg_front_r_a_b",
+   "child_cls": "big",
+   "child_from": null,
+   "child_cover_only": false
+  },
+  {
+   "pivot": "shoulder_l",
+   "parent": "body_b_mesh",
+   "child": "leg_front_l_a_b",
+   "child_cls": "big",
+   "child_from": null,
+   "child_cover_only": false
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "body_b_mesh",
+   "child": "leg_hind_r_a_b",
+   "child_cls": "big",
+   "child_from": null,
+   "child_cover_only": false
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "body_b_mesh",
+   "child": "leg_hind_l_a_b",
+   "child_cls": "big",
+   "child_from": null,
+   "child_cover_only": false
+  },
+  {
+   "pivot": "knee_front_r",
+   "parent": "leg_front_r_a_b",
+   "child": "leg_front_r_b_b",
+   "child_cls": "small",
+   "parent_cls": "small",
+   "child_from": "hoof_r_front",
+   "parent_from": "shoulder_r",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "knee_front_l",
+   "parent": "leg_front_l_a_b",
+   "child": "leg_front_l_b_b",
+   "child_cls": "small",
+   "parent_cls": "small",
+   "child_from": "hoof_l_front",
+   "parent_from": "shoulder_l",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "knee_hind_r",
+   "parent": "leg_hind_r_a_b",
+   "child": "leg_hind_r_b_b",
+   "child_cls": "small",
+   "parent_cls": "small",
+   "child_from": "hoof_r_hind",
+   "parent_from": "hip_r",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "knee_hind_l",
+   "parent": "leg_hind_l_a_b",
+   "child": "leg_hind_l_b_b",
+   "child_cls": "small",
+   "parent_cls": "small",
+   "child_from": "hoof_l_hind",
+   "parent_from": "hip_l",
+   "child_cover_only": false
+  }
+ ]
+}

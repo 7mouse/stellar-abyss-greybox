@@ -1,0 +1,28 @@
+{
+ "src_psd2x": "art_src/rigs/hero/hero_parts_b_v2_2_src2x.psd",
+ "src_pivots": "art_src/rigs/hero/hero_parts_b_v2_2_pivots.json",
+ "out_dir": "art_src/rigs/hero",
+ "base": "hero_parts_b_v2_3",
+ "parts_dir": "parts_v2_3",
+ "ops": [
+  {
+   "op": "empty",
+   "name": "expr_hurt_b",
+   "above": "eye_closed_l_b",
+   "swap": true
+  },
+  {
+   "op": "empty",
+   "name": "expr_angry_b",
+   "above": "eye_closed_l_b",
+   "swap": true
+  },
+  {
+   "op": "empty",
+   "name": "expr_happy_b",
+   "above": "eye_closed_l_b",
+   "swap": true
+  }
+ ],
+ "why": "21f: expression swaps (hurt / angry-attack / happy) = face area of an AI expression sheet fitted onto the rig head (alpha IoU), colour-matched, masked to the head skin; neutral = the head itself; b has no face (structural empty swaps so all views switch together)"
+}

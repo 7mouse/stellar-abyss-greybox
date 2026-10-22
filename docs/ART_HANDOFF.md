@@ -96,6 +96,8 @@ docs/
 ## 4. 提示词在哪
 [art_src/prompts/](https://github.com/7mouse/stellar-abyss-greybox/tree/rig-trial/art_src/prompts)：21c–21g 共 53 次生成，逐字提示词 + 宽高比 + 输出尺寸 + 参考图（`refs/` 里是当时临时拼的参考图）+ 落库文件。**21c 之前的原图（画风探索 37 张、设定图、基准图、主角/野猪部件表、10-21 11:54 的 8 张批量表）提示词无法恢复**，清单见 prompts/README.md。
 
+**统一提示词手册**：[06-art-direction/specs/PROMPTS.md](https://github.com/7mouse/stellar-abyss-design/blob/main/06-art-direction/specs/PROMPTS.md)（设计仓库，私有）。内容包括通用风格前缀和负面词、9 类资产的模板和采用版逐字提示词、已知坑、UI 文案规范与清单、缺失提示词清单。新出图先看这份。
+
 ---
 
 ## 5. 当前版本

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EcologyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ecology_data.gd" id="s"]
+[ext_resource type="Script" path="res://scripts/resources/hazard_data.gd" id="sh"]
+[ext_resource type="Resource" path="res://data/hazards/root_snare.tres" id="h"]
+[ext_resource type="Resource" path="res://data/guards/guard_2.tres" id="g"]
+
+[resource]
+script = ExtResource("s")
+id = "root_gorge"
+display_name = "根须深谷"
+palette = Color(0.22, 0.18, 0.12, 1)
+biome_bias = 0.0
+cliff_th = 0.15
+enemy_mix = "rootshot:0.50,mushling:0.35,shellbug:0.15"
+hazard_counts = Array[int]([5])
+hazards = Array[ExtResource("sh")]([ExtResource("h")])
+lord = ExtResource("g")

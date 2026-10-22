@@ -1,0 +1,407 @@
+{
+ "version": {
+  "neck": {
+   "parent": "body_b_mesh",
+   "child": "head_b",
+   "pair_disc_r": 28.6,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 38.7,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  },
+  "ear_root_r": {
+   "parent": "head_b",
+   "child": "ear_r_b",
+   "pair_disc_r": 6.5,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 8.8,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  },
+  "ear_root_l": {
+   "parent": "head_b",
+   "child": "ear_l_b",
+   "pair_disc_r": 6.6,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 8.8,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  },
+  "crown_root": {
+   "parent": "head_b",
+   "child": "crown_b",
+   "pair_disc_r": 22.1,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 22.3,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  },
+  "tail_root": {
+   "parent": "body_b_mesh",
+   "child": "tail_b",
+   "pair_disc_r": 7.1,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 15.3,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  },
+  "shoulder_r": {
+   "parent": "body_b_mesh",
+   "child": "leg_front_r_a_b",
+   "pair_disc_r": 9.7,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 12.9,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  },
+  "shoulder_l": {
+   "parent": "body_b_mesh",
+   "child": "leg_front_l_a_b",
+   "pair_disc_r": 7.6,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 10.1,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  },
+  "hip_r": {
+   "parent": "body_b_mesh",
+   "child": "leg_hind_r_a_b",
+   "pair_disc_r": 10.0,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 13.3,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  },
+  "hip_l": {
+   "parent": "body_b_mesh",
+   "child": "leg_hind_l_a_b",
+   "pair_disc_r": 10.1,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 13.4,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  },
+  "knee_front_r": {
+   "parent": "leg_front_r_a_b",
+   "child": "leg_front_r_b_b",
+   "pair_disc_r": 6.8,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 9.3,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  },
+  "knee_front_l": {
+   "parent": "leg_front_l_a_b",
+   "child": "leg_front_l_b_b",
+   "pair_disc_r": 6.9,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 9.1,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  },
+  "knee_hind_r": {
+   "parent": "leg_hind_r_a_b",
+   "child": "leg_hind_r_b_b",
+   "pair_disc_r": 8.4,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 11.5,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  },
+  "knee_hind_l": {
+   "parent": "leg_hind_l_a_b",
+   "child": "leg_hind_l_b_b",
+   "pair_disc_r": 8.5,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 11.4,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0,
+   "seam_band": 4.0,
+   "seam_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "seam_worst": 0.0
+  }
+ }
+}

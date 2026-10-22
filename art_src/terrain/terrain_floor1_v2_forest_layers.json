@@ -1,0 +1,53 @@
+{
+ "source": "art_src/src/terrain_v2/forest_layers_gen1.jpg",
+ "out_dir": "art_src/terrain/floor1_v2/forest",
+ "disp_scale": 1.25,
+ "items": [
+  {
+   "name": "forest_back_green",
+   "pick": [
+    255,
+    160
+   ],
+   "spec": "background tree clump (map back edge)",
+   "recolor": "back"
+  },
+  {
+   "name": "forest_back_autumn",
+   "pick": [
+    765,
+    160
+   ],
+   "spec": "background tree clump, autumn mix",
+   "recolor": "back"
+  },
+  {
+   "name": "canopy_front_green",
+   "pick": [
+    255,
+    450
+   ],
+   "spec": "foreground overhanging canopy (drawn above everything)",
+   "recolor": "front"
+  },
+  {
+   "name": "canopy_front_autumn",
+   "pick": [
+    765,
+    450
+   ],
+   "spec": "foreground canopy, autumn mix",
+   "recolor": "front"
+  }
+ ],
+ "recolor": {
+  "back": {
+   "sat": 0.8,
+   "val": 0.86
+  },
+  "front": {
+   "sat": 0.85,
+   "val": 0.78
+  }
+ }
+}

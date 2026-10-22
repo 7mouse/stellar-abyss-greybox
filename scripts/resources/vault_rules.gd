@@ -6,7 +6,7 @@ extends Resource
 @export var upgrade_slots_per_level := 2
 @export var max_upgrade_level := 3
 @export var village_bonus_per_village := 1 ## 灰盒只有一个村，不生效
-@export var allowed_categories: PackedStringArray = ["equipment", "rare_material", "key_item", "lift_fuel"]
+@export var allowed_categories: PackedStringArray = ["equipment", "rare_material", "key_item"]
 ## 升到第 1..3 级各花多少萤苔精
 @export var upgrade_cost := "2,4,6"
 

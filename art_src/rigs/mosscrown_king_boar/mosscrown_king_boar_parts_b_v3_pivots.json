@@ -1,0 +1,255 @@
+{
+ "canvas": [
+  320,
+  320
+ ],
+ "unit": "px@1:1",
+ "version": "mosscrown_king_boar_parts_b_v3",
+ "order": [
+  "leg_front_l_a_b_under_leg_front_l_b_b",
+  "leg_front_l_b_b",
+  "leg_front_l_a_b",
+  "leg_front_r_a_b_under_leg_front_r_b_b",
+  "leg_front_r_b_b",
+  "leg_front_r_a_b",
+  "head_b",
+  "head_roar_b",
+  "mane_b_mesh",
+  "ear_l_b",
+  "ear_r_b",
+  "tusk_r_b",
+  "tusk_l_b",
+  "eye_open_r_b",
+  "eye_closed_r_b",
+  "eye_open_l_b",
+  "eye_closed_l_b",
+  "eye_angry_r_b",
+  "eye_angry_l_b",
+  "leg_hind_l_a_b_under_leg_hind_l_b_b",
+  "leg_hind_l_b_b",
+  "leg_hind_l_a_b",
+  "leg_hind_r_a_b_under_leg_hind_r_b_b",
+  "leg_hind_r_b_b",
+  "leg_hind_r_a_b",
+  "body_b_mesh",
+  "tail_b",
+  "crown_b"
+ ],
+ "swap": [
+  "eye_angry_l_b",
+  "eye_angry_r_b",
+  "eye_closed_l_b",
+  "eye_closed_r_b",
+  "head_roar_b"
+ ],
+ "pivots": {
+  "neck": [
+   160.5,
+   136.3
+  ],
+  "head_top": [
+   160.5,
+   82.6
+  ],
+  "crown_root": [
+   160.5,
+   93.3
+  ],
+  "crown_tip": [
+   160.5,
+   50.3
+  ],
+  "tail_root": [
+   226.1,
+   184.7
+  ],
+  "tail_tip": [
+   251.9,
+   206.2
+  ],
+  "hip_l": [
+   101.4,
+   270.7
+  ],
+  "hoof_l_hind": [
+   101.4,
+   310.5
+  ],
+  "hip_r": [
+   219.7,
+   270.7
+  ],
+  "hoof_r_hind": [
+   219.7,
+   310.5
+  ],
+  "shoulder_l": [
+   141.2,
+   268.6
+  ],
+  "hoof_l_front": [
+   141.2,
+   301.9
+  ],
+  "shoulder_r": [
+   179.9,
+   268.6
+  ],
+  "hoof_r_front": [
+   179.9,
+   301.9
+  ],
+  "root": [
+   160.5,
+   311.6
+  ],
+  "ear_root_l": [
+   122.0,
+   112.0
+  ],
+  "ear_tip_l": [
+   114.0,
+   84.0
+  ],
+  "ear_root_r": [
+   200.0,
+   112.0
+  ],
+  "ear_tip_r": [
+   208.0,
+   84.0
+  ],
+  "knee_front_r": [
+   179.9,
+   285.0
+  ],
+  "knee_front_l": [
+   141.2,
+   285.0
+  ],
+  "knee_hind_r": [
+   219.7,
+   290.6
+  ],
+  "knee_hind_l": [
+   101.4,
+   290.6
+  ]
+ },
+ "line_rgb": [
+  61,
+  61,
+  37
+ ],
+ "log": {
+  "ops": [],
+  "joints": {
+   "knee_front_r": {
+    "child": {
+     "before": -0.2,
+     "half_width": 11.5,
+     "after": 7.2,
+     "action": "round cap v2.1 hidden: erase+interior fill",
+     "target": 7.5,
+     "cap_half_width": 13.2,
+     "added_px_1to1": 169,
+     "erased_cut_px_1to1": 18,
+     "part": "leg_front_r_b_b",
+     "cls": "small"
+    },
+    "parent": {
+     "before": -0.2,
+     "half_width": 11.2,
+     "after": 4.8,
+     "action": "round cap v2.1 visible: parent pixels",
+     "target": 5.0,
+     "cap_half_width": 12.5,
+     "added_px_1to1": 106,
+     "erased_cut_px_1to1": 0,
+     "part": "leg_front_r_a_b",
+     "cls": "small"
+    }
+   },
+   "knee_front_l": {
+    "child": {
+     "before": -0.2,
+     "half_width": 11.2,
+     "after": 7.2,
+     "action": "round cap v2.1 hidden: erase+interior fill",
+     "target": 7.5,
+     "cap_half_width": 12.9,
+     "added_px_1to1": 165,
+     "erased_cut_px_1to1": 16,
+     "part": "leg_front_l_b_b",
+     "cls": "small"
+    },
+    "parent": {
+     "before": -0.2,
+     "half_width": 11.0,
+     "after": 4.8,
+     "action": "round cap v2.1 visible: parent pixels",
+     "target": 5.0,
+     "cap_half_width": 12.6,
+     "added_px_1to1": 110,
+     "erased_cut_px_1to1": 0,
+     "part": "leg_front_l_a_b",
+     "cls": "small"
+    }
+   },
+   "knee_hind_r": {
+    "child": {
+     "before": -0.1,
+     "half_width": 14.5,
+     "after": 7.4,
+     "action": "round cap v2.1 hidden: erase+interior fill",
+     "target": 7.5,
+     "cap_half_width": 16.2,
+     "added_px_1to1": 215,
+     "erased_cut_px_1to1": 16,
+     "part": "leg_hind_r_b_b",
+     "cls": "small"
+    },
+    "parent": {
+     "before": -0.4,
+     "half_width": 14.0,
+     "after": 4.6,
+     "action": "round cap v2.1 visible: parent pixels",
+     "target": 5.0,
+     "cap_half_width": 15.8,
+     "added_px_1to1": 133,
+     "erased_cut_px_1to1": 0,
+     "part": "leg_hind_r_a_b",
+     "cls": "small"
+    }
+   },
+   "knee_hind_l": {
+    "child": {
+     "before": -0.1,
+     "half_width": 14.5,
+     "after": 7.4,
+     "action": "round cap v2.1 hidden: erase+interior fill",
+     "target": 7.5,
+     "cap_half_width": 16.2,
+     "added_px_1to1": 216,
+     "erased_cut_px_1to1": 13,
+     "part": "leg_hind_l_b_b",
+     "cls": "small"
+    },
+    "parent": {
+     "before": -0.4,
+     "half_width": 14.0,
+     "after": 4.6,
+     "action": "round cap v2.1 visible: parent pixels",
+     "target": 5.0,
+     "cap_half_width": 15.8,
+     "added_px_1to1": 135,
+     "erased_cut_px_1to1": 0,
+     "part": "leg_hind_l_a_b",
+     "cls": "small"
+    }
+   }
+  },
+  "cleanup": {},
+  "post_ops": []
+ }
+}

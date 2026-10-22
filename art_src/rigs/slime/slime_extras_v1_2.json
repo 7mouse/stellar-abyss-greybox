@@ -1,0 +1,40 @@
+{
+ "src_psd2x": "art_src/rigs/slime/slime_parts_v1_1_src2x.psd",
+ "src_pivots": "art_src/rigs/slime/slime_parts_v1_1_pivots.json",
+ "out_dir": "art_src/rigs/slime",
+ "base": "slime_parts_v1_2",
+ "parts_dir": "parts_v1_2",
+ "why": "21f: C07 core (AI sheet monster_extras_gen1, soft round core) inside the body, 50% so it reads through the jelly",
+ "ops": [
+  {
+   "op": "add_part",
+   "name": "core",
+   "source": "art_src/src/v21f/monster_extras_gen1.jpg",
+   "pick": [
+    725,
+    110
+   ],
+   "fit": {
+    "at": [
+     128,
+     122
+    ],
+    "h": 30
+   },
+   "recolor": {
+    "to": "body_mesh",
+    "mode": "meanstd",
+    "strength": 0.5,
+    "thr": 0.3
+   },
+   "alpha_mul": 0.5,
+   "above": "body_mesh",
+   "pivots": {
+    "core": [
+     128,
+     122
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+{
+ "src_psd2x": "art_src/rigs/slime/slime_parts_v1_src2x.psd",
+ "src_pivots": "art_src/rigs/slime/slime_parts_v1_pivots.json",
+ "out_dir": "art_src/rigs/slime/",
+ "base": "slime_parts_v1_1",
+ "parts_dir": "parts_v1_1",
+ "ops": [
+  {
+   "op": "blink",
+   "head": "body_mesh",
+   "suffix": "s",
+   "closed_only": true,
+   "eyes": [
+    {
+     "side": "r",
+     "open_layer": "eye_r",
+     "ellipse": [
+      103.5,
+      146.0,
+      10.5,
+      12.0
+     ]
+    },
+    {
+     "side": "l",
+     "open_layer": "eye_l",
+     "ellipse": [
+      151.0,
+      146.0,
+      11.0,
+      12.0
+     ]
+    }
+   ]
+  }
+ ]
+}

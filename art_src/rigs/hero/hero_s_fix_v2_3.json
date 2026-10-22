@@ -1,0 +1,85 @@
+{
+ "out_dir": "art_src/rigs/hero",
+ "base": "hero_parts_s_v2_3",
+ "scale": 2,
+ "joints": [
+  {
+   "pivot": "neck",
+   "parent": "torso_s_mesh",
+   "child": "head_s",
+   "child_cls": null,
+   "parent_cls": "big",
+   "note": "head is drawn over the torso; the torso collar grows up only underneath the head (invisible at rest, fills the gap when the head turns)",
+   "parent_hide_under": [
+    "head_s"
+   ],
+   "v21": "item 3: hidden collar cap (only under the head) 19.5->22.5 long, 9->15 wide",
+   "parent_cap_w": 15,
+   "parent_target": 22.5
+  },
+  {
+   "pivot": "shoulder_r",
+   "parent": "torso_s_mesh",
+   "child": "arm_upper_r_s",
+   "child_cls": "big",
+   "child_from": "elbow_r"
+  },
+  {
+   "pivot": "elbow_r",
+   "parent": "arm_upper_r_s",
+   "child": "forearm_r_s",
+   "child_cls": "small",
+   "child_from": "wrist_r",
+   "parent_cls": "small",
+   "parent_from": "shoulder_r"
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "torso_s_mesh",
+   "child": "thigh_r_s",
+   "child_cls": "big",
+   "child_from": "knee_r"
+  },
+  {
+   "pivot": "knee_r",
+   "parent": "thigh_r_s",
+   "child": "shin_r_s",
+   "child_cls": "small",
+   "child_from": "ankle_r",
+   "parent_cls": "small",
+   "parent_from": "hip_r"
+  },
+  {
+   "pivot": "shoulder_l",
+   "parent": "torso_s_mesh",
+   "child": "arm_upper_l_s",
+   "child_cls": "big",
+   "child_from": "elbow_l"
+  },
+  {
+   "pivot": "elbow_l",
+   "parent": "arm_upper_l_s",
+   "child": "forearm_l_s",
+   "child_cls": "small",
+   "child_from": "wrist_l",
+   "parent_cls": "small",
+   "parent_from": "shoulder_l"
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "torso_s_mesh",
+   "child": "thigh_l_s",
+   "child_cls": "big",
+   "child_from": "knee_l"
+  },
+  {
+   "pivot": "knee_l",
+   "parent": "thigh_l_s",
+   "child": "shin_l_s",
+   "child_cls": "small",
+   "child_from": "ankle_l",
+   "parent_cls": "small",
+   "parent_from": "hip_l"
+  }
+ ]
+}

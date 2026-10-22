@@ -1,0 +1,155 @@
+{
+ "rig": "art_src/rigs/deep_moss_slime/deep_moss_slime_parts_v1_2.psd",
+ "pivots": "art_src/rigs/deep_moss_slime/deep_moss_slime_parts_v1_2_pivots.json",
+ "fix": null,
+ "attach": {},
+ "out": "art_src/rigs/deep_moss_slime/ref/deep_moss_slime_ref_poses_v2.png",
+ "scale": 2,
+ "anims": [
+  {
+   "name": "idle",
+   "fps": 8,
+   "timing": "breathe 2 keys 0.6 s (squash <=25%)",
+   "keys": [
+    {
+     "label": "1"
+    },
+    {
+     "label": "2",
+     "root_scale": [
+      1.06,
+      0.94
+     ]
+    },
+    {
+     "label": "blink",
+     "show": [
+      "eye_closed_r_s",
+      "eye_closed_l_s"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "move (hop)",
+   "fps": 12,
+   "timing": "squash 0.1 / air 0.25 / land 0.1",
+   "keys": [
+    {
+     "label": "squash",
+     "root_scale": [
+      1.2,
+      0.8
+     ]
+    },
+    {
+     "label": "air",
+     "root_scale": [
+      0.85,
+      1.18
+     ],
+     "root_d": [
+      6,
+      -22
+     ]
+    },
+    {
+     "label": "land",
+     "root_scale": [
+      1.18,
+      0.84
+     ],
+     "root_d": [
+      12,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "name": "attack (pounce)",
+   "fps": 12,
+   "timing": "windup 0.4 s; leap 0.2 s; slam 0.1 s",
+   "keys": [
+    {
+     "label": "windup",
+     "root_scale": [
+      1.25,
+      0.75
+     ]
+    },
+    {
+     "label": "leap",
+     "root_scale": [
+      0.8,
+      1.22
+     ],
+     "root_d": [
+      22,
+      -30
+     ]
+    },
+    {
+     "label": "slam",
+     "root_scale": [
+      1.25,
+      0.76
+     ],
+     "root_d": [
+      40,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "name": "hit",
+   "fps": 12,
+   "timing": "0.1 s",
+   "keys": [
+    {
+     "label": "hit",
+     "root_scale": [
+      0.9,
+      1.1
+     ],
+     "root_d": [
+      -6,
+      0
+     ],
+     "show": [
+      "eye_closed_r_s",
+      "eye_closed_l_s"
+     ]
+    },
+    {
+     "label": "recover",
+     "root_scale": [
+      1.05,
+      0.95
+     ]
+    }
+   ]
+  },
+  {
+   "name": "shell break",
+   "fps": 12,
+   "timing": "hide shell + tuft + hanging moss + root spikes, play F04/leaf debris 3-4 frames",
+   "keys": [
+    {
+     "label": "armoured"
+    },
+    {
+     "label": "broken",
+     "hide": [
+      "shell",
+      "moss_tuft",
+      "moss_hang",
+      "root_spikes"
+     ]
+    }
+   ]
+  }
+ ],
+ "title": "deep_moss_slime (v1.2) reference key poses + core / hanging moss / root spikes"
+}

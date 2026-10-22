@@ -13,6 +13,7 @@ Settings="*res://autoload/settings.gd"
 Log="*res://autoload/log.gd"
 Lineage="*res://autoload/lineage.gd"
 Game="*res://autoload/game.gd"
+NoiseBus="*res://autoload/noise_bus.gd"
 SysLog="*res://scenes/ui/sys_log_flash.tscn"
 
 [display]

@@ -1,0 +1,292 @@
+{
+ "canvas": [
+  256,
+  256
+ ],
+ "unit": "px@1:1",
+ "version": "hero_parts_f_v2",
+ "order": [
+  "shin_r_f",
+  "shin_l_f",
+  "thigh_r_f",
+  "thigh_l_f",
+  "torso_f_mesh",
+  "arm_upper_r_f",
+  "forearm_r_f",
+  "arm_upper_l_f",
+  "head_f",
+  "scarf_f_mesh",
+  "sword_f",
+  "forearm_l_f"
+ ],
+ "pivots": {
+  "neck": [
+   120.0,
+   94.2
+  ],
+  "shoulder_r": [
+   95.8,
+   113.3
+  ],
+  "elbow_r": [
+   90.3,
+   142.7
+  ],
+  "wrist_r": [
+   86.3,
+   169.0
+  ],
+  "shoulder_l": [
+   159.8,
+   113.3
+  ],
+  "elbow_l": [
+   164.6,
+   142.7
+  ],
+  "wrist_l": [
+   166.2,
+   170.5
+  ],
+  "hip_r": [
+   101.7,
+   174.5
+  ],
+  "knee_r": [
+   97.8,
+   204.0
+  ],
+  "ankle_r": [
+   93.8,
+   238.2
+  ],
+  "hip_l": [
+   133.6,
+   174.5
+  ],
+  "knee_l": [
+   137.5,
+   204.0
+  ],
+  "ankle_l": [
+   141.5,
+   238.2
+  ],
+  "scarf_root": [
+   120.0,
+   97.3
+  ],
+  "sword_grip": [
+   164.6,
+   170.5
+  ],
+  "root": [
+   120.0,
+   246.9
+  ]
+ },
+ "line_rgb": [
+  40,
+  28,
+  21
+ ],
+ "log": {
+  "ops": [
+   {
+    "op": "translate",
+    "parts": [
+     "arm_upper_r_f",
+     "forearm_r_f"
+    ],
+    "d": [
+     10,
+     0
+    ],
+    "pivots": [
+     "shoulder_r",
+     "elbow_r",
+     "wrist_r"
+    ],
+    "why": "right shoulder point was ~10px outside the torso"
+   },
+   {
+    "op": "align_x",
+    "part": "scarf_f_mesh",
+    "top_band": 12,
+    "to_pivot": "neck",
+    "why": "collar centred on neck",
+    "dx_1to1": -23.0
+   },
+   {
+    "op": "cut_above_curve",
+    "part": "scarf_f_mesh",
+    "ellipse": [
+     118,
+     80,
+     16,
+     9
+    ],
+    "why": "free the mouth (mouth y84-86); scarf now starts 3px under the mouth",
+    "removed_px_1to1": 28
+   }
+  ],
+  "joints": {
+   "neck": {
+    "child": {
+     "before": 6.1,
+     "half_width": 12.9,
+     "after": 10.6,
+     "action": "round cap",
+     "target": 11.0,
+     "cap_half_width": 7.0,
+     "added_px_1to1": 72,
+     "part": "head_f",
+     "cls": "big"
+    }
+   },
+   "shoulder_r": {
+    "child": {
+     "before": 5.9,
+     "half_width": 7.8,
+     "after": 10.9,
+     "action": "round cap",
+     "target": 11.0,
+     "cap_half_width": 6.2,
+     "added_px_1to1": 66,
+     "part": "arm_upper_r_f",
+     "cls": "big"
+    }
+   },
+   "elbow_r": {
+    "child": {
+     "before": 6.1,
+     "half_width": 6.2,
+     "after": 6.1,
+     "action": "round cap",
+     "target": 6.1,
+     "cap_half_width": 7.1,
+     "added_px_1to1": 28,
+     "part": "forearm_r_f",
+     "cls": "small"
+    },
+    "parent": {
+     "before": 9.7,
+     "half_width": 6.2,
+     "after": 9.7,
+     "action": "kept (already deeper than range)",
+     "part": "arm_upper_r_f",
+     "cls": "small"
+    }
+   },
+   "hip_r": {
+    "child": {
+     "before": 1.2,
+     "half_width": 12.5,
+     "after": 19.3,
+     "action": "round cap",
+     "target": 19.5,
+     "cap_half_width": 13.7,
+     "added_px_1to1": 427,
+     "part": "thigh_r_f",
+     "cls": "big"
+    }
+   },
+   "knee_r": {
+    "child": {
+     "before": 5.1,
+     "half_width": 8.8,
+     "after": 7.4,
+     "action": "round cap",
+     "target": 7.5,
+     "cap_half_width": 9.3,
+     "added_px_1to1": 53,
+     "part": "shin_r_f",
+     "cls": "small"
+    },
+    "parent": {
+     "before": 4.0,
+     "half_width": 8.9,
+     "after": 4.9,
+     "action": "round cap",
+     "target": 5.0,
+     "cap_half_width": 9.6,
+     "added_px_1to1": 38,
+     "part": "thigh_r_f",
+     "cls": "small"
+    }
+   },
+   "shoulder_l": {
+    "child": {
+     "before": 6.6,
+     "half_width": 8.3,
+     "after": 11.0,
+     "action": "round cap",
+     "target": 11.0,
+     "cap_half_width": 6.3,
+     "added_px_1to1": 61,
+     "part": "arm_upper_l_f",
+     "cls": "big"
+    }
+   },
+   "elbow_l": {
+    "child": {
+     "before": 3.8,
+     "half_width": 6.0,
+     "after": 4.8,
+     "action": "round cap",
+     "target": 5.0,
+     "cap_half_width": 6.1,
+     "added_px_1to1": 28,
+     "part": "forearm_l_f",
+     "cls": "small"
+    },
+    "parent": {
+     "before": 10.2,
+     "half_width": 6.2,
+     "after": 10.2,
+     "action": "kept (already deeper than range)",
+     "part": "arm_upper_l_f",
+     "cls": "small"
+    }
+   },
+   "hip_l": {
+    "child": {
+     "before": 3.1,
+     "half_width": 12.9,
+     "after": 19.5,
+     "action": "round cap",
+     "target": 19.5,
+     "cap_half_width": 13.1,
+     "added_px_1to1": 349,
+     "part": "thigh_l_f",
+     "cls": "big"
+    }
+   },
+   "knee_l": {
+    "child": {
+     "before": 5.0,
+     "half_width": 8.6,
+     "after": 7.5,
+     "action": "round cap",
+     "target": 7.5,
+     "cap_half_width": 9.4,
+     "added_px_1to1": 57,
+     "part": "shin_l_f",
+     "cls": "small"
+    },
+    "parent": {
+     "before": 5.5,
+     "half_width": 10.1,
+     "after": 5.5,
+     "action": "round cap",
+     "target": 5.5,
+     "cap_half_width": 10.7,
+     "added_px_1to1": 25,
+     "part": "thigh_l_f",
+     "cls": "small"
+    }
+   }
+  },
+  "cleanup": {}
+ }
+}

@@ -1,0 +1,272 @@
+{
+ "source": "art_src/src/root_spore_mushroom_partsheet_gen1.jpg",
+ "out_dir": "art_src/rigs/root_spore_mushroom",
+ "base": "root_spore_mushroom_parts_f_v1",
+ "canvas2x": 512,
+ "disp_scale": 1.25,
+ "k": 1.5,
+ "pose_box": [
+  403,
+  55,
+  618,
+  306
+ ],
+ "parts": [
+  {
+   "name": "root_r_f",
+   "pick": [
+    752,
+    440
+   ],
+   "box": [
+    418,
+    226,
+    512,
+    308
+   ]
+  },
+  {
+   "name": "root_l_f",
+   "pick": [
+    847,
+    440
+   ],
+   "box": [
+    508,
+    226,
+    602,
+    308
+   ]
+  },
+  {
+   "name": "arm_r_f",
+   "pick": [
+    920,
+    440
+   ],
+   "box": [
+    397,
+    191,
+    460,
+    243
+   ],
+   "rotate": 100
+  },
+  {
+   "name": "arm_l_f",
+   "pick": [
+    985,
+    440
+   ],
+   "box": [
+    560,
+    191,
+    623,
+    243
+   ],
+   "rotate": -100
+  },
+  {
+   "name": "stalk_f_mesh",
+   "pick": [
+    557,
+    430
+   ],
+   "box": [
+    443,
+    132,
+    577,
+    272
+   ]
+  },
+  {
+   "name": "blush_r_f",
+   "png": "art_src/src/derived/root_spore_mushroom_face_blush_r.png",
+   "box": [
+    457,
+    183,
+    478,
+    198
+   ]
+  },
+  {
+   "name": "blush_l_f",
+   "png": "art_src/src/derived/root_spore_mushroom_face_blush_l.png",
+   "box": [
+    540,
+    183,
+    561,
+    198
+   ]
+  },
+  {
+   "name": "eye_r_f",
+   "png": "art_src/src/derived/root_spore_mushroom_face_eye_r.png",
+   "box": [
+    468,
+    164,
+    492,
+    192
+   ]
+  },
+  {
+   "name": "eye_l_f",
+   "png": "art_src/src/derived/root_spore_mushroom_face_eye_l.png",
+   "box": [
+    525,
+    164,
+    549,
+    192
+   ]
+  },
+  {
+   "name": "mouth_f",
+   "png": "art_src/src/derived/root_spore_mushroom_face_mouth.png",
+   "box": [
+    497,
+    184,
+    521,
+    196
+   ]
+  },
+  {
+   "name": "cap_f",
+   "pick": [
+    260,
+    415
+   ],
+   "box": [
+    406,
+    55,
+    613,
+    166
+   ]
+  }
+ ],
+ "order": [
+  "root_r_f",
+  "root_l_f",
+  "arm_r_f",
+  "arm_l_f",
+  "stalk_f_mesh",
+  "blush_r_f",
+  "blush_l_f",
+  "eye_r_f",
+  "eye_l_f",
+  "mouth_f",
+  "cap_f"
+ ],
+ "pivots": {
+  "cap_root": [
+   510,
+   152
+  ],
+  "cap_top": [
+   510,
+   60
+  ],
+  "hip_r": [
+   466,
+   248
+  ],
+  "foot_r": [
+   466,
+   302
+  ],
+  "hip_l": [
+   554,
+   248
+  ],
+  "foot_l": [
+   554,
+   302
+  ],
+  "arm_root_r": [
+   457,
+   214
+  ],
+  "hand_r": [
+   410,
+   228
+  ],
+  "arm_root_l": [
+   563,
+   214
+  ],
+  "hand_l": [
+   610,
+   228
+  ],
+  "eye_r": [
+   480,
+   178
+  ],
+  "eye_l": [
+   537,
+   178
+  ],
+  "mouth": [
+   509,
+   190
+  ],
+  "root": [
+   510,
+   305
+  ]
+ },
+ "joints": [
+  {
+   "pivot": "cap_root",
+   "parent": "stalk_f_mesh",
+   "child": "cap_f",
+   "child_cls": "big",
+   "child_from": "cap_top",
+   "parent_cls": "big",
+   "parent_from": "root"
+  },
+  {
+   "pivot": "hip_r",
+   "parent": "stalk_f_mesh",
+   "child": "root_r_f",
+   "child_cls": "big",
+   "child_from": "foot_r",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "hip_l",
+   "parent": "stalk_f_mesh",
+   "child": "root_l_f",
+   "child_cls": "big",
+   "child_from": "foot_l",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "arm_root_r",
+   "parent": "stalk_f_mesh",
+   "child": "arm_r_f",
+   "child_cls": "small",
+   "child_from": "hand_r",
+   "child_target": 8,
+   "parent_cls": "small",
+   "parent_from": "root",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "arm_root_l",
+   "parent": "stalk_f_mesh",
+   "child": "arm_l_f",
+   "child_cls": "small",
+   "child_from": "hand_l",
+   "child_target": 8,
+   "parent_cls": "small",
+   "parent_from": "root",
+   "child_cover_only": false
+  }
+ ],
+ "cap_version": 2,
+ "line_rgb": [
+  38,
+  40,
+  32
+ ]
+}

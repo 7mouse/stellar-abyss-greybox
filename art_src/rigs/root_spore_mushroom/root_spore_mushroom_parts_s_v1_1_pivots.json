@@ -1,0 +1,221 @@
+{
+ "canvas": [
+  256,
+  256
+ ],
+ "unit": "px@1:1",
+ "version": "root_spore_mushroom_parts_s_v1_1",
+ "order": [
+  "root_l_s",
+  "arm_l_s",
+  "stalk_s_mesh",
+  "root_r_s",
+  "blush_r_s",
+  "eye_r_s",
+  "eye_closed_r_s",
+  "arm_r_s",
+  "cap_s"
+ ],
+ "swap": [
+  "eye_closed_r_s"
+ ],
+ "pivots": {
+  "cap_root": [
+   126.1,
+   134.6
+  ],
+  "cap_top": [
+   126.1,
+   67.1
+  ],
+  "hip_r": [
+   93.9,
+   208.1
+  ],
+  "foot_r": [
+   93.9,
+   247.1
+  ],
+  "hip_l": [
+   137.4,
+   206.6
+  ],
+  "foot_l": [
+   137.4,
+   244.1
+  ],
+  "arm_root_r": [
+   128.4,
+   158.6
+  ],
+  "hand_r": [
+   135.1,
+   203.6
+  ],
+  "arm_root_l": [
+   162.1,
+   160.1
+  ],
+  "hand_l": [
+   167.4,
+   193.1
+  ],
+  "eye_r": [
+   167.0,
+   153.0
+  ],
+  "root": [
+   126.1,
+   249.4
+  ]
+ },
+ "line_rgb": [
+  38,
+  40,
+  32
+ ],
+ "from": "art_src/rigs/root_spore_mushroom/root_spore_mushroom_parts_s_v1_src2x.psd",
+ "log": {
+  "extras": [
+   {
+    "op": "blink",
+    "head": "stalk_s_mesh",
+    "suffix": "s",
+    "closed_only": true,
+    "eyes": [
+     {
+      "side": "r",
+      "open_layer": "eye_r_s",
+      "ellipse": [
+       167.0,
+       153.0,
+       8.0,
+       11.0
+      ]
+     }
+    ],
+    "eyes_fit": [
+     {
+      "side": "r",
+      "ellipse_1to1": [
+       167.0,
+       153.0,
+       8.0,
+       11.0
+      ],
+      "skin_rgb": [
+       232.0,
+       228.0,
+       189.0
+      ]
+     }
+    ]
+   }
+  ],
+  "previous": {
+   "ops": [],
+   "joints": {
+    "cap_root": {
+     "child": {
+      "before": 10.2,
+      "half_width": 57.8,
+      "after": 10.7,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 11.0,
+      "cap_half_width": 53.0,
+      "added_px_1to1": 331,
+      "erased_cut_px_1to1": 0,
+      "part": "cap_s",
+      "cls": "big"
+     },
+     "parent": {
+      "before": 16.3,
+      "half_width": 30.2,
+      "after": 19.3,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 19.5,
+      "cap_half_width": 19.0,
+      "added_px_1to1": 133,
+      "erased_cut_px_1to1": 68,
+      "part": "stalk_s_mesh",
+      "cls": "big"
+     }
+    },
+    "hip_r": {
+     "child": {
+      "before": 16.3,
+      "half_width": 8.9,
+      "after": 16.3,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 16.3,
+      "cap_half_width": 6.9,
+      "added_px_1to1": 18,
+      "erased_cut_px_1to1": 0,
+      "part": "root_r_s",
+      "cls": "big"
+     }
+    },
+    "hip_l": {
+     "child": {
+      "before": 16.3,
+      "half_width": 10.0,
+      "after": 19.3,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 19.5,
+      "cap_half_width": 7.5,
+      "added_px_1to1": 88,
+      "erased_cut_px_1to1": 27,
+      "part": "root_l_s",
+      "cls": "big"
+     }
+    },
+    "arm_root_r": {
+     "child": {
+      "before": -3.2,
+      "half_width": 7.9,
+      "after": 7.9,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 8.0,
+      "cap_half_width": 8.8,
+      "added_px_1to1": 191,
+      "erased_cut_px_1to1": 0,
+      "part": "arm_r_s",
+      "cls": "small"
+     },
+     "parent": {
+      "before": 43.5,
+      "half_width": 37.8,
+      "after": 43.5,
+      "action": "kept (already deeper than range)",
+      "part": "stalk_s_mesh",
+      "cls": "small"
+     }
+    },
+    "arm_root_l": {
+     "child": {
+      "before": -1.7,
+      "half_width": 6.6,
+      "after": 8.0,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 8.0,
+      "cap_half_width": 7.6,
+      "added_px_1to1": 102,
+      "erased_cut_px_1to1": 50,
+      "part": "arm_l_s",
+      "cls": "small"
+     },
+     "parent": {
+      "before": 34.6,
+      "half_width": 37.6,
+      "after": 34.6,
+      "action": "kept (already deeper than range)",
+      "part": "stalk_s_mesh",
+      "cls": "small"
+     }
+    }
+   },
+   "cleanup": {},
+   "post_ops": []
+  }
+ }
+}

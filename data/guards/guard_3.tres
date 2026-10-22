@@ -8,10 +8,12 @@
 [ext_resource type="Resource" path="res://data/guards/affix_frenzy.tres" id="r3"]
 [ext_resource type="Resource" path="res://data/guards/affix_summon.tres" id="r4"]
 
+[ext_resource type="Resource" path="res://data/hazards/falling_rock.tres" id="h1"]
+
 [resource]
 script = ExtResource("s")
 id = "guard_3"
-display_name = "层守·狂暴硬壳甲虫"
+display_name = "狂暴硬壳甲虫"
 base_enemy = ExtResource("r0")
 hp_mult = 17.1429
 dmg_mult = 0.75
@@ -25,3 +27,8 @@ summon_every_mult = 1.5
 xp = 60
 loot_table = ExtResource("r1")
 phase2_affix = ExtResource("r4")
+moves = PackedStringArray("重砸（前摇 1.35 秒）", "二阶段召唤")
+minions = "mushling:2"
+arena_hazard = ExtResource("h1")
+arena_hazard_count = 3
+arena_hazard_phase2_only = true

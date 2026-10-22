@@ -1,0 +1,411 @@
+{
+ "canvas": [
+  256,
+  256
+ ],
+ "unit": "px@1:1",
+ "version": "hero_parts_b_v2_3",
+ "order": [
+  "sword_b",
+  "shin_r_b",
+  "shin_l_b",
+  "thigh_r_b",
+  "thigh_l_b",
+  "arm_upper_r_b",
+  "forearm_r_b",
+  "arm_upper_l_b",
+  "forearm_l_b",
+  "torso_b_mesh",
+  "head_b",
+  "eye_open_r_b",
+  "eye_closed_r_b",
+  "eye_open_l_b",
+  "eye_closed_l_b",
+  "expr_happy_b",
+  "expr_angry_b",
+  "expr_hurt_b",
+  "backpack_b",
+  "scarf_b_mesh"
+ ],
+ "swap": [
+  "expr_angry_b",
+  "expr_happy_b",
+  "expr_hurt_b",
+  "eye_closed_l_b",
+  "eye_closed_r_b"
+ ],
+ "pivots": {
+  "neck": [
+   134.4,
+   91.2
+  ],
+  "shoulder_r": [
+   167.9,
+   113.6
+  ],
+  "elbow_r": [
+   168.4,
+   141.1
+  ],
+  "wrist_r": [
+   180.7,
+   165.1
+  ],
+  "shoulder_l": [
+   98.5,
+   113.6
+  ],
+  "elbow_l": [
+   100.6,
+   146.9
+  ],
+  "wrist_l": [
+   93.7,
+   171.1
+  ],
+  "hip_r": [
+   150.4,
+   175.1
+  ],
+  "knee_r": [
+   152.7,
+   204.6
+  ],
+  "ankle_r": [
+   156.7,
+   238.9
+  ],
+  "hip_l": [
+   118.4,
+   175.1
+  ],
+  "knee_l": [
+   114.4,
+   204.6
+  ],
+  "ankle_l": [
+   112.0,
+   238.9
+  ],
+  "scarf_root": [
+   134.4,
+   95.2
+  ],
+  "backpack_anchor": [
+   132.8,
+   115.2
+  ],
+  "sword_grip": [
+   93.7,
+   171.1
+  ],
+  "root": [
+   134.4,
+   247.7
+  ]
+ },
+ "line_rgb": [
+  40,
+  28,
+  21
+ ],
+ "from": "art_src/rigs/hero/hero_parts_b_v2_2_src2x.psd",
+ "log": {
+  "extras": [
+   {
+    "op": "empty",
+    "name": "expr_hurt_b",
+    "above": "eye_closed_l_b",
+    "swap": true
+   },
+   {
+    "op": "empty",
+    "name": "expr_angry_b",
+    "above": "eye_closed_l_b",
+    "swap": true
+   },
+   {
+    "op": "empty",
+    "name": "expr_happy_b",
+    "above": "eye_closed_l_b",
+    "swap": true
+   }
+  ],
+  "previous": {
+   "extras": [
+    {
+     "op": "empty",
+     "name": "eye_open_r_b",
+     "above": "head_b"
+    },
+    {
+     "op": "empty",
+     "name": "eye_closed_r_b",
+     "above": "eye_open_r_b",
+     "swap": true
+    },
+    {
+     "op": "empty",
+     "name": "eye_open_l_b",
+     "above": "eye_closed_r_b"
+    },
+    {
+     "op": "empty",
+     "name": "eye_closed_l_b",
+     "above": "eye_open_l_b",
+     "swap": true
+    }
+   ],
+   "previous": {
+    "ops": [
+     {
+      "op": "swing_attach",
+      "child": "forearm_r_b",
+      "parent": "arm_upper_r_b",
+      "joint": "elbow_r",
+      "hinge": "wrist_r",
+      "overlap": 6,
+      "why": "forearm hung ~6px beside the cuff; swung around the wrist so the elbow end overlaps the upper-arm cuff, hand stays put",
+      "gap_before_1to1": 8.3,
+      "rotated_deg": -30.1,
+      "new_pivot": [
+       172.0,
+       144.7
+      ]
+     },
+     {
+      "op": "translate",
+      "parts": [
+       "forearm_r_b"
+      ],
+      "d": [
+       0,
+       -6
+      ],
+      "pivots": [
+       "elbow_r",
+       "wrist_r"
+      ],
+      "why": "v2.1 item 4: the v2 swing turns the hand straight down, bottom 183->187.5 (6px below the left hand 181.5). Lift the whole forearm+hand 6px so the fingertips end at 181.5 = left hand; elbow end goes 6px deeper into the cuff (hidden under torso/upper arm)"
+     },
+     {
+      "op": "pivot_to_overlap",
+      "pivot": "elbow_r",
+      "parts": [
+       "arm_upper_r_b",
+       "forearm_r_b"
+      ],
+      "new_pivot": [
+       168.4,
+       141.1
+      ],
+      "overlap_px_1to1": 89
+     },
+     {
+      "op": "translate",
+      "parts": [
+       "forearm_l_b",
+       "sword_b"
+      ],
+      "d": [
+       4,
+       0
+      ],
+      "pivots": [
+       "wrist_l",
+       "sword_grip"
+      ],
+      "why": "left forearm floated 4px off the torso; nudged in, still overlapping the upper arm"
+     },
+     {
+      "op": "pivot_to_overlap",
+      "pivot": "elbow_l",
+      "parts": [
+       "arm_upper_l_b",
+       "forearm_l_b"
+      ],
+      "new_pivot": [
+       100.6,
+       146.9
+      ],
+      "overlap_px_1to1": 178
+     }
+    ],
+    "joints": {
+     "neck": {
+      "child": {
+       "before": 3.6,
+       "half_width": 9.8,
+       "after": 10.6,
+       "action": "round cap v2.1 visible: parent pixels",
+       "target": 11.0,
+       "cap_half_width": 8.0,
+       "added_px_1to1": 108,
+       "erased_cut_px_1to1": 0,
+       "part": "head_b",
+       "cls": "big"
+      }
+     },
+     "shoulder_r": {
+      "child": {
+       "before": 6.8,
+       "half_width": 8.7,
+       "after": 12.4,
+       "action": "round cap v2.1 hidden: erase+interior fill",
+       "target": 19.5,
+       "cap_half_width": 7.6,
+       "added_px_1to1": 63,
+       "erased_cut_px_1to1": 27,
+       "part": "arm_upper_r_b",
+       "cls": "big"
+      }
+     },
+     "elbow_r": {
+      "child": {
+       "before": 6.9,
+       "half_width": 7.0,
+       "after": 6.9,
+       "action": "round cap v2.1 visible: parent pixels",
+       "target": 6.9,
+       "cap_half_width": 7.9,
+       "added_px_1to1": 34,
+       "erased_cut_px_1to1": 0,
+       "part": "forearm_r_b",
+       "cls": "small"
+      },
+      "parent": {
+       "before": 12.6,
+       "half_width": 6.8,
+       "after": 12.6,
+       "action": "kept (already deeper than range)",
+       "part": "arm_upper_r_b",
+       "cls": "small"
+      }
+     },
+     "hip_r": {
+      "child": {
+       "before": -0.8,
+       "half_width": 11.9,
+       "after": 19.4,
+       "action": "round cap v2.1 hidden: erase+interior fill",
+       "target": 19.5,
+       "cap_half_width": 12.9,
+       "added_px_1to1": 450,
+       "erased_cut_px_1to1": 41,
+       "part": "thigh_r_b",
+       "cls": "big"
+      }
+     },
+     "knee_r": {
+      "child": {
+       "before": 3.4,
+       "half_width": 9.0,
+       "after": 7.5,
+       "action": "round cap v2.1 hidden: erase+interior fill",
+       "target": 7.5,
+       "cap_half_width": 9.4,
+       "added_px_1to1": 39,
+       "erased_cut_px_1to1": 20,
+       "part": "shin_r_b",
+       "cls": "small"
+      },
+      "parent": {
+       "before": 5.2,
+       "half_width": 11.8,
+       "after": 9.8,
+       "action": "round cap v2.1 visible: parent pixels",
+       "target": 10.0,
+       "cap_half_width": 11.7,
+       "added_px_1to1": 104,
+       "erased_cut_px_1to1": 0,
+       "part": "thigh_r_b",
+       "cls": "small"
+      }
+     },
+     "shoulder_l": {
+      "child": {
+       "before": 5.3,
+       "half_width": 8.3,
+       "after": 19.1,
+       "action": "round cap v2.1 hidden: erase+interior fill",
+       "target": 19.5,
+       "cap_half_width": 6.5,
+       "added_px_1to1": 139,
+       "erased_cut_px_1to1": 27,
+       "part": "arm_upper_l_b",
+       "cls": "big"
+      }
+     },
+     "elbow_l": {
+      "child": {
+       "before": 7.8,
+       "half_width": 5.6,
+       "after": 7.8,
+       "action": "round cap v2.1 visible: parent pixels",
+       "target": 7.8,
+       "cap_half_width": 6.4,
+       "added_px_1to1": 22,
+       "erased_cut_px_1to1": 0,
+       "part": "forearm_l_b",
+       "cls": "small"
+      },
+      "parent": {
+       "before": 7.3,
+       "half_width": 6.8,
+       "after": 7.4,
+       "action": "round cap v2.1 hidden: erase+interior fill",
+       "target": 7.5,
+       "cap_half_width": 7.4,
+       "added_px_1to1": 17,
+       "erased_cut_px_1to1": 16,
+       "part": "arm_upper_l_b",
+       "cls": "small"
+      }
+     },
+     "hip_l": {
+      "child": {
+       "before": 1.0,
+       "half_width": 11.8,
+       "after": 19.5,
+       "action": "round cap v2.1 hidden: erase+interior fill",
+       "target": 19.5,
+       "cap_half_width": 12.0,
+       "added_px_1to1": 398,
+       "erased_cut_px_1to1": 40,
+       "part": "thigh_l_b",
+       "cls": "big"
+      }
+     },
+     "knee_l": {
+      "child": {
+       "before": 4.2,
+       "half_width": 8.6,
+       "after": 7.5,
+       "action": "round cap v2.1 hidden: erase+interior fill",
+       "target": 7.5,
+       "cap_half_width": 9.1,
+       "added_px_1to1": 48,
+       "erased_cut_px_1to1": 29,
+       "part": "shin_l_b",
+       "cls": "small"
+      },
+      "parent": {
+       "before": 5.7,
+       "half_width": 11.9,
+       "after": 9.9,
+       "action": "round cap v2.1 visible: parent pixels",
+       "target": 10.0,
+       "cap_half_width": 11.2,
+       "added_px_1to1": 112,
+       "erased_cut_px_1to1": 0,
+       "part": "thigh_l_b",
+       "cls": "small"
+      }
+     }
+    },
+    "cleanup": {},
+    "post_ops": []
+   }
+  }
+ }
+}

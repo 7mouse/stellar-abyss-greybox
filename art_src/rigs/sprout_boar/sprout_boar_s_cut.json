@@ -1,0 +1,14 @@
+{"source":"/workspace/art/rigs/sprout_boar/src/sprout_boar_s_partsheet_gen1.jpg","out_dir":"/workspace/art/rigs/sprout_boar","base":"sprout_boar_parts_s_v1","canvas2x":512,"disp_scale":1.25,
+"pose_box":[305,10,697,310],
+"parts":[
+{"name":"leg_hind_l_s","pick":[905,480],"box":[415,238,462,300]},
+{"name":"leg_front_l_s","pick":[815,480],"box":[555,238,602,302]},
+{"name":"tail_s","pick":[675,395],"box":[303,168,348,222]},
+{"name":"body_s_mesh","pick":[475,465],"box":[335,52,575,272]},
+{"name":"leg_hind_r_s","pick":[720,480],"box":[352,232,402,308]},
+{"name":"leg_front_r_s","pick":[628,480],"box":[493,238,545,312]},
+{"name":"head_s","pick":[185,445],"box":[478,68,698,240]},
+{"name":"ear_s","pick":[340,420],"box":[450,76,522,142]},
+{"name":"sprout_s","pick":[573,380],"box":[432,8,516,82]}],
+"order":["leg_hind_l_s","leg_front_l_s","tail_s","body_s_mesh","leg_hind_r_s","leg_front_r_s","head_s","ear_s","sprout_s"],
+"pivots":{"neck":[525,150],"ear_root":[485,135],"sprout_root":[473,75],"tail_root":[342,185],"hip_r":[378,240],"hip_l":[438,242],"shoulder_r":[518,240],"shoulder_l":[578,240],"hoof_r_hind":[378,300],"hoof_l_hind":[438,295],"hoof_r_front":[518,305],"hoof_l_front":[578,298],"root":[470,305]}}

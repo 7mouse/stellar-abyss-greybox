@@ -6,6 +6,7 @@ extends CharacterBody2D
 signal hp_changed(cur: int, max: int)
 signal died(cause: String)
 signal dashed(from: Vector2, to: Vector2)
+signal damaged(amount: int)
 
 enum S { IDLE, MOVE, ATTACK, DASH, SKILL, HURT, DEAD }
 const SIZE := Vector2(40, 64)
@@ -43,6 +44,7 @@ var input_enabled := true
 var sim_move := Vector2.ZERO ## 测试注入
 var sim_aim := Vector2.ZERO
 var body_rect: ColorRect
+var sprite: Sprite2D
 var depth := 1
 
 func _ready() -> void:
@@ -59,7 +61,17 @@ func _ready() -> void:
 	body_rect.position = Vector2(-SIZE.x / 2, -SIZE.y + 8)
 	body_rect.color = Color(0.3, 0.6, 1.0)
 	body_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body_rect.visible = false
 	add_child(body_rect)
+	sprite = Sprite2D.new()
+	sprite.texture = Art.hero()
+	sprite.centered = true
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	var vh := Art.HERO_WORLD_H
+	if sprite.texture:
+		sprite.scale = Vector2.ONE * (vh / sprite.texture.get_height())
+	sprite.position = Vector2(0, 8 - vh * 0.5)
+	add_child(sprite)
 	hurtbox = Hurtbox.new()
 	hurtbox.team = "player"
 	hurtbox.owner_actor = self
@@ -100,8 +112,22 @@ func dash_recharge() -> float:
 func dash_distance() -> float:
 	return stats.dash_distance * (1.0 + float(mods.get("dash_dist_pct", 0)))
 
+
+## 环境机关减速（孢子云 −30%、缠根 −40%）：取持续中最强的一个
+var hz_slow_left := 0.0
+var hz_slow_pct := 0.0
+var snare_breaks := 0
+var hz_slow_tag := "" ## 当前减速来源（root_snare = 缠根，可被冲刺挣脱）
+func apply_hazard_slow(pct: float, sec: float, tag := "") -> void:
+	if hz_slow_left <= 0.0 or pct >= hz_slow_pct:
+		hz_slow_pct = pct
+		hz_slow_tag = tag
+	hz_slow_left = maxf(hz_slow_left, sec)
+func hazard_speed_mult() -> float:
+	return 1.0 - hz_slow_pct if hz_slow_left > 0.0 else 1.0
+
 func move_speed() -> float:
-	return stats.move_speed * (1.0 + float(mods.get("move_pct", 0)))
+	return stats.move_speed * (1.0 + float(mods.get("move_pct", 0))) * hazard_speed_mult()
 
 func skill_cooldown() -> float:
 	return Game.skill.cooldown * maxf(0.1, 1.0 + float(mods.get("skill_cd_pct", 0)))
@@ -183,6 +209,7 @@ func try_skill() -> bool:
 		hitbox.end()
 	_update_facing()
 	atk = Game.skill
+	NoiseBus.emit_kind(global_position, "combat")
 	state = S.SKILL
 	phase = "windup"
 	phase_t = 0.0
@@ -202,6 +229,10 @@ func try_dash() -> bool:
 		return false
 	if i >= 0 and not Game.inf_dash:
 		dash_cd[i] = dash_recharge()
+	if hz_slow_left > 0.0 and hz_slow_tag == "root_snare": ## 冲刺挣脱缠根
+		hz_slow_left = 0.0
+		hz_slow_tag = ""
+		snare_breaks += 1
 	if state == S.ATTACK or state == S.SKILL:
 		hitbox.end() ## 取消普攻（含后摇）
 	var mv := move_input()
@@ -212,6 +243,7 @@ func try_dash() -> bool:
 	dash_start = global_position
 	iframe_left = maxf(iframe_left, stats.dash_iframes)
 	state = S.DASH
+	NoiseBus.emit_kind(global_position, "dash")
 	return true
 
 func _update_facing() -> void:
@@ -224,6 +256,12 @@ func _update_facing() -> void:
 		facing = a
 
 func _physics_process(delta: float) -> void:
+	var _p := Prof.t0()
+	_prof_physics_process(delta)
+	Prof.add("player", _p)
+
+func _prof_physics_process(delta: float) -> void:
+	hz_slow_left = maxf(0.0, hz_slow_left - delta)
 	iframe_left = maxf(0.0, iframe_left - delta)
 	skill_cd_left = maxf(0.0, skill_cd_left - delta)
 	combo_timer = maxf(0.0, combo_timer - delta)
@@ -265,6 +303,14 @@ func _physics_process(delta: float) -> void:
 	flash_t += delta
 	body_rect.modulate.a = 0.35 if (iframe_left > 0.0 and state != S.DASH and int(flash_t * 20) % 2 == 0) else 1.0
 	body_rect.color = Color(0.55, 0.8, 1.0) if state == S.DASH else Color(0.3, 0.6, 1.0)
+	if sprite:
+		var tint := Color(0.75, 0.9, 1.2) if state == S.DASH else Color.WHITE
+		if state == S.DEAD:
+			tint = Color(0.4, 0.4, 0.45)
+		sprite.modulate = tint
+		sprite.modulate.a = body_rect.modulate.a
+		if absf(facing.x) > 0.2:
+			sprite.flip_h = facing.x < 0.0
 
 func _tick_attack(delta: float) -> void:
 	phase_t += delta
@@ -292,6 +338,7 @@ func _tick_attack(delta: float) -> void:
 			_start_attack()
 
 func _on_hit_landed(_t: Node, _dmg: int) -> void:
+	NoiseBus.emit_kind(global_position, "combat")
 	Game.hitstop(atk.hitstop_sec if atk else stats.hitstop_sec)
 	var cam := get_viewport().get_camera_2d()
 	if cam and cam.has_method("shake"):
@@ -311,6 +358,8 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		Game.run.dmg_taken += real
 		Game.run.floor_stats["dmg_taken"] = int(Game.run.floor_stats.get("dmg_taken", 0)) + real
 	Log.write("hits", [Game.run.id if Game.run else "", depth_now, sname, "主角", real, false])
+	if real > 0:
+		damaged.emit(real)
 	DamageNumber.spawn(get_parent(), global_position, real, Color(1, 0.4, 0.4))
 	hp_changed.emit(hp, max_hp)
 	iframe_left = stats.hurt_iframes

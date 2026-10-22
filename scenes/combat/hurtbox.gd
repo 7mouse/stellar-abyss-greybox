@@ -40,4 +40,12 @@ func _draw() -> void:
 		draw_polyline(pts, Color(0.6, 0.6, 0.6) if invulnerable else Color(0.2, 1, 0.3), 2.0)
 
 func _process(_d: float) -> void:
-	queue_redraw()
+	var _p := Prof.t0()
+	_prof_process(_d)
+	Prof.add("hurtbox", _p)
+
+var _drawn_boxes := false
+func _prof_process(_d: float) -> void:
+	if Game.show_boxes or _drawn_boxes: ## 性能：只在显示碰撞框（或刚关掉）时重画
+		_drawn_boxes = Game.show_boxes
+		queue_redraw()

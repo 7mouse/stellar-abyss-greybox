@@ -11,6 +11,12 @@ var floor_spin: SpinBox
 var boon_pick: OptionButton
 var seed_spin: SpinBox
 var groups := {} ## 名称 -> VBoxContainer
+var show_chunks := false ## 显示区块网格（楼层每帧读取）
+var show_aggro := false ## 显示视野锥和声音圈
+var sleep_all := false ## 全图怪物休眠
+var aggro_label: Label
+var map_label: Label
+var risk_label: Label
 
 func _ready() -> void:
 	layer = 100
@@ -39,19 +45,36 @@ func _ready() -> void:
 	for id in g.enemies:
 		_section("敌人：" + g.enemies[id].display_name, g.enemies[id].display_name, g.enemies[id])
 	for fd in g.floors:
-		_section("层守", fd.guard.display_name, fd.guard)
-		_affix_toggles("层守", fd.guard)
+		_section("层主", fd.lord().display_name, fd.lord())
+		_affix_toggles("层主", fd.lord())
+		if fd.ecology:
+			_section("生态", "第 %d 层：%s（改 biome_bias 等后重新生成本层生效）" % [fd.depth, fd.ecology.display_name], fd.ecology)
+	for hid in ["spore_pod", "root_snare", "falling_rock", "root_pillar"]:
+		var hr: HazardData = load("res://data/hazards/%s.tres" % hid)
+		_section("生态", "机关：" + hr.display_name, hr)
 	for id in g.affixes:
-		_section("层守", "词缀：" + g.affixes[id].display_name, g.affixes[id])
+		_section("层主", "词缀：" + g.affixes[id].display_name, g.affixes[id])
 	for fd in g.floors:
 		_section("楼层", "第 %d 层" % fd.depth, fd)
-	for id in ["enemy_common", "guard_1", "guard_2", "guard_3", "chest"]:
+	_section("仇恨", "全局仇恨参数 aggro_rules.tres（= 第 3 层）", load("res://data/aggro_rules.tres"))
+	for fd in g.floors:
+		if fd.aggro_override:
+			_section("仇恨", "第 %d 层覆盖（只有和默认值不同的字段生效）" % fd.depth, fd.aggro_override)
+	for id in ["enemy_common", "guard_1", "guard_2", "guard_3", "chest", "node"]:
 		_loot_section(load("res://data/loot_tables/%s.tres" % id))
 	_section("遗志", "继承规则（legacy_power = 遗志生效比例）", Lineage.legacy_rules)
 	_section("保险箱", "保险箱规则", Lineage.vault_rules)
 	_section("保险箱", "强化台（局外）", Lineage.meta_rules)
 	_section("线索", "虚拟世界线索 clues.tres", g.clues)
+	_section("回村符", "紧急回村符 recall_charm.tres", g.recall)
+	_btn(_group("回村符"), "发 1 张回村符到身上", give_recall_charm)
+	risk_label = _lbl(_group("回村符"), "", 18)
 	root.visible = false
+
+func set_aggro_counts(chasing: int, windup: int, chase_peak: int, windup_peak: int) -> void:
+	if aggro_label and root.visible:
+		var R: AggroRules = load("res://data/aggro_rules.tres")
+		aggro_label.text = "追击 %d / %d，前摇 %d / %d（本层峰值 %d / %d）" % [chasing, R.max_chasers, windup, R.max_attackers, chase_peak, windup_peak]
 
 func _lbl(parent: Node, t: String, size := 20) -> Label:
 	var l := Label.new()
@@ -101,7 +124,14 @@ func _build_tools() -> void:
 	spawn_count.value = 1
 	r2.add_child(spawn_count)
 	_btn(r2, "刷出", func(): spawn_enemies(Game.enemies.keys()[spawn_kind.selected], int(spawn_count.value)))
-	_btn(r2, "直接打出层守", debug_guard)
+	_btn(r2, "传送到层主区（入口外侧）", debug_guard)
+	var rm := _row(tools)
+	_check(rm, "显示区块网格", show_chunks, func(v): show_chunks = v)
+	_check(rm, "显示视野锥和声音圈", show_aggro, func(v): show_aggro = v)
+	_check(rm, "全图怪物休眠", sleep_all, func(v): sleep_all = v)
+	_btn(rm, "地图统计", func(): map_label.text = map_stats_text())
+	map_label = _lbl(tools, "")
+	aggro_label = _lbl(tools, "追击 0 / 6，前摇 0 / 3")
 	var r3 := _row(tools)
 	floor_spin = SpinBox.new()
 	floor_spin.min_value = 1
@@ -226,6 +256,10 @@ func _process(_d: float) -> void:
 		var r := Game.run
 		info.text = "个体 %s　局：%s　层 %d　种子 %s\n存档：%s　CSV：%s" % [Lineage.current().name, r.id if r else "—", r.depth if r else 0, str(r.seed) if r else "—",
 			ProjectSettings.globalize_path(Lineage.save_path), ProjectSettings.globalize_path(Log.dir)]
+		if risk_label:
+			var s: Dictionary = Log.risk_summary()
+			var stock: int = Game.recall.stock() if Game.recall else 0
+			risk_label.text = "回村并存物 %d/%d 局（%.0f%%）　未击杀层主带出材料 合计 %d　平均 %.2f　回村符库存 %d" % [int(s.stash_runs), int(s.runs), float(s.share) * 100.0, int(s.unbossed_sum), float(s.unbossed_avg), stock]
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("debug_toggle"):
@@ -255,7 +289,7 @@ func spawn_enemies(id: String, n: int) -> Array:
 		return []
 	var out := []
 	for i in n:
-		out.append(f.spawn_enemy(id, f.player.global_position + Vector2(260, 0).rotated(TAU * i / maxf(1, n)), f.current_room))
+		out.append(f.spawn_enemy(id, f.player.global_position + Vector2(260, 0).rotated(TAU * i / maxf(1, n))))
 	return out
 
 func debug_guard() -> void:
@@ -263,10 +297,25 @@ func debug_guard() -> void:
 	if f:
 		f.debug_guard()
 
+func map_stats_text() -> String:
+	var f := _floor()
+	return f.map_stats_text() if f else "不在楼层里"
+
 func jump_floor(n: int) -> void:
 	if Game.run == null:
 		Game.start_run()
 	Game.enter_floor(clampi(n, 1, Game.FINAL_FLOOR))
+
+## 还没下潜时放进仓库，进层再按能带的张数带上。已经在局内就发放，多出来的封印
+func give_recall_charm() -> void:
+	if Game.recall == null:
+		return
+	if Game.run == null:
+		Lineage.charm_carried += 1
+		Lineage.charm_source = "debug"
+		Lineage.save()
+		return
+	Game.recall.grant("debug")
 
 func give_boon(id: String) -> void:
 	if Game.run:
@@ -299,12 +348,12 @@ func add_mats(n: int) -> void:
 	Lineage.mats.moss_essence += n
 	Lineage.save()
 
-## 用真实掉落表刷 n 只普通怪 + n 只各层守 + n 个宝箱，统计每项出现率
+## 用真实掉落表刷 n 只普通怪 + n 只各层主 + n 个宝箱，统计每项出现率
 func drop_stats(n: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 12345
 	var out := {}
-	for id in ["enemy_common", "guard_1", "guard_2", "guard_3", "chest"]:
+	for id in ["enemy_common", "guard_1", "guard_2", "guard_3", "chest", "node"]:
 		var lt: LootTable = load("res://data/loot_tables/%s.tres" % id)
 		var hits := {}
 		for i in n:
@@ -342,12 +391,14 @@ func export_res(res: Resource) -> String:
 
 func export_all() -> Array:
 	var out := []
-	var list: Array = [Game.player_stats, Game.skill, Game.clues, Lineage.legacy_rules, Lineage.vault_rules, Lineage.meta_rules]
+	var list: Array = [load("res://data/aggro_rules.tres"), Game.player_stats, Game.skill, Game.clues, Lineage.legacy_rules, Lineage.vault_rules, Lineage.meta_rules, Game.recall]
 	list += Game.attacks
 	list += Game.enemies.values()
 	list += Game.floors
 	for f in Game.floors:
-		list.append(f.guard)
+		list.append(f.lord())
+		if f.ecology:
+			list.append(f.ecology)
 	for r in list:
 		out.append(export_res(r))
 	return out

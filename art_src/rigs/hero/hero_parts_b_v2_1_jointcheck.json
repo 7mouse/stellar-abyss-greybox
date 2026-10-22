@@ -1,0 +1,402 @@
+{
+ "previous": {
+  "neck": {
+   "parent": "torso_b_mesh",
+   "child": "head_b",
+   "pair_disc_r": 5.9,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 7.8,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "shoulder_r": {
+   "parent": "torso_b_mesh",
+   "child": "arm_upper_r_b",
+   "pair_disc_r": 5.4,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 7.0,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "elbow_r": {
+   "parent": "arm_upper_r_b",
+   "child": "forearm_r_b",
+   "pair_disc_r": 4.0,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 5.2,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "hip_r": {
+   "parent": "torso_b_mesh",
+   "child": "thigh_r_b",
+   "pair_disc_r": 7.2,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 9.6,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "knee_r": {
+   "parent": "thigh_r_b",
+   "child": "shin_r_b",
+   "pair_disc_r": 5.4,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.2,
+    "15": 0.2,
+    "30": 0.2
+   },
+   "pair_worst": 0.2,
+   "visible_disc_r": 7.3,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 3.0,
+    "30": 4.2
+   },
+   "worst": 4.2
+  },
+  "shoulder_l": {
+   "parent": "torso_b_mesh",
+   "child": "arm_upper_l_b",
+   "pair_disc_r": 5.0,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.2,
+    "0": 2.8,
+    "15": 6.0,
+    "30": 8.5
+   },
+   "pair_worst": 8.5,
+   "visible_disc_r": 6.8,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "elbow_l": {
+   "parent": "arm_upper_l_b",
+   "child": "forearm_l_b",
+   "pair_disc_r": 3.4,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 4.6,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "hip_l": {
+   "parent": "torso_b_mesh",
+   "child": "thigh_l_b",
+   "pair_disc_r": 7.1,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 9.4,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "knee_l": {
+   "parent": "thigh_l_b",
+   "child": "shin_l_b",
+   "pair_disc_r": 5.2,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 7.2,
+   "visible_gaps": {
+    "-30": 3.5,
+    "-15": 1.5,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 3.5
+  }
+ },
+ "version": {
+  "neck": {
+   "parent": "torso_b_mesh",
+   "child": "head_b",
+   "pair_disc_r": 5.9,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 7.8,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "shoulder_r": {
+   "parent": "torso_b_mesh",
+   "child": "arm_upper_r_b",
+   "pair_disc_r": 5.2,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 7.0,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "elbow_r": {
+   "parent": "arm_upper_r_b",
+   "child": "forearm_r_b",
+   "pair_disc_r": 4.3,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 5.2,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "hip_r": {
+   "parent": "torso_b_mesh",
+   "child": "thigh_r_b",
+   "pair_disc_r": 7.2,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 9.6,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "knee_r": {
+   "parent": "thigh_r_b",
+   "child": "shin_r_b",
+   "pair_disc_r": 5.4,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.2,
+    "15": 0.2,
+    "30": 0.2
+   },
+   "pair_worst": 0.2,
+   "visible_disc_r": 7.3,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "shoulder_l": {
+   "parent": "torso_b_mesh",
+   "child": "arm_upper_l_b",
+   "pair_disc_r": 5.0,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.2,
+    "0": 2.8,
+    "15": 6.0,
+    "30": 8.5
+   },
+   "pair_worst": 8.5,
+   "visible_disc_r": 6.8,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "elbow_l": {
+   "parent": "arm_upper_l_b",
+   "child": "forearm_l_b",
+   "pair_disc_r": 3.4,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 4.6,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "hip_l": {
+   "parent": "torso_b_mesh",
+   "child": "thigh_l_b",
+   "pair_disc_r": 7.1,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 9.4,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  },
+  "knee_l": {
+   "parent": "thigh_l_b",
+   "child": "shin_l_b",
+   "pair_disc_r": 5.2,
+   "pair_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "pair_worst": 0.0,
+   "visible_disc_r": 7.2,
+   "visible_gaps": {
+    "-30": 0.0,
+    "-15": 0.0,
+    "0": 0.0,
+    "15": 0.0,
+    "30": 0.0
+   },
+   "worst": 0.0
+  }
+ }
+}

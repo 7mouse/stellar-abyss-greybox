@@ -1,0 +1,75 @@
+{
+ "out": "art_src/terrain/floor1_v2",
+ "n": 512,
+ "ov": 64,
+ "tiles": [
+  {
+   "name": "s01_ground_moss",
+   "src": "art_src/src/terrain_v2/s01_moss_gen2.jpg",
+   "desat": 0.72,
+   "val": 0.86
+  },
+  {
+   "name": "s01_ground_autumn",
+   "src": "art_src/src/terrain_v2/s01_autumn_gen2.jpg",
+   "val": 0.9,
+   "desat": 0.9
+  },
+  {
+   "name": "s01_ground_stone_large",
+   "src": "art_src/src/terrain_v2/s01_stone_gen1.jpg"
+  },
+  {
+   "name": "s01_water",
+   "src": "art_src/src/terrain_v2/s01_water_gen1.jpg"
+  },
+  {
+   "name": "s01_ground_stone",
+   "src": "art_src/src/terrain_v2/s01_flagstone_gen2.jpg",
+   "desat": 0.8,
+   "val": 0.9
+  },
+  {
+   "name": "s01_ground_stone_b",
+   "src": "art_src/src/terrain_v2/s01_flagstone_gen3.jpg",
+   "desat": 0.9,
+   "val": 0.9
+  }
+ ],
+ "edges": [
+  {
+   "name": "s02_edge_moss_stone",
+   "src": "art_src/src/terrain_v2/s02_moss_stone_gen1.jpg",
+   "desat": 0.72,
+   "top": "s01_ground_moss",
+   "bottom": "s01_ground_stone",
+   "val": 0.86
+  },
+  {
+   "name": "s02_edge_autumn_moss",
+   "src": "art_src/src/terrain_v2/s02_moss_autumn_gen1.jpg",
+   "desat": 0.72,
+   "flip": true,
+   "top": "s01_ground_autumn",
+   "bottom": "s01_ground_moss",
+   "val": 0.86
+  }
+ ],
+ "variants": [
+  {
+   "name": "s01_ground_stone_v2",
+   "base": "s01_ground_stone",
+   "interior": "s01_ground_stone_b"
+  },
+  {
+   "name": "s01_ground_stone_v3",
+   "base": "s01_ground_stone",
+   "interior": "roll"
+  },
+  {
+   "name": "s01_ground_moss_v2",
+   "base": "s01_ground_moss",
+   "interior": "roll"
+  }
+ ]
+}

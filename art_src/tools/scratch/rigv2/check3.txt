@@ -1,0 +1,41 @@
+/workspace/art_inbox/2026-10-21/art_src/rigs/hero/hero_palette_src 12 ['#281C15', '#3C2C1F', '#682921', '#4F3726', '#433B34', '#6A4A35', '#933D33', '#79726C', '#8C6F53', '#DDB088', '#C4BAB2', '#F8DBC2']
+/workspace/art_inbox/2026-10-21/art_src/rigs/sprout_boar/sprout_boar_palette_src 11 ['#211706', '#454820', '#5F4D37', '#747738', '#947C5E', '#9B9A4D', '#C3A378', '#CDB28D', '#E7CEA9', '#F2DBB8', '#FBEED6']
+== hero f
+neck         head_f           visible holes(px@1:1, worst +-30) v1=16.5 v2=3.2 | pair-core v1=1.5 v2=0.8
+shoulder_r   arm_upper_r_f    visible holes(px@1:1, worst +-30) v1=2.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+elbow_r      forearm_r_f      visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+hip_r        thigh_r_f        visible holes(px@1:1, worst +-30) v1=0.2 v2=0.0 | pair-core v1=0.0 v2=0.0
+knee_r       shin_r_f         visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+shoulder_l   arm_upper_l_f    visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+elbow_l      forearm_l_f      visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+hip_l        thigh_l_f        visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+knee_l       shin_l_f         visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+== hero s
+neck         head_s           visible holes(px@1:1, worst +-30) v1=42.0 v2=5.0 | pair-core v1=71.8 v2=54.8
+shoulder_r   arm_upper_r_s    visible holes(px@1:1, worst +-30) v1=1.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+elbow_r      forearm_r_s      visible holes(px@1:1, worst +-30) v1=0.5 v2=0.0 | pair-core v1=12.8 v2=0.0
+hip_r        thigh_r_s        visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+knee_r       shin_r_s         visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+shoulder_l   arm_upper_l_s    visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+elbow_l      forearm_l_s      visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=15.0 v2=2.0
+hip_l        thigh_l_s        visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+knee_l       shin_l_s         visible holes(px@1:1, worst +-30) v1=0.8 v2=0.0 | pair-core v1=0.0 v2=0.0
+== hero b
+neck         head_b           visible holes(px@1:1, worst +-30) v1=4.2 v2=0.0 | pair-core v1=1.2 v2=0.0
+shoulder_r   arm_upper_r_b    visible holes(px@1:1, worst +-30) v1=1.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+elbow_r      forearm_r_b      visible holes(px@1:1, worst +-30) v1=2.0 v2=0.0 | pair-core v1=55.5 v2=0.0
+hip_r        thigh_r_b        visible holes(px@1:1, worst +-30) v1=5.2 v2=0.0 | pair-core v1=0.0 v2=0.0
+knee_r       shin_r_b         visible holes(px@1:1, worst +-30) v1=3.8 v2=2.0 | pair-core v1=0.2 v2=0.2
+shoulder_l   arm_upper_l_b    visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=14.5 v2=8.5
+elbow_l      forearm_l_b      visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=5.8 v2=0.0
+hip_l        thigh_l_b        visible holes(px@1:1, worst +-30) v1=5.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+knee_l       shin_l_b         visible holes(px@1:1, worst +-30) v1=3.2 v2=3.2 | pair-core v1=0.0 v2=0.0
+== boar
+neck         head_s           visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+ear_root     ear_s            visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=20.8 v2=5.5
+sprout_root  sprout_s         visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+tail_root    tail_s           visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+hip_r        leg_hind_r_s     visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+hip_l        leg_hind_l_s     visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+shoulder_r   leg_front_r_s    visible holes(px@1:1, worst +-30) v1=0.0 v2=0.0 | pair-core v1=0.0 v2=0.0
+shoulder_l   leg_front_l_s    visible holes(px@1:1, worst +-30) v1=6.5 v2=0.0 | pair-core v1=8.0 v2=0.0

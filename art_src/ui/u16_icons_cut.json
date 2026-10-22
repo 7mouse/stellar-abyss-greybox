@@ -1,0 +1,95 @@
+{
+ "source": "art_src/src/ui_v2/u16_icons_gen2.jpg",
+ "out_dir": "art_src/ui/hud_v2/icons_u16",
+ "disp_scale": 1.0,
+ "items": [
+  {
+   "name": "u16_glowmoss",
+   "rect": [
+    4.0,
+    4.0,
+    337.3333333333333,
+    337.3333333333333
+   ],
+   "soft": false,
+   "max": 128,
+   "spec": "U16 (gen2: outlined, chibi style)"
+  },
+  {
+   "name": "u16_glowmoss_essence",
+   "max": 128,
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    510,
+    170
+   ]
+  },
+  {
+   "name": "u16_shard",
+   "max": 128,
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    820,
+    190
+   ]
+  },
+  {
+   "name": "u16_trinket_ring",
+   "max": 128,
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    200,
+    500
+   ],
+   "open_holes": true
+  },
+  {
+   "name": "u16_trinket_amulet",
+   "max": 128,
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    480,
+    480
+   ]
+  },
+  {
+   "name": "u16_trinket_charm",
+   "max": 128,
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    810,
+    500
+   ]
+  },
+  {
+   "name": "u16_return_talisman",
+   "max": 128,
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    185,
+    790
+   ]
+  },
+  {
+   "name": "u16_heal_potion",
+   "max": 128,
+   "spec": "U16 (gen2: outlined, chibi style)",
+   "pick": [
+    500,
+    820
+   ]
+  },
+  {
+   "name": "u16_mosscrown_tusk",
+   "rect": [
+    686.6666666666666,
+    686.6666666666666,
+    1020.0,
+    1020.0
+   ],
+   "soft": false,
+   "max": 128,
+   "spec": "U16 (gen2: outlined, chibi style)"
+  }
+ ]
+}

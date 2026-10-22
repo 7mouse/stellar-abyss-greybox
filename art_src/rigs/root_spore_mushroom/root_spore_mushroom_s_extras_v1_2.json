@@ -1,0 +1,134 @@
+{
+ "src_psd2x": "art_src/rigs/root_spore_mushroom/root_spore_mushroom_parts_s_v1_1_src2x.psd",
+ "src_pivots": "art_src/rigs/root_spore_mushroom/root_spore_mushroom_parts_s_v1_1_pivots.json",
+ "out_dir": "art_src/rigs/root_spore_mushroom",
+ "base": "root_spore_mushroom_parts_s_v1_2_raw",
+ "parts_dir": "parts_v1_2_raw",
+ "ops": [
+  {
+   "op": "add_part",
+   "name": "mouth_open_s",
+   "source": "art_src/src/v21f/monster_extras_gen1.jpg",
+   "pick": [
+    545,
+    465
+   ],
+   "clip": [
+    499,
+    470,
+    526,
+    500
+   ],
+   "fit": {
+    "at": [
+     169,
+     168
+    ],
+    "h": 11
+   },
+   "recolor": {
+    "to": "stalk_s_mesh",
+    "mode": "meanstd",
+    "strength": 0.5,
+    "thr": 0.6
+   },
+   "above": "eye_closed_r_s",
+   "swap": true,
+   "flip_h": true,
+   "mask": {
+    "of": "stalk_s_mesh",
+    "ellipse": [
+     169,
+     168,
+     5,
+     6
+    ],
+    "feather": 0.6
+   }
+  },
+  {
+   "op": "split",
+   "part": "root_r_s",
+   "at": [
+    97.2,
+    219.5
+   ],
+   "from": "hip_r",
+   "to": "foot_r",
+   "upper": "root_r_a_s",
+   "lower": "root_r_b_s",
+   "pivot": "root_mid_r"
+  },
+  {
+   "op": "split",
+   "part": "root_l_s",
+   "at": [
+    135.5,
+    217.5
+   ],
+   "from": "hip_l",
+   "to": "foot_l",
+   "upper": "root_l_a_s",
+   "lower": "root_l_b_s",
+   "pivot": "root_mid_l"
+  },
+  {
+   "op": "underfill",
+   "parent": "stalk_s_mesh",
+   "child": "cap_s",
+   "pivot": "cap_root",
+   "radius": 40.0,
+   "shade": 0.72,
+   "inset": 2
+  },
+  {
+   "op": "underfill",
+   "parent": "stalk_s_mesh",
+   "child": "arm_r_s",
+   "pivot": "arm_root_r",
+   "radius": 11,
+   "shade": 0.92
+  },
+  {
+   "op": "underfill",
+   "parent": "stalk_s_mesh",
+   "child": "root_r_a_s",
+   "pivot": "hip_r",
+   "radius": 14,
+   "shade": 0.92
+  },
+  {
+   "op": "underfill",
+   "parent": "stalk_s_mesh",
+   "child": "arm_l_s",
+   "pivot": "arm_root_l",
+   "radius": 11,
+   "shade": 0.92
+  },
+  {
+   "op": "underfill",
+   "parent": "stalk_s_mesh",
+   "child": "root_l_a_s",
+   "pivot": "hip_l",
+   "radius": 14,
+   "shade": 0.92
+  },
+  {
+   "op": "underfill",
+   "parent": "root_r_a_s",
+   "child": "root_r_b_s",
+   "pivot": "root_mid_r",
+   "radius": 15,
+   "shade": 0.9
+  },
+  {
+   "op": "underfill",
+   "parent": "root_l_a_s",
+   "child": "root_l_b_s",
+   "pivot": "root_mid_l",
+   "radius": 15,
+   "shade": 0.9
+  }
+ ],
+ "why": "21f: open-mouth swap (AI monster_extras_gen1), roots split into 2 segments at the narrowest trunk row (trunk / toes) (cut by tool, caps by rig_patch), hidden overlap extensions under cap / arms / roots (stalk colours)"
+}

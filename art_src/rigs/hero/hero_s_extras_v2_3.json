@@ -1,0 +1,169 @@
+{
+ "src_psd2x": "art_src/rigs/hero/hero_parts_s_v2_2_src2x.psd",
+ "src_pivots": "art_src/rigs/hero/hero_parts_s_v2_2_pivots.json",
+ "out_dir": "art_src/rigs/hero",
+ "base": "hero_parts_s_v2_3",
+ "parts_dir": "parts_v2_3",
+ "ops": [
+  {
+   "op": "add_part",
+   "name": "expr_hurt_s",
+   "source": "art_src/src/v21f/hero_expressions_gen1.jpg",
+   "pick": [
+    390,
+    350
+   ],
+   "clip": [
+    260,
+    280,
+    520,
+    462
+   ],
+   "fit": {
+    "iou": "head_s",
+    "region": [
+     85,
+     0,
+     200,
+     104
+    ],
+    "scale": [
+     0.8,
+     1.25
+    ]
+   },
+   "recolor": {
+    "to": "head_s",
+    "mode": "meanstd",
+    "strength": 0.8,
+    "thr": 0.55
+   },
+   "mask": {
+    "of": "head_s",
+    "ellipse": [
+     160,
+     88,
+     19,
+     19
+    ],
+    "skin": [
+     244,
+     205,
+     173
+    ],
+    "skin_tol": 0.22,
+    "feather": 0.8,
+    "skin_lum": 0.5
+   },
+   "above": "eye_closed_r_s",
+   "swap": true
+  },
+  {
+   "op": "add_part",
+   "name": "expr_angry_s",
+   "source": "art_src/src/v21f/hero_expressions_gen1.jpg",
+   "pick": [
+    635,
+    350
+   ],
+   "clip": [
+    505,
+    280,
+    765,
+    462
+   ],
+   "fit": {
+    "iou": "head_s",
+    "region": [
+     85,
+     0,
+     200,
+     104
+    ],
+    "scale": [
+     0.8,
+     1.25
+    ]
+   },
+   "recolor": {
+    "to": "head_s",
+    "mode": "meanstd",
+    "strength": 0.8,
+    "thr": 0.55
+   },
+   "mask": {
+    "of": "head_s",
+    "ellipse": [
+     160,
+     88,
+     19,
+     19
+    ],
+    "skin": [
+     244,
+     205,
+     173
+    ],
+    "skin_tol": 0.22,
+    "feather": 0.8,
+    "skin_lum": 0.5
+   },
+   "above": "eye_closed_r_s",
+   "swap": true
+  },
+  {
+   "op": "add_part",
+   "name": "expr_happy_s",
+   "source": "art_src/src/v21f/hero_expressions_gen1.jpg",
+   "pick": [
+    880,
+    350
+   ],
+   "clip": [
+    750,
+    280,
+    1010,
+    462
+   ],
+   "fit": {
+    "iou": "head_s",
+    "region": [
+     85,
+     0,
+     200,
+     104
+    ],
+    "scale": [
+     0.8,
+     1.25
+    ]
+   },
+   "recolor": {
+    "to": "head_s",
+    "mode": "meanstd",
+    "strength": 0.8,
+    "thr": 0.55
+   },
+   "mask": {
+    "of": "head_s",
+    "ellipse": [
+     160,
+     88,
+     19,
+     19
+    ],
+    "skin": [
+     244,
+     205,
+     173
+    ],
+    "skin_tol": 0.22,
+    "feather": 0.8,
+    "skin_lum": 0.5
+   },
+   "above": "eye_closed_r_s",
+   "swap": true
+  }
+ ],
+ "why": "21f: expression swaps (hurt / angry-attack / happy) = face area of an AI expression sheet fitted onto the rig head (alpha IoU), colour-matched, masked to the head skin; neutral = the head itself; b has no face (structural empty swaps so all views switch together)"
+}

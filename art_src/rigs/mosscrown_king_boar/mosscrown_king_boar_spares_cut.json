@@ -1,0 +1,62 @@
+{
+ "source": "art_src/src/mosscrown_king_boar_partsheet_v2_gen1.jpg",
+ "out_dir": "art_src/rigs/mosscrown_king_boar/spares_v2",
+ "disp_scale": 1.25,
+ "why": "sheet parts that are baked into the heads in v2.1 (crown/ears/tusks); cut at sheet resolution for a later separate-part version (phase-2 crown break, tusk sway)",
+ "items": [
+  {
+   "name": "crown",
+   "pick": [
+    767,
+    515
+   ],
+   "spec": "\u82d4\u51a0 (spare; baked into head_f/head_s, own part in b)"
+  },
+  {
+   "name": "crown_sprout_glow",
+   "rect": [
+    748,
+    450,
+    790,
+    500
+   ],
+   "soft": false,
+   "spec": "crown sprout crystal (spare, part of crown)"
+  },
+  {
+   "name": "ear_l",
+   "pick": [
+    561,
+    490
+   ]
+  },
+  {
+   "name": "ear_r",
+   "pick": [
+    633,
+    490
+   ]
+  },
+  {
+   "name": "tusk_l",
+   "pick": [
+    894,
+    500
+   ]
+  },
+  {
+   "name": "tusk_r",
+   "pick": [
+    953,
+    500
+   ]
+  },
+  {
+   "name": "tail",
+   "pick": [
+    474,
+    495
+   ]
+  }
+ ]
+}

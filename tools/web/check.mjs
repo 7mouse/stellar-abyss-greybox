@@ -29,10 +29,22 @@ await page.mouse.click(640, 360); // 让画布获得焦点
 await page.evaluate('window.greybox.startRun()');
 ok(await waitScene('res://scenes/floor/floor.tscn'), '起程村 → 下潜第 1 层');
 await new Promise(r => setTimeout(r, 800));
+// 开放地图：楼层启动时打印“[map] 第 1 层：区块 30，生成 x ms，导航烘焙 y ms”
+const mapLine = logs.find(l => l.includes('[map]')) || '';
+const mm = mapLine.match(/区块 (\d+)，生成 ([\d.]+) ms，导航烘焙 ([\d.]+) ms/);
+ok(mm && +mm[1] === 30 && +mm[2] + +mm[3] <= 800 && +mm[3] <= 600, `开放地图：${mapLine.trim() || '没有 [map] 日志'}（生成 + 烘焙 ≤ 800 ms，烘焙 ≤ 600 ms）`);
 await page.keyboard.down('KeyD'); await new Promise(r => setTimeout(r, 900)); await page.keyboard.up('KeyD');
 await page.keyboard.press('KeyJ'); await new Promise(r => setTimeout(r, 300));
 await page.keyboard.press('Space'); await new Promise(r => setTimeout(r, 500));
 await page.screenshot({ path: `${shots}/3_floor.png` });
+// OM9 性能：主角周围 12 只敌人战斗，读逻辑帧时间（process + physics，指数平均）和 rAF 帧间隔
+await page.evaluate('window.greybox.perfRing()');
+await new Promise(r => setTimeout(r, 4000));
+const raf = await page.evaluate(() => new Promise(res => { const ts = []; const f = t => { ts.push(t); if (ts.length < 121) requestAnimationFrame(f); else res(ts); }; requestAnimationFrame(f); }));
+const gaps = raf.slice(1).map((t, i) => t - raf[i]).sort((a, b) => a - b);
+const perf = await page.evaluate('[window.greybox.logicMs, window.greybox.enemies]');
+const p95 = gaps[Math.floor(gaps.length * 0.95)]; const p99 = gaps[Math.floor(gaps.length * 0.99)];
+ok(gaps[60] <= 17.5 && perf[1] >= 12, `OM9 主角周围 12 只敌人战斗（全层 ${perf[1]} 只，远处的休眠）：rAF 帧间隔中位数 ${gaps[60].toFixed(1)} ms，95% 分位 ${p95.toFixed(1)} ms、99% 分位 ${p99.toFixed(1)} ms（≤ 16.7 ms 即 60 帧；性能监视器 process+physics ${perf[0].toFixed(1)} ms，网页单线程下含渲染等待，仅供参考）`);
 await page.keyboard.press('Backquote');
 await new Promise(r => setTimeout(r, 800));
 await page.screenshot({ path: `${shots}/4_debug_panel.png` });

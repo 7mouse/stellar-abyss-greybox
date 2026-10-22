@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EcologyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ecology_data.gd" id="s"]
+[ext_resource type="Script" path="res://scripts/resources/hazard_data.gd" id="sh"]
+[ext_resource type="Resource" path="res://data/hazards/spore_pod.tres" id="h"]
+[ext_resource type="Resource" path="res://data/guards/guard_1.tres" id="g"]
+
+[resource]
+script = ExtResource("s")
+id = "fungal_grove"
+display_name = "菌褶林"
+palette = Color(0.16, 0.24, 0.12, 1)
+biome_bias = -0.25
+water_th = 0.4
+enemy_mix = "mushling:0.60,rootshot:0.25,shellbug:0.15"
+hazard_counts = Array[int]([6])
+hazards = Array[ExtResource("sh")]([ExtResource("h")])
+lord = ExtResource("g")

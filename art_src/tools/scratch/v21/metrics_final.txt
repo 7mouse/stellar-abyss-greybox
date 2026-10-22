@@ -1,0 +1,51 @@
+== boar
+ear_root:ear_s                   hid restΔ v2=82.2/186.1 v21=None/None | ext-int v2=1.3 v21=None | dark@oldend v2=5 v21=None
+sprout_root:sprout_s             VIS restΔ v2=67.5/120.3 v21=1.6/12.3 | ext-int v2=-23.3 v21=21.5 | dark@oldend v2=76 v21=71
+tail_root:tail_s                 hid restΔ v2=0.0/0.0 v21=0.0/0.0 | ext-int v2=27.5 v21=2.1 | dark@oldend v2=5 v21=0
+hip_r:leg_hind_r_s               VIS restΔ v2=50.7/127.3 v21=0.2/0.0 | ext-int v2=-24.4 v21=-18.0 | dark@oldend v2=5 v21=5
+hip_l:leg_hind_l_s               hid restΔ v2=0.0/0.0 v21=0.0/0.0 | ext-int v2=-24.2 v21=-6.1 | dark@oldend v2=2 v21=0
+shoulder_r:leg_front_r_s         VIS restΔ v2=37.9/138.9 v21=0.0/0.0 | ext-int v2=-17.7 v21=-6.3 | dark@oldend v2=6 v21=6
+shoulder_l:leg_front_l_s         hid restΔ v2=10.7/97.8 v21=26.9/151.6 | ext-int v2=-29.2 v21=-6.0 | dark@oldend v2=4 v21=0
+== hero_f
+neck:head_f                      VIS restΔ v2=16.3/141.5 v21=0.0/0.0 | ext-int v2=53.0 v21=-66.5 | dark@oldend v2=0 v21=0
+shoulder_r:arm_upper_r_f         VIS restΔ v2=0.3/0.0 v21=0.1/0.0 | ext-int v2=-1.0 v21=9.3 | dark@oldend v2=12 v21=12
+elbow_r:forearm_r_f              VIS restΔ v2=0.0/0.0 v21=0.0/0.0 | ext-int v2=-76.5 v21=-74.4 | dark@oldend v2=11 v21=11
+hip_r:thigh_r_f                  hid restΔ v2=7.2/47.2 v21=1.2/0.0 | ext-int v2=-34.0 v21=-36.3 | dark@oldend v2=78 v21=64
+knee_r:shin_r_f                  hid restΔ v2=2.0/10.0 v21=0.2/0.0 | ext-int v2=4.6 v21=3.0 | dark@oldend v2=49 v21=43
+knee_r:thigh_r_f                 VIS restΔ v2=7.2/47.2 v21=1.2/0.0 | ext-int v2=-34.0 v21=-36.3 | dark@oldend v2=78 v21=64
+shoulder_l:arm_upper_l_f         VIS restΔ v2=51.7/82.4 v21=3.0/20.7 | ext-int v2=-11.8 v21=None | dark@oldend v2=18 v21=3
+elbow_l:forearm_l_f              VIS restΔ v2=34.4/107.0 v21=0.7/0.0 | ext-int v2=-79.2 v21=None | dark@oldend v2=13 v21=12
+hip_l:thigh_l_f                  hid restΔ v2=3.1/18.9 v21=0.3/0.0 | ext-int v2=-50.7 v21=-31.1 | dark@oldend v2=63 v21=51
+knee_l:shin_l_f                  hid restΔ v2=0.4/0.0 v21=0.0/0.0 | ext-int v2=-0.4 v21=4.1 | dark@oldend v2=59 v21=59
+knee_l:thigh_l_f                 VIS restΔ v2=3.1/18.9 v21=0.3/0.0 | ext-int v2=-50.7 v21=-31.1 | dark@oldend v2=63 v21=51
+neck:torso_f_mesh                hid restΔ v2=None/None v21=0.2/0.0 | ext-int v2=None v21=-3.2 | dark@oldend v2=None v21=148
+shoulder_r:torso_f_mesh          hid restΔ v2=None/None v21=0.2/0.0 | ext-int v2=None v21=-3.2 | dark@oldend v2=None v21=148
+shoulder_l:torso_f_mesh          hid restΔ v2=None/None v21=0.2/0.0 | ext-int v2=None v21=-3.2 | dark@oldend v2=None v21=148
+== hero_s
+neck:torso_s_mesh                hid restΔ v2=1.6/6.1 v21=0.5/1.8 | ext-int v2=-13.2 v21=15.8 | dark@oldend v2=6 v21=5
+shoulder_r:arm_upper_r_s         VIS restΔ v2=13.1/52.7 v21=1.5/6.1 | ext-int v2=-8.4 v21=0.5 | dark@oldend v2=48 v21=11
+elbow_r:forearm_r_s              VIS restΔ v2=33.5/78.9 v21=3.2/18.5 | ext-int v2=-5.8 v21=-4.2 | dark@oldend v2=16 v21=2
+elbow_r:arm_upper_r_s            hid restΔ v2=13.1/52.7 v21=1.5/6.1 | ext-int v2=-8.4 v21=0.5 | dark@oldend v2=48 v21=11
+hip_r:thigh_r_s                  VIS restΔ v2=3.8/28.8 v21=0.1/0.0 | ext-int v2=0.6 v21=4.9 | dark@oldend v2=58 v21=31
+knee_r:shin_r_s                  VIS restΔ v2=28.9/48.2 v21=1.0/4.9 | ext-int v2=None v21=None | dark@oldend v2=19 v21=12
+knee_r:thigh_r_s                 hid restΔ v2=3.8/28.8 v21=0.1/0.0 | ext-int v2=0.6 v21=4.9 | dark@oldend v2=58 v21=31
+shoulder_l:arm_upper_l_s         hid restΔ v2=0.2/0.0 v21=3.1/29.5 | ext-int v2=-8.6 v21=-0.9 | dark@oldend v2=73 v21=47
+elbow_l:forearm_l_s              VIS restΔ v2=0.0/0.0 v21=0.0/0.0 | ext-int v2=15.0 v21=2.9 | dark@oldend v2=9 v21=9
+elbow_l:arm_upper_l_s            hid restΔ v2=0.2/0.0 v21=3.1/29.5 | ext-int v2=-8.6 v21=-0.9 | dark@oldend v2=73 v21=47
+hip_l:thigh_l_s                  hid restΔ v2=1.4/0.0 v21=0.7/0.0 | ext-int v2=-3.9 v21=6.5 | dark@oldend v2=57 v21=16
+knee_l:shin_l_s                  VIS restΔ v2=32.4/66.8 v21=1.7/10.7 | ext-int v2=None v21=None | dark@oldend v2=26 v21=18
+knee_l:thigh_l_s                 hid restΔ v2=1.4/0.0 v21=0.7/0.0 | ext-int v2=-3.9 v21=6.5 | dark@oldend v2=57 v21=16
+== hero_b
+neck:head_b                      VIS restΔ v2=0.0/0.0 v21=0.0/0.0 | ext-int v2=46.9 v21=-51.5 | dark@oldend v2=0 v21=0
+shoulder_r:arm_upper_r_b         hid restΔ v2=32.8/87.3 v21=2.0/16.3 | ext-int v2=-11.2 v21=-4.3 | dark@oldend v2=68 v21=3
+elbow_r:forearm_r_b              VIS restΔ v2=29.4/68.0 v21=0.3/0.3 | ext-int v2=None v21=-27.7 | dark@oldend v2=16 v21=8
+elbow_r:arm_upper_r_b            hid restΔ v2=32.8/87.3 v21=None/None | ext-int v2=-11.2 v21=None | dark@oldend v2=68 v21=None
+hip_r:thigh_r_b                  hid restΔ v2=7.0/57.8 v21=0.7/0.0 | ext-int v2=-28.1 v21=-14.5 | dark@oldend v2=64 v21=59
+knee_r:shin_r_b                  hid restΔ v2=31.6/72.6 v21=2.0/7.7 | ext-int v2=1.2 v21=0.7 | dark@oldend v2=46 v21=10
+knee_r:thigh_r_b                 VIS restΔ v2=7.0/57.8 v21=0.7/0.0 | ext-int v2=-28.1 v21=-14.5 | dark@oldend v2=64 v21=59
+shoulder_l:arm_upper_l_b         hid restΔ v2=11.0/66.9 v21=0.8/2.9 | ext-int v2=-8.9 v21=11.7 | dark@oldend v2=60 v21=47
+elbow_l:forearm_l_b              VIS restΔ v2=0.0/0.0 v21=0.0/0.0 | ext-int v2=None v21=None | dark@oldend v2=11 v21=11
+elbow_l:arm_upper_l_b            hid restΔ v2=11.0/66.9 v21=0.8/2.9 | ext-int v2=-8.9 v21=11.7 | dark@oldend v2=60 v21=47
+hip_l:thigh_l_b                  hid restΔ v2=10.3/88.3 v21=1.0/0.0 | ext-int v2=-36.4 v21=-34.2 | dark@oldend v2=59 v21=51
+knee_l:shin_l_b                  hid restΔ v2=20.3/63.4 v21=2.1/15.8 | ext-int v2=-2.8 v21=5.5 | dark@oldend v2=53 v21=32
+knee_l:thigh_l_b                 VIS restΔ v2=10.3/88.3 v21=1.0/0.0 | ext-int v2=-36.4 v21=-34.2 | dark@oldend v2=59 v21=51

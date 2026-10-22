@@ -7,7 +7,7 @@ func _init() -> void:
 	title = "保险箱"
 
 func _fill() -> void:
-	text("容量 %d / %d（升级在强化台）　能放：装备、稀有材料、钥匙道具、升降梯燃料" % [Lineage.vault.size(), Lineage.vault_capacity()], 24)
+	text("容量 %d / %d（升级在强化台）　能放：装备、稀有材料、钥匙道具" % [Lineage.vault.size(), Lineage.vault_capacity()], 24)
 	if replacing != "":
 		text("选择要换出的格子（换出的东西回到身上）：", 24, Color(1, 0.9, 0.5))
 		for i in Lineage.vault.size():
@@ -21,13 +21,38 @@ func _fill() -> void:
 	text("身上：", 24)
 	for id in Lineage.loadout:
 		btn("放入：" + Items.get_item(id).display_name, _put.bind(id))
+	if Lineage.charm_carried > 0:
+		btn("放入保险箱：%s ×%d" % [Game.recall.display_name, Lineage.charm_carried], _put.bind(RecallCharm.ITEM_ID))
 	if Lineage.mats.moss_essence > 0:
 		btn("放入：萤苔精 ×1（稀有材料）", _put.bind("moss_essence"))
+	if Game.run:
+		text("背包：", 24)
+		var shown := {}
+		for st in Game.run.bag:
+			if st.item.id != RecallCharm.ITEM_ID and shown.has(st.item.id):
+				continue
+			if st.item.id != RecallCharm.ITEM_ID:
+				shown[st.item.id] = true
+			if st.item.id == RecallCharm.ITEM_ID:
+				btn("存入仓库：" + Game.recall.stack_label(st), _store_charm.bind(st.sealed, false))
+				btn("放入保险箱：" + Game.recall.stack_label(st), _store_charm.bind(st.sealed, true))
+			elif st.item.category in ["material", "rare_material"]:
+				btn("存入仓库：%s ×%d" % [st.item.display_name, Game.run.count_of(st.item.id)], _store_bag.bind(st.item.id))
+			elif Lineage.can_vault(st.item):
+				btn("放入保险箱：" + st.item.display_name, _store_bag.bind(st.item.id))
 	btn("记忆碎片 ×%d（不能放入）" % Lineage.shards_bank, func(): pass, false)
 	btn("局内强化（不能放入）", func(): pass, false)
 
 func _take(i: int) -> void:
 	Lineage.vault_take(i)
+	rebuild()
+
+func _store_bag(id: String) -> void:
+	Game.store_bag(id)
+	rebuild()
+
+func _store_charm(sealed: bool, to_vault: bool) -> void:
+	Game.store_charm(sealed, to_vault)
 	rebuild()
 
 func _put(id: String) -> void:

@@ -1,0 +1,9 @@
+{"source": "art_src/src/terrain_v2/s05s06_rocks_ruins_gen1.jpg", "out_dir": "art_src/terrain/floor1_v2/props_rocks_ruins", "disp_scale": 1.25, "items": [
+ {"name": "s05_rock_large", "pick": [160, 140], "max": 256, "spec": "S05 large"},
+ {"name": "s05_rock_medium", "pick": [437, 150], "max": 192, "spec": "S05 medium"},
+ {"name": "s05_rock_small", "pick": [655, 165], "max": 96, "spec": "S05 small"},
+ {"name": "s05_pebbles", "rect": [798, 118, 920, 214], "soft": false, "max": 96, "spec": "S05 pebble cluster"},
+ {"name": "s06_ruin_pillar", "pick": [120, 400], "max": 384, "spec": "S06 broken pillar"},
+ {"name": "s06_ruin_wall", "pick": [360, 420], "max": 384, "spec": "S06 low wall"},
+ {"name": "s06_ruin_arch", "pick": [610, 470], "max": 512, "spec": "S06 arch fragment"},
+ {"name": "s06_ruin_blocks", "pick": [875, 430], "max": 384, "spec": "S06 fallen blocks"}]}

@@ -1,0 +1,52 @@
+{
+ "src_psd2x": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_b_v3_raw_src2x.psd",
+ "src_pivots": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_b_v3_raw_pivots.json",
+ "out_dir": "art_src/rigs/mosscrown_king_boar",
+ "base": "mosscrown_king_boar_parts_b_v3",
+ "parts_dir": "parts_b_v3",
+ "scale": 2,
+ "cap_version": 2,
+ "defringe": false,
+ "joints": [
+  {
+   "pivot": "knee_front_r",
+   "parent": "leg_front_r_a_b",
+   "child": "leg_front_r_b_b",
+   "child_cls": "small",
+   "parent_cls": "small",
+   "child_from": "hoof_r_front",
+   "parent_from": "shoulder_r",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "knee_front_l",
+   "parent": "leg_front_l_a_b",
+   "child": "leg_front_l_b_b",
+   "child_cls": "small",
+   "parent_cls": "small",
+   "child_from": "hoof_l_front",
+   "parent_from": "shoulder_l",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "knee_hind_r",
+   "parent": "leg_hind_r_a_b",
+   "child": "leg_hind_r_b_b",
+   "child_cls": "small",
+   "parent_cls": "small",
+   "child_from": "hoof_r_hind",
+   "parent_from": "hip_r",
+   "child_cover_only": false
+  },
+  {
+   "pivot": "knee_hind_l",
+   "parent": "leg_hind_l_a_b",
+   "child": "leg_hind_l_b_b",
+   "child_cls": "small",
+   "parent_cls": "small",
+   "child_from": "hoof_l_hind",
+   "parent_from": "hip_l",
+   "child_cover_only": false
+  }
+ ]
+}

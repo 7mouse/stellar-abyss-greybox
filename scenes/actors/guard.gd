@@ -1,6 +1,6 @@
 class_name Guard
 extends EnemyBase
-## 层守 = 敌人模板 × 词缀 × 配色。词缀：狂暴（攻速 +30%）、召唤（每 10 秒 2 只菌菇小鬼）、硬壳（poise +100%，背后受伤 ×1.5）
+## 层主 = 敌人模板 × 词缀 × 配色。词缀：狂暴（攻速 +30%）、召唤（每 10 秒 2 只菌菇小鬼）、硬壳（poise +100%，背后受伤 ×1.5）、孢子（重砸后落点留 2 秒孢子云）
 ## 二阶段：HP 降到 phase2_hp_ratio 时 1 秒演出（无敌），之后加 phase2_affix
 
 signal phase2_started
@@ -44,7 +44,7 @@ func effective_interval() -> float:
 func _ready() -> void:
 	super._ready()
 	hitbox.source_name = gdata.display_name
-	warn.add_theme_font_size_override("font_size", 72)  # 层守预兆“!”加大
+	warn.add_theme_font_size_override("font_size", 72)  # 层主预兆“!”加大
 	add_to_group("guards")
 
 func _tick_extra(delta: float) -> void:
@@ -70,6 +70,7 @@ func _physics_process(delta: float) -> void:
 	if phase2_t >= 0.0:
 		state_t += delta
 		_tick_extra(delta)
+		_sync_visual()
 		return
 	super._physics_process(delta)
 
@@ -86,6 +87,19 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		_go(S.RECOVER)
 		phase2_started.emit()
 	return ok
+
+## 孢子词缀：重砸（非射击模板）落点留下孢子云
+func _begin_attack() -> void:
+	super._begin_attack()
+	if data.id == "rootshot":
+		return
+	for a in active_affixes:
+		if a.spore_on_slam:
+			var at := global_position + attack_dir * (data.attack_range * 0.6)
+			get_parent().add_child(SporeCloud.make(at, a.spore_on_slam, a.spore_sec))
+			spore_clouds += 1
+
+var spore_clouds := 0
 
 func roll_loot(rare_mult := 1.0) -> Array[ItemStack]:
 	return gdata.loot_table.roll(Game.rng, rare_mult) if gdata.loot_table else []

@@ -1,0 +1,192 @@
+{
+ "rig": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_s_v2_1.psd",
+ "pivots": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_s_v2_1_pivots.json",
+ "fix": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_s_v2_fix.json",
+ "attach": {
+  "eye_open_r_s": "head_s",
+  "eye_closed_r_s": "head_s",
+  "eye_open_l_s": "head_s",
+  "eye_closed_l_s": "head_s"
+ },
+ "out": "art_src/rigs/mosscrown_king_boar/ref/mosscrown_king_boar_ref_poses_v1.png",
+ "scale": 2,
+ "anims": [
+  {
+   "name": "idle",
+   "fps": 8,
+   "timing": "2 keys 0.8 s",
+   "keys": [
+    {
+     "label": "1"
+    },
+    {
+     "label": "2",
+     "root_d": [
+      0,
+      1
+     ],
+     "rot": {
+      "neck": 3,
+      "tail_root": -10
+     }
+    },
+    {
+     "label": "blink",
+     "show": [
+      "eye_closed_r_s"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "move",
+   "fps": 12,
+   "timing": "heavy trot 4 keys 0.6 s",
+   "keys": [
+    {
+     "label": "A",
+     "rot": {
+      "shoulder_r": -20,
+      "shoulder_l": 16,
+      "hip_r": 16,
+      "hip_l": -18
+     }
+    },
+    {
+     "label": "pass",
+     "root_d": [
+      0,
+      -3
+     ]
+    },
+    {
+     "label": "B",
+     "rot": {
+      "shoulder_r": 16,
+      "shoulder_l": -20,
+      "hip_r": -18,
+      "hip_l": 16
+     }
+    },
+    {
+     "label": "pass",
+     "root_d": [
+      0,
+      -3
+     ]
+    }
+   ]
+  },
+  {
+   "name": "attack (charge)",
+   "fps": 12,
+   "timing": "windup 0.8 s; charge loop; wall stun",
+   "keys": [
+    {
+     "label": "windup",
+     "root_rot": -5,
+     "root_d": [
+      -6,
+      0
+     ],
+     "rot": {
+      "neck": -8,
+      "hip_r": 12,
+      "hip_l": 12
+     }
+    },
+    {
+     "label": "charge",
+     "root_rot": 6,
+     "root_d": [
+      14,
+      0
+     ],
+     "rot": {
+      "neck": 10,
+      "shoulder_r": -28,
+      "shoulder_l": -22,
+      "hip_r": 26,
+      "hip_l": 22
+     }
+    },
+    {
+     "label": "recover",
+     "root_d": [
+      6,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "name": "hit",
+   "fps": 12,
+   "timing": "0.1 s",
+   "keys": [
+    {
+     "label": "hit",
+     "root_d": [
+      -5,
+      0
+     ],
+     "root_rot": -4,
+     "rot": {
+      "neck": -12
+     },
+     "show": [
+      "eye_closed_r_s"
+     ]
+    },
+    {
+     "label": "recover",
+     "rot": {
+      "neck": -4
+     }
+    }
+   ]
+  },
+  {
+   "name": "roar (summon)",
+   "fps": 12,
+   "timing": "hooves up 0.3 s; lean back 0.3 s; roar hold 0.6 s (F15 ring)",
+   "keys": [
+    {
+     "label": "1 front hooves up",
+     "root_rot": -10,
+     "root_rot_pivot": "hoof_r_hind",
+     "rot": {
+      "shoulder_r": -35,
+      "shoulder_l": -28,
+      "neck": -5
+     }
+    },
+    {
+     "label": "2 body leans back",
+     "root_rot": -16,
+     "root_rot_pivot": "hoof_r_hind",
+     "rot": {
+      "shoulder_r": -20,
+      "shoulder_l": -15,
+      "neck": -14,
+      "tail_root": -20
+     }
+    },
+    {
+     "label": "3 mouth open (needs jaw swap)",
+     "root_rot": -8,
+     "root_rot_pivot": "hoof_r_hind",
+     "root_d": [
+      2,
+      0
+     ],
+     "rot": {
+      "neck": -24,
+      "tail_root": -25
+     }
+    }
+   ]
+  }
+ ],
+ "title": "mosscrown_king_boar (side, v2.1) reference key poses; mouth-open/angry-eye swaps still need generation"
+}

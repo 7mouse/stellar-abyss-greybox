@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="HazardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/hazard_data.gd" id="s"]
+
+[resource]
+script = ExtResource("s")
+id = "falling_rock"
+display_name = "落石"
+radius = 90.0
+effect_radius = 90.0
+trigger_px = 220.0
+warn_sec = 1.2
+effect_sec = 0.0
+damage = 14
+rearm_sec = 6.0
+lord_dmg_mult = 2.0
+color = Color(0.55, 0.5, 0.45, 1)

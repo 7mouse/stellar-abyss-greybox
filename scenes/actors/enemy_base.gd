@@ -1,11 +1,13 @@
 class_name EnemyBase
 extends CharacterBody2D
-## 普通敌人基类：IDLE / CHASE / WINDUP / ATTACK / RECOVER / HURT / DEAD
+## 普通敌人基类：IDLE / CHASE / WINDUP / ATTACK / RECOVER / HURT / DEAD / RETURN / PATROL / ALERT
+## 地图怪（ai 不为空，见 EnemyAI）：PATROL 巡逻 → ALERT 警觉 → CHASE 追击 → RETURN 回归；前摇要先拿攻击令牌，追击名额满了就包围待机。
+## ai 为空（层主、召唤物、调试刷怪、测试场）= 旧行为，IDLE 立即开追、一直追。追击/回归走 NavigationAgent2D（use_nav，楼层烘焙完导航后打开）。
 ## 攻击前摇有明显预兆（变色 + “!” 图标），时长 = windup；poise 打满才硬直（普通怪 poise 0 = 每下都硬直）
 
 signal died(enemy: EnemyBase)
 
-enum S { IDLE, CHASE, WINDUP, ATTACK, RECOVER, HURT, DEAD }
+enum S { IDLE, CHASE, WINDUP, ATTACK, RECOVER, HURT, DEAD, RETURN, PATROL, ALERT }
 
 var data: EnemyData
 var depth := 1
@@ -27,17 +29,25 @@ var target: Node2D
 var hurtbox: Hurtbox
 var hitbox: Hitbox
 var body: ColorRect
+var visual: Sprite2D
 var warn: Label
 var aim_line: Line2D
 var size := Vector2(40, 48)
 var tint := Color.WHITE
-var walls: Array = [] ## 给弹道用
 var last_windup_sec := -1.0 ## 测试：上一次前摇实际时长
 var telegraph_delay := 0.0
 var invulnerable := false
 var aggro := true
 var _lunge_left := 0.0
 var _windup_started := 0.0
+var rules: AggroRules ## 仇恨参数（地图怪）；null = 一直追
+var ai: EnemyAI
+var home_pos := Vector2.INF ## 出生点
+var no_go := Rect2() ## 主角在这个矩形里（层主区）时普通怪不追、正在追的回归
+var use_nav := false
+var nav: NavigationAgent2D
+var _repath_t := 0.0
+var _nav_goal := Vector2.INF
 
 func setup(p_data: EnemyData, p_depth: int, fd: FloorData = null) -> void:
 	data = p_data
@@ -66,7 +76,18 @@ func _ready() -> void:
 	body.position = Vector2(-size.x / 2, -size.y + 10)
 	body.color = tint
 	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body.visible = false
 	add_child(body)
+	visual = Sprite2D.new()
+	visual.centered = true
+	visual.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	visual.texture = Art.enemy(data.id)
+	var vh := Art.visual_h(data.id) * (size.y / maxf(1.0, data.size.y))
+	if visual.texture:
+		visual.scale = Vector2.ONE * (vh / visual.texture.get_height())
+	visual.position = Vector2(0, 10 - vh * 0.5)
+	add_child(visual)
+	_sync_visual()
 	warn = Label.new()
 	warn.text = "!"
 	warn.add_theme_font_size_override("font_size", 48)
@@ -90,25 +111,58 @@ func _ready() -> void:
 	hitbox.source = self
 	hitbox.source_name = data.display_name
 	add_child(hitbox)
+	nav = NavigationAgent2D.new()
+	nav.path_desired_distance = 16.0
+	nav.target_desired_distance = data.attack_range * 0.8
+	nav.radius = size.x * 0.4
+	add_child(nav)
+	_repath_t = randf() * 0.25 ## 分帧错开寻路请求
+	if home_pos == Vector2.INF:
+		home_pos = global_position
 	add_to_group("enemies")
 	telegraph_delay = float(Game.mods().get("telegraph_delay", 0.0))
 	cooldown = 0.6 + randf() * 0.6
 
 func _physics_process(delta: float) -> void:
+	var _p := Prof.t0()
+	_prof_physics_process(delta)
+	_sync_visual()
+	Prof.add("enemy", _p)
+
+func _sync_visual() -> void:
+	if visual == null:
+		return
+	visual.modulate = body.color * body.modulate
+	if absf(facing.x) > 0.2:
+		visual.flip_h = facing.x < 0.0
+
+func _prof_physics_process(delta: float) -> void:
 	if state == S.DEAD:
 		return
 	state_t += delta
 	slow_left = maxf(0.0, slow_left - delta)
+	hz_slow_left = maxf(0.0, hz_slow_left - delta)
 	cooldown = maxf(0.0, cooldown - delta)
 	if target == null or not is_instance_valid(target):
 		var ps := get_tree().get_nodes_in_group("player")
 		target = ps[0] if not ps.is_empty() else null
+	if ai and ai.pre_tick(delta):
+		return
 	_tick_extra(delta)
 	match state:
 		S.IDLE:
 			velocity = Vector2.ZERO
 			if aggro and target:
 				_go(S.CHASE)
+		S.PATROL:
+			ai.tick_patrol(delta)
+		S.ALERT:
+			ai.tick_alert(delta)
+		S.RETURN:
+			if ai:
+				ai.tick_return(delta)
+			else:
+				_return_home(delta)
 		S.CHASE:
 			_chase(delta)
 		S.WINDUP:
@@ -130,12 +184,15 @@ func _physics_process(delta: float) -> void:
 			velocity = Vector2.ZERO
 			if state_t >= data.recover_sec:
 				_go(S.CHASE)
+			if ai:
+				ai.end_attack()
 		S.HURT:
 			velocity = velocity.move_toward(Vector2.ZERO, 2000 * delta)
 			move_and_slide()
 			if state_t >= _hurt_len:
 				_go(S.CHASE)
-	_separate()
+	if state != S.IDLE and state != S.PATROL:
+		_separate()
 
 var _hurt_len := 0.3
 
@@ -143,26 +200,76 @@ func _go(s: int) -> void:
 	state = s
 	state_t = 0.0
 
-func speed() -> float:
-	return data.move_speed * (0.5 if slow_left > 0.0 else 1.0)
 
-func _chase(_delta: float) -> void:
+## 环境机关减速（孢子云 −30%、缠根 −40%）：取持续中最强的一个
+var hz_slow_left := 0.0
+var hz_slow_pct := 0.0
+var hz_slow_tag := "" ## 当前减速来源（root_snare = 缠根，可被冲刺挣脱）
+func apply_hazard_slow(pct: float, sec: float, tag := "") -> void:
+	if hz_slow_left <= 0.0 or pct >= hz_slow_pct:
+		hz_slow_pct = pct
+		hz_slow_tag = tag
+	hz_slow_left = maxf(hz_slow_left, sec)
+func hazard_speed_mult() -> float:
+	return 1.0 - hz_slow_pct if hz_slow_left > 0.0 else 1.0
+
+func speed() -> float:
+	return data.move_speed * (0.5 if slow_left > 0.0 else 1.0) * hazard_speed_mult()
+
+func should_return() -> bool:
+	return false
+
+## 朝 goal 走的方向：有导航时每 0.25 秒更新一次 target_position（goal 跳变 > 80px 立即更新），取下一个路径点
+func nav_dir(goal: Vector2, delta: float) -> Vector2:
+	var _p := Prof.t0()
+	var _r := _prof_nav_dir(goal, delta)
+	Prof.add("nav", _p)
+	return _r
+
+func _prof_nav_dir(goal: Vector2, delta: float) -> Vector2:
+	var direct := (goal - global_position).normalized()
+	if not use_nav or nav == null:
+		return direct
+	_repath_t -= delta
+	if _repath_t <= 0.0 or _nav_goal == Vector2.INF or _nav_goal.distance_to(goal) > 80.0:
+		_repath_t = 0.25
+		_nav_goal = goal
+		nav.target_position = goal
+	var nxt := nav.get_next_path_position()
+	if nxt.distance_to(global_position) < 1.0:
+		return direct
+	return (nxt - global_position).normalized()
+
+func _return_home(delta: float) -> void:
+	var to := home_pos - global_position
+	if to.length() <= (rules.home_arrive_px if rules else 24.0):
+		velocity = Vector2.ZERO
+		_go(S.IDLE)
+		return
+	var dir := nav_dir(home_pos, delta)
+	facing = dir if dir != Vector2.ZERO else facing
+	velocity = dir * speed()
+	move_and_slide()
+
+func _chase(delta: float) -> void:
 	if target == null:
+		return
+	if ai and (ai.chase_check(delta) or ai.chase_wait(delta)):
 		return
 	var to: Vector2 = target.global_position - global_position
 	var dist := to.length()
 	facing = to.normalized() if dist > 1 else facing
-	var dir := to.normalized()
+	var dir := nav_dir(target.global_position, delta)
 	if data.id == "rootshot":
 		if dist < data.keep_distance:
-			dir = -dir
+			dir = nav_dir(global_position - to.normalized() * 160.0, delta) ## 后退目标点同样走导航
 		elif dist <= data.attack_range:
 			dir = Vector2.ZERO
 	elif dist <= data.attack_range * 0.8:
 		dir = Vector2.ZERO
 	velocity = dir * speed()
 	move_and_slide()
-	if dist <= data.attack_range and cooldown <= 0.0:
+	if dist <= data.attack_range and cooldown <= 0.0 and (ai == null or ai.request_attack()):
 		attack_dir = to.normalized()
 		_go(S.WINDUP)
 
@@ -186,7 +293,6 @@ func _shoot(dir: Vector2) -> void:
 	p.damage = damage
 	p.velocity = dir * data.projectile_speed
 	p.source_name = data.display_name
-	p.walls = walls
 	p.position = global_position + dir * 20
 	get_parent().add_child(p)
 
@@ -229,6 +335,8 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 	hp = maxi(0, hp - real)
 	DamageNumber.spawn(get_parent(), global_position, real, Color(1, 0.95, 0.5) if real > dmg else Color.WHITE)
 	Log.write("hits", [Game.run.id if Game.run else "", depth, "主角", data.display_name, real, false])
+	if ai:
+		ai.on_hit()
 	var stagger := float(src.get("stagger_sec")) if src and src.get("stagger_sec") != null else 0.0
 	var slow := float(src.get("slow_sec")) if src and src.get("slow_sec") != null else 0.0
 	if slow > 0.0:
@@ -245,10 +353,15 @@ func take_hit(dmg: int, src: Node, knockback: Vector2) -> bool:
 		body.color = tint
 		_hurt_len = maxf(data.hurt_sec, stagger)
 		velocity = knockback / 0.2
+		if ai:
+			ai.end_attack()
 		_go(S.HURT)
 	return true
 
 func _die() -> void:
+	if ai:
+		ai.release()
+		NoiseBus.emit_kind(global_position, "death")
 	_go(S.DEAD)
 	hitbox.end()
 	remove_from_group("enemies")
@@ -259,6 +372,11 @@ func _die() -> void:
 		var rm := 1.0 + float(Game.mods().get("rare_drop_pct", 0))
 		for st in roll_loot(rm):
 			Game.run.add_item(st)
+		if not (self is Guard):
+			var ckey := str(get_meta("rid", ""))
+			if ckey == "":
+				ckey = "%s@%d,%d" % [data.id, int(global_position.x), int(global_position.y)]
+			Game.recall.roll_elite(data.id, ckey)
 		Game.gain_xp(xp_value())
 		var kh := int(Game.mods().get("kill_heal", 0))
 		if kh > 0:
@@ -276,9 +394,25 @@ func xp_value() -> int:
 	return data.xp
 
 func _separate() -> void:
-	for e in get_tree().get_nodes_in_group("enemies"):
-		if e != self:
-			var d: Vector2 = global_position - e.global_position
+	var _p := Prof.t0()
+	_prof_separate()
+	Prof.add("separate", _p)
+
+## 性能：敌人列表每个物理帧只取一次（原来每只敌人每帧都 get_nodes_in_group 一次，分配新数组）
+static var _sep_list: Array = []
+static var _sep_frame := -1
+func _prof_separate() -> void:
+	var pf := Engine.get_physics_frames()
+	if pf != _sep_frame:
+		_sep_frame = pf
+		_sep_list = get_tree().get_nodes_in_group("enemies")
+	var gp := global_position
+	for e in _sep_list:
+		if e != self and is_instance_valid(e):
+			var d: Vector2 = gp - e.global_position
 			var min_d: float = (size.x + e.size.x) * 0.45
-			if d.length() < min_d and d.length() > 0.01:
+			var dl2 := d.length_squared()
+			if dl2 >= min_d * min_d:
+				continue
+			if dl2 > 0.0001:
 				move_and_collide(d.normalized() * (min_d - d.length()) * 0.3)

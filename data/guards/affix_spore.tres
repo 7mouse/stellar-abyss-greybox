@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AffixData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/affix_data.gd" id="s"]
+[ext_resource type="Resource" path="res://data/hazards/spore_pod.tres" id="h"]
+
+[resource]
+script = ExtResource("s")
+id = "spore"
+display_name = "孢子"
+spore_on_slam = ExtResource("h")
+spore_sec = 2.0

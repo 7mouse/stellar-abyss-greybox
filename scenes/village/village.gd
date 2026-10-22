@@ -20,12 +20,13 @@ func _ready() -> void:
 	for r in [Rect2(-40, -40, MAP.x + 80, 40), Rect2(-40, MAP.y, MAP.x + 80, 40), Rect2(-40, 0, 40, MAP.y), Rect2(MAP.x, 0, 40, MAP.y)]:
 		_wall(r)
 	_fac("incubator", "培养槽", Vector2(500, 380), Vector2(120, 160), Color(0.35, 0.8, 0.85), func(): _open("res://scenes/village/incubator.gd"))
-	_fac("vault", "保险箱", Vector2(820, 420), Vector2(140, 100), Color(0.7, 0.6, 0.3), func(): _open("res://scenes/village/vault_ui.gd"))
+	_fac("vault", "保险箱", Vector2(820, 420), Vector2(140, 100), Color(0.7, 0.6, 0.3), _vault)
 	_fac("epitaph", "墓志铭墙", Vector2(1250, 340), Vector2(320, 60), Color(0.55, 0.55, 0.6), func(): _open("res://scenes/village/epitaph_wall.gd"))
-	_fac("bench", "简易强化台", Vector2(1700, 380), Vector2(140, 90), Color(0.6, 0.4, 0.3), func(): _open("res://scenes/village/bench.gd"))
+	_fac("bench", "简易强化台", Vector2(1700, 380), Vector2(140, 90), Color(0.6, 0.4, 0.3), _bench)
 	_fac("well", "下潜井口", Vector2(1200, 1100), Vector2(160, 160), Color(0.08, 0.08, 0.1), _dive)
 	_fac("board", "布告栏", Vector2(400, 900), Vector2(120, 80), Color(0.5, 0.42, 0.3), func(): play_opening(true))
 	_fac("npc", "老冒险者", Vector2(1550, 800), Vector2(40, 64), Color(0.75, 0.7, 0.55), func(): show_toast("老冒险者：“往下走吧，越深越好。”"))
+	_fac("craft", "制作回村符", Vector2(1880, 980), Vector2(220, 90), Color(0.72, 0.48, 0.22), func(): _open("res://scenes/village/craft_ui.gd"))
 	player = Player.new()
 	player.position = Vector2(1200, 700)
 	add_child(player)
@@ -41,6 +42,8 @@ func _ready() -> void:
 	prompt = UI.label(hud, "", Vector2(700, 900), 30, Color(1, 0.95, 0.6))
 	toast = UI.label(hud, "", Vector2(560, 160), 32, Color(0.85, 1, 0.85))
 	UI.label(hud, "WASD/左摇杆 移动　E/手柄B 互动　F1/` 调试", Vector2(40, 1020), 22, Color(0.7, 0.7, 0.7))
+	if Game.run and Game.run.suspended:
+		_recall_facilities()
 	if not Lineage.flags.get("opening_seen", false):
 		play_opening(false)
 
@@ -114,8 +117,39 @@ func _open(script_path: String) -> Panel2:
 	add_child(p)
 	return p
 
+func _vault() -> void:
+	_open("res://scenes/village/vault_ui.gd")
+
+func _bench() -> void:
+	_open("res://scenes/village/bench.gd")
+
 func _dive() -> void:
+	if Game.run and Game.run.suspended:
+		show_toast("探索还没结束，不能重新下潜")
+		return
 	Game.start_run()
+
+func _recall_facilities() -> void:
+	player.hp = mini(Game.run.hp, player.max_hp)
+	_fac("rest", "回复生命", Vector2(860, 1100), Vector2(180, 90), Color(0.3, 0.65, 0.35), _rest)
+	_fac("bag", "整理背包", Vector2(1560, 1100), Vector2(180, 90), Color(0.3, 0.45, 0.7), _bag)
+	_fac("return", "返回第 %d 层" % Game.run.depth, Vector2(1200, 860), Vector2(240, 90), Color(0.42, 0.32, 0.62), _return_floor)
+	if Game.run.just_recalled:
+		Game.run.just_recalled = false
+		show_toast("已回到起程村。层主没死就不算撤离，身上的东西仍会丢失。")
+
+func _rest() -> void:
+	if Game.run == null:
+		return
+	player.hp = player.max_hp
+	Game.run.hp = player.hp
+	show_toast("生命已恢复")
+
+func _bag() -> void:
+	_open("res://scenes/village/bag_ui.gd")
+
+func _return_floor() -> void:
+	Game.recall_return()
 
 # ---------- 开场（方案 B；保留“死了就是真死”台词） ----------
 const OPENING := [["black", "23:47。楼梯。"], ["black", "有人推了我一把。"], ["sky", "【系统】欢迎来到起程村。"], ["sky", "【系统】打穿第 100 层就能回去。"], ["sky", "【系统】在这里死了，就是真的死了。"]]

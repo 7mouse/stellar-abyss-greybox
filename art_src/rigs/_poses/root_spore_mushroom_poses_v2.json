@@ -1,0 +1,167 @@
+{
+ "rig": "art_src/rigs/root_spore_mushroom/root_spore_mushroom_parts_s_v1_2.psd",
+ "pivots": "art_src/rigs/root_spore_mushroom/root_spore_mushroom_parts_s_v1_2_pivots.json",
+ "fix": "art_src/rigs/root_spore_mushroom/root_spore_mushroom_parts_s_v1_2_fix.json",
+ "attach": {
+  "eye_r_s": "stalk_s_mesh",
+  "eye_closed_r_s": "stalk_s_mesh",
+  "blush_r_s": "stalk_s_mesh",
+  "mouth_open_s": "stalk_s_mesh",
+  "stalk_s_under_root_l_a_s": "stalk_s_mesh",
+  "stalk_s_under_arm_l_s": "stalk_s_mesh",
+  "root_l_a_s_under_root_l_b_s": "root_l_a_s",
+  "root_r_a_s_under_root_r_b_s": "root_r_a_s"
+ },
+ "out": "art_src/rigs/root_spore_mushroom/ref/root_spore_mushroom_ref_poses_v2.png",
+ "scale": 2,
+ "anims": [
+  {
+   "name": "idle",
+   "fps": 8,
+   "timing": "2 keys 0.6 s (stalk mesh breathes <=15%)",
+   "keys": [
+    {
+     "label": "1 rest"
+    },
+    {
+     "label": "2",
+     "root_scale": [
+      1.04,
+      0.96
+     ],
+     "rot": {
+      "cap_root": -3
+     }
+    },
+    {
+     "label": "blink",
+     "show": [
+      "eye_closed_r_s"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "move",
+   "fps": 12,
+   "timing": "waddle 4 keys 0.5 s",
+   "keys": [
+    {
+     "label": "A",
+     "rot": {
+      "hip_r": -18,
+      "hip_l": 14,
+      "arm_root_r": 12,
+      "cap_root": 3,
+      "root_mid_r": 10,
+      "root_mid_l": -8
+     }
+    },
+    {
+     "label": "up",
+     "root_d": [
+      0,
+      -4
+     ]
+    },
+    {
+     "label": "B",
+     "rot": {
+      "hip_r": 14,
+      "hip_l": -18,
+      "arm_root_r": -12,
+      "cap_root": -3,
+      "root_mid_r": -8,
+      "root_mid_l": 10
+     }
+    },
+    {
+     "label": "up",
+     "root_d": [
+      0,
+      -4
+     ]
+    }
+   ]
+  },
+  {
+   "name": "attack (spore spit)",
+   "fps": 12,
+   "timing": "swell 0.4 s; spit 0.1 s; recover 0.3 s",
+   "keys": [
+    {
+     "label": "swell",
+     "root_scale": [
+      1.12,
+      0.9
+     ],
+     "rot": {
+      "cap_root": -10,
+      "arm_root_r": -25,
+      "arm_root_l": -25,
+      "root_mid_r": 8,
+      "root_mid_l": 8
+     }
+    },
+    {
+     "label": "spit",
+     "root_scale": [
+      0.92,
+      1.08
+     ],
+     "root_d": [
+      3,
+      0
+     ],
+     "rot": {
+      "cap_root": 12,
+      "arm_root_r": 25,
+      "arm_root_l": 25
+     },
+     "show": [
+      "mouth_open_s"
+     ]
+    },
+    {
+     "label": "recover",
+     "rot": {
+      "cap_root": 3
+     }
+    }
+   ]
+  },
+  {
+   "name": "hit",
+   "fps": 12,
+   "timing": "0.1 s hold",
+   "keys": [
+    {
+     "label": "hit",
+     "root_d": [
+      -5,
+      0
+     ],
+     "root_scale": [
+      0.95,
+      1.04
+     ],
+     "rot": {
+      "cap_root": -16,
+      "arm_root_r": 30
+     },
+     "show": [
+      "eye_closed_r_s",
+      "mouth_open_s"
+     ]
+    },
+    {
+     "label": "recover",
+     "rot": {
+      "cap_root": -5
+     }
+    }
+   ]
+  }
+ ],
+ "title": "root_spore_mushroom (side, v1.2) reference key poses; spit uses the open mouth swap, roots bend at root_mid"
+}

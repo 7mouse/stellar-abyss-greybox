@@ -1,0 +1,561 @@
+{
+ "canvas": [
+  320,
+  320
+ ],
+ "unit": "px@1:1",
+ "version": "mosscrown_king_boar_parts_b_v3_raw",
+ "order": [
+  "leg_front_l_a_b_under_leg_front_l_b_b",
+  "leg_front_l_b_b",
+  "leg_front_l_a_b",
+  "leg_front_r_a_b_under_leg_front_r_b_b",
+  "leg_front_r_b_b",
+  "leg_front_r_a_b",
+  "head_b",
+  "head_roar_b",
+  "mane_b_mesh",
+  "ear_l_b",
+  "ear_r_b",
+  "tusk_r_b",
+  "tusk_l_b",
+  "eye_open_r_b",
+  "eye_closed_r_b",
+  "eye_open_l_b",
+  "eye_closed_l_b",
+  "eye_angry_r_b",
+  "eye_angry_l_b",
+  "leg_hind_l_a_b_under_leg_hind_l_b_b",
+  "leg_hind_l_b_b",
+  "leg_hind_l_a_b",
+  "leg_hind_r_a_b_under_leg_hind_r_b_b",
+  "leg_hind_r_b_b",
+  "leg_hind_r_a_b",
+  "body_b_mesh",
+  "tail_b",
+  "crown_b"
+ ],
+ "swap": [
+  "eye_angry_l_b",
+  "eye_angry_r_b",
+  "eye_closed_l_b",
+  "eye_closed_r_b",
+  "head_roar_b"
+ ],
+ "pivots": {
+  "neck": [
+   160.5,
+   136.3
+  ],
+  "head_top": [
+   160.5,
+   82.6
+  ],
+  "crown_root": [
+   160.5,
+   93.3
+  ],
+  "crown_tip": [
+   160.5,
+   50.3
+  ],
+  "tail_root": [
+   226.1,
+   184.7
+  ],
+  "tail_tip": [
+   251.9,
+   206.2
+  ],
+  "hip_l": [
+   101.4,
+   270.7
+  ],
+  "hoof_l_hind": [
+   101.4,
+   310.5
+  ],
+  "hip_r": [
+   219.7,
+   270.7
+  ],
+  "hoof_r_hind": [
+   219.7,
+   310.5
+  ],
+  "shoulder_l": [
+   141.2,
+   268.6
+  ],
+  "hoof_l_front": [
+   141.2,
+   301.9
+  ],
+  "shoulder_r": [
+   179.9,
+   268.6
+  ],
+  "hoof_r_front": [
+   179.9,
+   301.9
+  ],
+  "root": [
+   160.5,
+   311.6
+  ],
+  "ear_root_l": [
+   122.0,
+   112.0
+  ],
+  "ear_tip_l": [
+   114.0,
+   84.0
+  ],
+  "ear_root_r": [
+   200.0,
+   112.0
+  ],
+  "ear_tip_r": [
+   208.0,
+   84.0
+  ],
+  "knee_front_r": [
+   179.9,
+   285.0
+  ],
+  "knee_front_l": [
+   141.2,
+   285.0
+  ],
+  "knee_hind_r": [
+   219.7,
+   290.6
+  ],
+  "knee_hind_l": [
+   101.4,
+   290.6
+  ]
+ },
+ "line_rgb": [
+  63,
+  62,
+  42
+ ],
+ "from": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_b_v2_1_src2x.psd",
+ "log": {
+  "extras": [
+   {
+    "op": "add_part",
+    "name": "head_b",
+    "source": "art_src/src/v21f/king_boar_heads_gen1.jpg",
+    "pick": [
+     760,
+     100
+    ],
+    "fit": {
+     "iou": "head_b",
+     "region": [
+      100,
+      92,
+      222,
+      200
+     ],
+     "scale": [
+      0.8,
+      1.2
+     ]
+    },
+    "recolor": {
+     "to": "head_b",
+     "mode": "meanstd",
+     "strength": 0.6
+    },
+    "replace": true,
+    "fit_result": {
+     "scale": 1.01,
+     "xy_2x": [
+      211,
+      179
+     ],
+     "iou": 0.899
+    }
+   },
+   {
+    "op": "add_part",
+    "name": "mane_b_mesh",
+    "source": "art_src/src/v21f/king_boar_mane_gen1.jpg",
+    "pick": [
+     875,
+     270
+    ],
+    "fit": {
+     "box": [
+      100,
+      70,
+      222,
+      200
+     ],
+     "anchor": "top"
+    },
+    "recolor": {
+     "to": "body_b_mesh",
+     "mode": "meanstd",
+     "strength": 0.6
+    },
+    "above": "head_b"
+   },
+   {
+    "op": "add_part",
+    "name": "ear_l_b",
+    "png": "art_src/rigs/mosscrown_king_boar/spares_v2/ear_l.png",
+    "fit": {
+     "box": [
+      106,
+      80,
+      134,
+      118
+     ]
+    },
+    "recolor": {
+     "to": "head_b",
+     "mode": "meanstd",
+     "strength": 0.8
+    },
+    "above": "mane_b_mesh",
+    "pivots": {
+     "ear_root_l": [
+      122,
+      112
+     ],
+     "ear_tip_l": [
+      114,
+      84
+     ]
+    }
+   },
+   {
+    "op": "add_part",
+    "name": "ear_r_b",
+    "png": "art_src/rigs/mosscrown_king_boar/spares_v2/ear_r.png",
+    "fit": {
+     "box": [
+      188,
+      80,
+      216,
+      118
+     ]
+    },
+    "recolor": {
+     "to": "head_b",
+     "mode": "meanstd",
+     "strength": 0.8
+    },
+    "above": "ear_l_b",
+    "pivots": {
+     "ear_root_r": [
+      200,
+      112
+     ],
+     "ear_tip_r": [
+      208,
+      84
+     ]
+    }
+   },
+   {
+    "op": "empty",
+    "name": "head_roar_b",
+    "above": "head_b",
+    "swap": true
+   },
+   {
+    "op": "empty",
+    "name": "tusk_r_b",
+    "above": "ear_r_b"
+   },
+   {
+    "op": "empty",
+    "name": "tusk_l_b",
+    "above": "tusk_r_b"
+   },
+   {
+    "op": "empty",
+    "name": "eye_angry_r_b",
+    "above": "eye_closed_l_b",
+    "swap": true
+   },
+   {
+    "op": "empty",
+    "name": "eye_angry_l_b",
+    "above": "eye_angry_r_b",
+    "swap": true
+   },
+   {
+    "op": "rename",
+    "map": {
+     "crown_b": "crown_b"
+    }
+   },
+   {
+    "op": "split",
+    "part": "leg_front_r_b",
+    "at": [
+     179.9,
+     285
+    ],
+    "from": "shoulder_r",
+    "to": "hoof_r_front",
+    "upper": "leg_front_r_a_b",
+    "lower": "leg_front_r_b_b",
+    "pivot": "knee_front_r"
+   },
+   {
+    "op": "split",
+    "part": "leg_front_l_b",
+    "at": [
+     141.2,
+     285
+    ],
+    "from": "shoulder_l",
+    "to": "hoof_l_front",
+    "upper": "leg_front_l_a_b",
+    "lower": "leg_front_l_b_b",
+    "pivot": "knee_front_l"
+   },
+   {
+    "op": "split",
+    "part": "leg_hind_r_b",
+    "at": [
+     219.7,
+     290.6
+    ],
+    "from": "hip_r",
+    "to": "hoof_r_hind",
+    "upper": "leg_hind_r_a_b",
+    "lower": "leg_hind_r_b_b",
+    "pivot": "knee_hind_r"
+   },
+   {
+    "op": "split",
+    "part": "leg_hind_l_b",
+    "at": [
+     101.4,
+     290.6
+    ],
+    "from": "hip_l",
+    "to": "hoof_l_hind",
+    "upper": "leg_hind_l_a_b",
+    "lower": "leg_hind_l_b_b",
+    "pivot": "knee_hind_l"
+   },
+   {
+    "op": "underfill",
+    "parent": "head_b",
+    "child": "crown_b",
+    "pivot": "crown_root",
+    "radius": 34,
+    "shade": 0.8,
+    "inset": 2,
+    "added_px_1to1": 1664,
+    "into": "head_b"
+   },
+   {
+    "op": "underfill",
+    "parent": "head_b",
+    "child": "ear_r_b",
+    "pivot": "ear_root_r",
+    "radius": 14,
+    "shade": 0.85,
+    "added_px_1to1": 202,
+    "into": "head_b"
+   },
+   {
+    "op": "underfill",
+    "parent": "head_b",
+    "child": "ear_l_b",
+    "pivot": "ear_root_l",
+    "radius": 14,
+    "shade": 0.85,
+    "added_px_1to1": 201,
+    "into": "head_b"
+   },
+   {
+    "op": "underfill",
+    "parent": "body_b_mesh",
+    "child": "tail_b",
+    "pivot": "tail_root",
+    "radius": 18,
+    "shade": 0.9,
+    "added_px_1to1": 2,
+    "into": "body_b_mesh"
+   },
+   {
+    "op": "underfill",
+    "parent": "leg_front_r_a_b",
+    "child": "leg_front_r_b_b",
+    "pivot": "knee_front_r",
+    "radius": 12,
+    "shade": 0.9,
+    "added_px_1to1": 226,
+    "into": "leg_front_r_a_b_under_leg_front_r_b_b"
+   },
+   {
+    "op": "underfill",
+    "parent": "leg_front_l_a_b",
+    "child": "leg_front_l_b_b",
+    "pivot": "knee_front_l",
+    "radius": 12,
+    "shade": 0.9,
+    "added_px_1to1": 218,
+    "into": "leg_front_l_a_b_under_leg_front_l_b_b"
+   },
+   {
+    "op": "underfill",
+    "parent": "leg_hind_r_a_b",
+    "child": "leg_hind_r_b_b",
+    "pivot": "knee_hind_r",
+    "radius": 12,
+    "shade": 0.9,
+    "added_px_1to1": 228,
+    "into": "leg_hind_r_a_b_under_leg_hind_r_b_b"
+   },
+   {
+    "op": "underfill",
+    "parent": "leg_hind_l_a_b",
+    "child": "leg_hind_l_b_b",
+    "pivot": "knee_hind_l",
+    "radius": 12,
+    "shade": 0.9,
+    "added_px_1to1": 228,
+    "into": "leg_hind_l_a_b_under_leg_hind_l_b_b"
+   }
+  ],
+  "previous": {
+   "extras": [
+    {
+     "op": "empty",
+     "name": "eye_open_r_b",
+     "above": "head_b"
+    },
+    {
+     "op": "empty",
+     "name": "eye_closed_r_b",
+     "above": "eye_open_r_b",
+     "swap": true
+    },
+    {
+     "op": "empty",
+     "name": "eye_open_l_b",
+     "above": "eye_closed_r_b"
+    },
+    {
+     "op": "empty",
+     "name": "eye_closed_l_b",
+     "above": "eye_open_l_b",
+     "swap": true
+    }
+   ],
+   "previous": {
+    "ops": [],
+    "joints": {
+     "neck": {
+      "child": {
+       "before": 58.9,
+       "half_width": 44.5,
+       "after": 58.9,
+       "action": "kept (already deeper than range)",
+       "part": "head_b",
+       "cls": "big"
+      }
+     },
+     "crown_root": {
+      "child": {
+       "before": 9.5,
+       "half_width": 36.8,
+       "after": 9.5,
+       "action": "kept (already deeper than range)",
+       "part": "crown_b",
+       "cls": "small"
+      },
+      "parent": {
+       "before": 15.5,
+       "half_width": 46.2,
+       "after": 15.5,
+       "action": "kept (already deeper than range)",
+       "part": "head_b",
+       "cls": "small"
+      }
+     },
+     "tail_root": {
+      "child": {
+       "before": 18.2,
+       "half_width": 11.8,
+       "after": 18.2,
+       "action": "kept (already deeper than range)",
+       "part": "tail_b",
+       "cls": "small"
+      },
+      "parent": {
+       "before": 51.1,
+       "half_width": 74.9,
+       "after": 51.1,
+       "action": "kept (already deeper than range)",
+       "part": "body_b_mesh",
+       "cls": "small"
+      }
+     },
+     "hip_r": {
+      "child": {
+       "before": 21.4,
+       "half_width": 17.0,
+       "after": 21.4,
+       "action": "kept (already deeper than range)",
+       "part": "leg_hind_r_b",
+       "cls": "big"
+      }
+     },
+     "hip_l": {
+      "child": {
+       "before": 21.4,
+       "half_width": 16.8,
+       "after": 21.4,
+       "action": "kept (already deeper than range)",
+       "part": "leg_hind_l_b",
+       "cls": "big"
+      }
+     },
+     "shoulder_r": {
+      "child": {
+       "before": 19.4,
+       "half_width": 13.0,
+       "after": 19.4,
+       "action": "round cap v2.1 hidden: erase+interior fill",
+       "target": 19.5,
+       "cap_half_width": 11.2,
+       "added_px_1to1": 43,
+       "erased_cut_px_1to1": 26,
+       "part": "leg_front_r_b",
+       "cls": "big"
+      }
+     },
+     "shoulder_l": {
+      "child": {
+       "before": 18.4,
+       "half_width": 12.8,
+       "after": 19.4,
+       "action": "round cap v2.1 hidden: erase+interior fill",
+       "target": 19.5,
+       "cap_half_width": 10.5,
+       "added_px_1to1": 60,
+       "erased_cut_px_1to1": 15,
+       "part": "leg_front_l_b",
+       "cls": "big"
+      }
+     }
+    },
+    "cleanup": {},
+    "post_ops": []
+   }
+  }
+ }
+}

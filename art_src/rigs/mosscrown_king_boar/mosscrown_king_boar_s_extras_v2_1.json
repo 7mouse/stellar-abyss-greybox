@@ -1,0 +1,36 @@
+{
+ "src_psd2x": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_s_v2_src2x.psd",
+ "src_pivots": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_s_v2_pivots.json",
+ "out_dir": "art_src/rigs/mosscrown_king_boar/",
+ "base": "mosscrown_king_boar_parts_s_v2_1",
+ "parts_dir": "parts_v2_1",
+ "ops": [
+  {
+   "op": "blink",
+   "head": "head_s",
+   "suffix": "s",
+   "eyes": [
+    {
+     "side": "r",
+     "auto": [
+      235,
+      150,
+      264,
+      183
+     ]
+    }
+   ]
+  },
+  {
+   "op": "empty",
+   "name": "eye_open_l_s",
+   "above": "eye_closed_r_s"
+  },
+  {
+   "op": "empty",
+   "name": "eye_closed_l_s",
+   "above": "eye_open_l_s",
+   "swap": true
+  }
+ ]
+}

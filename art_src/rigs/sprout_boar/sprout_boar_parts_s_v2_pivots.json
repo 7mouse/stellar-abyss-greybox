@@ -1,0 +1,205 @@
+{
+ "canvas": [
+  256,
+  256
+ ],
+ "unit": "px@1:1",
+ "version": "sprout_boar_parts_s_v2",
+ "order": [
+  "leg_hind_l_s",
+  "leg_front_l_s",
+  "tail_s",
+  "body_s_mesh",
+  "leg_hind_r_s",
+  "leg_front_r_s",
+  "head_s",
+  "ear_s",
+  "sprout_s"
+ ],
+ "pivots": {
+  "neck": [
+   142.7,
+   151.9
+  ],
+  "ear_root": [
+   118.2,
+   142.7
+  ],
+  "sprout_root": [
+   110.8,
+   105.9
+  ],
+  "tail_root": [
+   30.4,
+   173.4
+  ],
+  "hip_r": [
+   52.5,
+   207.1
+  ],
+  "hip_l": [
+   89.3,
+   208.4
+  ],
+  "shoulder_r": [
+   138.4,
+   207.1
+  ],
+  "shoulder_l": [
+   175.0,
+   204.1
+  ],
+  "hoof_r_hind": [
+   52.5,
+   244.0
+  ],
+  "hoof_l_hind": [
+   89.3,
+   240.9
+  ],
+  "hoof_r_front": [
+   138.4,
+   247.0
+  ],
+  "hoof_l_front": [
+   175.3,
+   242.7
+  ],
+  "root": [
+   109.0,
+   247.0
+  ]
+ },
+ "line_rgb": [
+  33,
+  24,
+  8
+ ],
+ "log": {
+  "ops": [
+   {
+    "op": "pivot_to_edge",
+    "pivot": "shoulder_l",
+    "parents": [
+     "body_s_mesh",
+     "head_s"
+    ],
+    "dir": [
+     0,
+     -1
+    ],
+    "inset": 2,
+    "x_from_part": "leg_front_l_s",
+    "why": "far front leg had ~8px gap to the body",
+    "new_pivot": [
+     175.0,
+     204.1
+    ]
+   }
+  ],
+  "joints": {
+   "neck": {
+    "child": {
+     "before": 21.1,
+     "half_width": 41.8,
+     "after": 21.1,
+     "action": "kept (already deeper than range)",
+     "part": "head_s",
+     "cls": "big"
+    }
+   },
+   "ear_root": {
+    "child": {
+     "before": 4.0,
+     "half_width": 10.0,
+     "after": 4.9,
+     "action": "round cap",
+     "target": 5.0,
+     "cap_half_width": 7.5,
+     "added_px_1to1": 45,
+     "part": "ear_s",
+     "cls": "small"
+    }
+   },
+   "sprout_root": {
+    "child": {
+     "before": 3.8,
+     "half_width": 13.5,
+     "after": 4.9,
+     "action": "round cap",
+     "target": 5.0,
+     "cap_half_width": 13.3,
+     "added_px_1to1": 78,
+     "part": "sprout_s",
+     "cls": "small"
+    }
+   },
+   "tail_root": {
+    "child": {
+     "before": 1.7,
+     "half_width": 3.8,
+     "after": 7.3,
+     "action": "round cap",
+     "target": 7.5,
+     "cap_half_width": 2.9,
+     "added_px_1to1": 44,
+     "part": "tail_s",
+     "cls": "small"
+    }
+   },
+   "hip_r": {
+    "child": {
+     "before": 4.3,
+     "half_width": 7.8,
+     "after": 4.8,
+     "action": "round cap",
+     "target": 5.0,
+     "cap_half_width": 6.5,
+     "added_px_1to1": 35,
+     "part": "leg_hind_r_s",
+     "cls": "small"
+    }
+   },
+   "hip_l": {
+    "child": {
+     "before": 2.2,
+     "half_width": 6.6,
+     "after": 7.2,
+     "action": "round cap",
+     "target": 7.5,
+     "cap_half_width": 5.9,
+     "added_px_1to1": 73,
+     "part": "leg_hind_l_s",
+     "cls": "small"
+    }
+   },
+   "shoulder_r": {
+    "child": {
+     "before": 0.8,
+     "half_width": 7.0,
+     "after": 4.8,
+     "action": "round cap",
+     "target": 5.0,
+     "cap_half_width": 6.3,
+     "added_px_1to1": 69,
+     "part": "leg_front_r_s",
+     "cls": "small"
+    }
+   },
+   "shoulder_l": {
+    "child": {
+     "before": -2.2,
+     "half_width": 6.0,
+     "after": 9.9,
+     "action": "round cap",
+     "target": 10.0,
+     "cap_half_width": 6.3,
+     "added_px_1to1": 152,
+     "part": "leg_front_l_s",
+     "cls": "small"
+    }
+   }
+  },
+  "cleanup": {}
+ }
+}

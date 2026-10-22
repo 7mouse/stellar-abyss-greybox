@@ -1,0 +1,216 @@
+{
+ "canvas": [
+  320,
+  320
+ ],
+ "unit": "px@1:1",
+ "version": "mosscrown_king_boar_parts_f_v2_1",
+ "order": [
+  "leg_hind_r_f",
+  "leg_hind_l_f",
+  "body_f_mesh",
+  "leg_front_r_f",
+  "leg_front_l_f",
+  "head_f",
+  "eye_open_r_f",
+  "eye_closed_r_f",
+  "eye_open_l_f",
+  "eye_closed_l_f"
+ ],
+ "swap": [
+  "eye_closed_l_f",
+  "eye_closed_r_f"
+ ],
+ "pivots": {
+  "neck": [
+   160.0,
+   215.9
+  ],
+  "head_top": [
+   160.0,
+   76.1
+  ],
+  "hip_r": [
+   129.9,
+   269.6
+  ],
+  "hoof_r_hind": [
+   129.9,
+   301.9
+  ],
+  "hip_l": [
+   190.1,
+   269.6
+  ],
+  "hoof_l_hind": [
+   190.1,
+   301.9
+  ],
+  "shoulder_r": [
+   98.7,
+   269.6
+  ],
+  "hoof_r_front": [
+   98.7,
+   310.5
+  ],
+  "shoulder_l": [
+   221.3,
+   269.6
+  ],
+  "hoof_l_front": [
+   221.3,
+   310.5
+  ],
+  "root": [
+   160.0,
+   311.6
+  ],
+  "eye_r": [
+   120.2,
+   168.8
+  ],
+  "eye_l": [
+   202.8,
+   169.2
+  ]
+ },
+ "line_rgb": [
+  72,
+  70,
+  49
+ ],
+ "from": "art_src/rigs/mosscrown_king_boar/mosscrown_king_boar_parts_f_v2_src2x.psd",
+ "log": {
+  "extras": [
+   {
+    "op": "blink",
+    "head": "head_f",
+    "suffix": "f",
+    "eyes": [
+     {
+      "side": "r",
+      "auto": [
+       106,
+       150,
+       135,
+       188
+      ]
+     },
+     {
+      "side": "l",
+      "auto": [
+       188,
+       150,
+       217,
+       188
+      ]
+     }
+    ],
+    "eyes_fit": [
+     {
+      "side": "r",
+      "ellipse_1to1": [
+       120.2,
+       168.8,
+       10.0,
+       13.4
+      ],
+      "skin_rgb": [
+       187.0,
+       172.0,
+       127.0
+      ]
+     },
+     {
+      "side": "l",
+      "ellipse_1to1": [
+       202.8,
+       169.2,
+       10.0,
+       13.4
+      ],
+      "skin_rgb": [
+       185.0,
+       171.0,
+       125.0
+      ]
+     }
+    ]
+   }
+  ],
+  "previous": {
+   "ops": [],
+   "joints": {
+    "neck": {
+     "child": {
+      "before": 44.8,
+      "half_width": 80.5,
+      "after": 44.8,
+      "action": "kept (already deeper than range)",
+      "part": "head_f",
+      "cls": "big"
+     }
+    },
+    "hip_r": {
+     "child": {
+      "before": 19.4,
+      "half_width": 12.2,
+      "after": 19.4,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 19.5,
+      "cap_half_width": 11.0,
+      "added_px_1to1": 43,
+      "erased_cut_px_1to1": 17,
+      "part": "leg_hind_r_f",
+      "cls": "big"
+     }
+    },
+    "hip_l": {
+     "child": {
+      "before": 20.4,
+      "half_width": 12.5,
+      "after": 20.4,
+      "action": "round cap v2.1 hidden: erase+interior fill",
+      "target": 20.0,
+      "cap_half_width": 12.2,
+      "added_px_1to1": 41,
+      "erased_cut_px_1to1": 26,
+      "part": "leg_hind_l_f",
+      "cls": "big"
+     }
+    },
+    "shoulder_r": {
+     "child": {
+      "before": 19.4,
+      "half_width": 17.0,
+      "after": 19.4,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 19.4,
+      "cap_half_width": 13.2,
+      "added_px_1to1": 49,
+      "erased_cut_px_1to1": 0,
+      "part": "leg_front_r_f",
+      "cls": "big"
+     }
+    },
+    "shoulder_l": {
+     "child": {
+      "before": 19.4,
+      "half_width": 17.0,
+      "after": 19.4,
+      "action": "round cap v2.1 visible: parent pixels",
+      "target": 19.4,
+      "cap_half_width": 13.2,
+      "added_px_1to1": 48,
+      "erased_cut_px_1to1": 0,
+      "part": "leg_front_l_f",
+      "cls": "big"
+     }
+    }
+   },
+   "cleanup": {},
+   "post_ops": []
+  }
+ }
+}
